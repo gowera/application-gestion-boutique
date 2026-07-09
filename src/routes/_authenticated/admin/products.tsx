@@ -234,7 +234,7 @@ function StockAdjustDialog({ product, onOpenChange, onSaved }: { product: Produc
             </Select>
           </div>
           <div><Label>Quantité {reason === "correction" && "(peut être négative)"}</Label><Input type="number" value={delta} onChange={(e) => setDelta(+e.target.value)} /></div>
-          <div><Label>Motif / note</Label><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} /></div>
+          <div><Label>Motif / note</Label><Textarea rows={2} value={note ?? ""} onChange={(e) => setNote(e.target.value)} /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
