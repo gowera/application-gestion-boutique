@@ -1,0 +1,864 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  public: {
+    Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          entity: string | null
+          entity_id: string | null
+          id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity?: string | null
+          entity_id?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity?: string | null
+          entity_id?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      cash_sessions: {
+        Row: {
+          closed_at: string | null
+          closing_amount: number | null
+          expected_amount: number | null
+          id: string
+          notes: string | null
+          opened_at: string
+          opening_amount: number
+          user_id: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closing_amount?: number | null
+          expected_amount?: number | null
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opening_amount?: number
+          user_id: string
+        }
+        Update: {
+          closed_at?: string | null
+          closing_amount?: number | null
+          expected_amount?: number | null
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opening_amount?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          parent_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          parent_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_ledger: {
+        Row: {
+          created_at: string
+          customer_id: string
+          delta: number
+          id: string
+          reason: string
+          ref_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          delta: number
+          id?: string
+          reason: string
+          ref_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          delta?: number
+          id?: string
+          reason?: string
+          ref_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_ledger_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address: string | null
+          balance: number
+          created_at: string
+          credit_limit: number
+          email: string | null
+          id: string
+          is_archived: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          balance?: number
+          created_at?: string
+          credit_limit?: number
+          email?: string | null
+          id?: string
+          is_archived?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          balance?: number
+          created_at?: string
+          credit_limit?: number
+          email?: string | null
+          id?: string
+          is_archived?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      expense_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          amount_usd: number
+          category_id: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          note: string | null
+          proof_url: string | null
+          spent_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          amount_usd: number
+          category_id?: string | null
+          created_at?: string
+          currency?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          note?: string | null
+          proof_url?: string | null
+          spent_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          amount_usd?: number
+          category_id?: string | null
+          created_at?: string
+          currency?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          note?: string | null
+          proof_url?: string | null
+          spent_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          amount_usd: number
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          reference: string | null
+          sale_id: string
+        }
+        Insert: {
+          amount: number
+          amount_usd: number
+          created_at?: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          method: Database["public"]["Enums"]["payment_method"]
+          reference?: string | null
+          sale_id: string
+        }
+        Update: {
+          amount?: number
+          amount_usd?: number
+          created_at?: string
+          currency?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          reference?: string | null
+          sale_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          brand: string | null
+          category_id: string | null
+          cost_price: number
+          created_at: string
+          description: string | null
+          id: string
+          images: string[]
+          low_stock_threshold: number | null
+          name: string
+          sale_price: number
+          sku: string | null
+          status: Database["public"]["Enums"]["product_status"]
+          stock: number
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          category_id?: string | null
+          cost_price?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[]
+          low_stock_threshold?: number | null
+          name: string
+          sale_price?: number
+          sku?: string | null
+          status?: Database["public"]["Enums"]["product_status"]
+          stock?: number
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          category_id?: string | null
+          cost_price?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[]
+          low_stock_threshold?: number | null
+          name?: string
+          sale_price?: number
+          sku?: string | null
+          status?: Database["public"]["Enums"]["product_status"]
+          stock?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          is_active: boolean
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          is_active?: boolean
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quote_requests: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string | null
+          name: string
+          phone: string
+          service: string
+          status: Database["public"]["Enums"]["quote_status"]
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name: string
+          phone: string
+          service: string
+          status?: Database["public"]["Enums"]["quote_status"]
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string
+          service?: string
+          status?: Database["public"]["Enums"]["quote_status"]
+        }
+        Relationships: []
+      }
+      sale_items: {
+        Row: {
+          discount_usd: number
+          id: string
+          line_total_usd: number
+          product_id: string
+          product_name: string
+          qty: number
+          sale_id: string
+          unit_price_usd: number
+        }
+        Insert: {
+          discount_usd?: number
+          id?: string
+          line_total_usd: number
+          product_id: string
+          product_name: string
+          qty: number
+          sale_id: string
+          unit_price_usd: number
+        }
+        Update: {
+          discount_usd?: number
+          id?: string
+          line_total_usd?: number
+          product_id?: string
+          product_name?: string
+          qty?: number
+          sale_id?: string
+          unit_price_usd?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          channel: Database["public"]["Enums"]["sale_channel"]
+          code: string
+          created_at: string
+          credit_usd: number
+          customer_id: string | null
+          discount_usd: number
+          id: string
+          note: string | null
+          paid_usd: number
+          session_id: string | null
+          status: Database["public"]["Enums"]["sale_status"]
+          subtotal_usd: number
+          total_usd: number
+          user_id: string | null
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["sale_channel"]
+          code: string
+          created_at?: string
+          credit_usd?: number
+          customer_id?: string | null
+          discount_usd?: number
+          id?: string
+          note?: string | null
+          paid_usd?: number
+          session_id?: string | null
+          status?: Database["public"]["Enums"]["sale_status"]
+          subtotal_usd?: number
+          total_usd?: number
+          user_id?: string | null
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["sale_channel"]
+          code?: string
+          created_at?: string
+          credit_usd?: number
+          customer_id?: string | null
+          discount_usd?: number
+          id?: string
+          note?: string | null
+          paid_usd?: number
+          session_id?: string | null
+          status?: Database["public"]["Enums"]["sale_status"]
+          subtotal_usd?: number
+          total_usd?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settings: {
+        Row: {
+          address: string | null
+          email: string | null
+          id: number
+          invoice_prefix: string
+          logo_url: string | null
+          low_stock_threshold: number
+          phone: string | null
+          primary_currency: Database["public"]["Enums"]["currency_code"]
+          shop_name: string
+          updated_at: string
+          usd_to_cdf_rate: number
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          email?: string | null
+          id?: number
+          invoice_prefix?: string
+          logo_url?: string | null
+          low_stock_threshold?: number
+          phone?: string | null
+          primary_currency?: Database["public"]["Enums"]["currency_code"]
+          shop_name?: string
+          updated_at?: string
+          usd_to_cdf_rate?: number
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          email?: string | null
+          id?: number
+          invoice_prefix?: string
+          logo_url?: string | null
+          low_stock_threshold?: number
+          phone?: string | null
+          primary_currency?: Database["public"]["Enums"]["currency_code"]
+          shop_name?: string
+          updated_at?: string
+          usd_to_cdf_rate?: number
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          note: string | null
+          product_id: string
+          reason: Database["public"]["Enums"]["movement_reason"]
+          ref_id: string | null
+          ref_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          note?: string | null
+          product_id: string
+          reason: Database["public"]["Enums"]["movement_reason"]
+          ref_id?: string | null
+          ref_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          note?: string | null
+          product_id?: string
+          reason?: Database["public"]["Enums"]["movement_reason"]
+          ref_id?: string | null
+          ref_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      adjust_stock: {
+        Args: {
+          _delta: number
+          _note?: string
+          _product_id: string
+          _reason: Database["public"]["Enums"]["movement_reason"]
+        }
+        Returns: undefined
+      }
+      cancel_sale: { Args: { _sale_id: string }; Returns: undefined }
+      create_pos_sale: {
+        Args: {
+          _customer_id: string
+          _discount_usd?: number
+          _items: Json
+          _note?: string
+          _payments: Json
+          _session_id?: string
+        }
+        Returns: string
+      }
+      has_any_role: {
+        Args: {
+          _roles: Database["public"]["Enums"]["app_role"][]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      next_sale_code: { Args: never; Returns: string }
+      record_customer_payment: {
+        Args: { _amount: number; _customer_id: string; _note?: string }
+        Returns: string
+      }
+    }
+    Enums: {
+      app_role: "admin" | "manager" | "caissier" | "vendeur" | "comptable"
+      currency_code: "USD" | "CDF"
+      movement_reason:
+        | "sale"
+        | "sale_cancel"
+        | "purchase"
+        | "manual_in"
+        | "manual_out"
+        | "correction"
+        | "return"
+      payment_method:
+        | "cash"
+        | "mobile_money"
+        | "card"
+        | "bank_transfer"
+        | "credit"
+        | "mixed"
+      product_status: "active" | "inactive" | "on_order"
+      quote_status: "new" | "read" | "replied" | "closed"
+      sale_channel: "pos" | "online"
+      sale_status: "completed" | "cancelled" | "refunded"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      app_role: ["admin", "manager", "caissier", "vendeur", "comptable"],
+      currency_code: ["USD", "CDF"],
+      movement_reason: [
+        "sale",
+        "sale_cancel",
+        "purchase",
+        "manual_in",
+        "manual_out",
+        "correction",
+        "return",
+      ],
+      payment_method: [
+        "cash",
+        "mobile_money",
+        "card",
+        "bank_transfer",
+        "credit",
+        "mixed",
+      ],
+      product_status: ["active", "inactive", "on_order"],
+      quote_status: ["new", "read", "replied", "closed"],
+      sale_channel: ["pos", "online"],
+      sale_status: ["completed", "cancelled", "refunded"],
+    },
+  },
+} as const
