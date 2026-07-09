@@ -209,7 +209,7 @@ function StockAdjustDialog({ product, onOpenChange, onSaved }: { product: Produc
     mutationFn: async () => {
       if (!product || !delta) throw new Error("Quantité requise");
       const signed = reason === "manual_out" ? -Math.abs(delta) : reason === "manual_in" || reason === "return" ? Math.abs(delta) : delta;
-      const { error } = await supabase.rpc("adjust_stock", { _product_id: product.id, _delta: signed, _reason: reason, _note: note || null });
+      const { error } = await supabase.rpc("adjust_stock", { _product_id: product.id, _delta: signed, _reason: reason, _note: note || undefined });
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Stock mis à jour"); onSaved(); onOpenChange(false); setDelta(0); setNote(""); },
