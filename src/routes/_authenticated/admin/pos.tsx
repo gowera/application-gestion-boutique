@@ -68,7 +68,7 @@ function PosPage() {
       if (cart.length === 0) throw new Error("Panier vide");
       if (remaining > 0.01 && !customerId) throw new Error("Un client est requis pour un paiement à crédit.");
       const { data, error } = await supabase.rpc("create_pos_sale", {
-        _customer_id: customerId,
+        _customer_id: customerId ?? undefined,
         _items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty, unit_price_usd: l.unit_price_usd, discount_usd: l.discount_usd })),
         _payments: payments.filter((p) => p.amount > 0).map((p) => ({ method: p.method, amount: p.amount, currency: p.currency, reference: p.reference })),
         _discount_usd: discount,
