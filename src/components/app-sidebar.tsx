@@ -1,26 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  Receipt,
-  Users,
-  Wallet,
-  Settings as SettingsIcon,
-  Inbox,
-  UserCog,
-  Zap,
+  LayoutDashboard, Package, ShoppingCart, Receipt, Users, Wallet, Settings as SettingsIcon,
+  Inbox, UserCog, Zap, Truck, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, HandCoins,
 } from "lucide-react";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
 const groups: { label: string; items: { title: string; url: string; icon: typeof Zap }[] }[] = [
@@ -34,23 +19,36 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
   {
     label: "Commercial",
     items: [
+      { title: "Commandes en ligne", url: "/admin/orders", icon: ShoppingBag },
       { title: "Ventes", url: "/admin/sales", icon: Receipt },
       { title: "Clients & crédits", url: "/admin/customers", icon: Users },
-      { title: "Demandes de devis", url: "/admin/messages", icon: Inbox },
+      { title: "Interventions & SAV", url: "/admin/interventions", icon: Wrench },
+      { title: "Devis & messages", url: "/admin/messages", icon: Inbox },
     ],
   },
   {
-    label: "Stock",
-    items: [{ title: "Produits & stock", url: "/admin/products", icon: Package }],
+    label: "Stock & achats",
+    items: [
+      { title: "Produits & stock", url: "/admin/products", icon: Package },
+      { title: "Catégories", url: "/admin/categories", icon: FolderTree },
+      { title: "Fournisseurs", url: "/admin/suppliers", icon: Truck },
+      { title: "Achats", url: "/admin/purchases", icon: Boxes },
+    ],
   },
   {
-    label: "Finance",
-    items: [{ title: "Dépenses", url: "/admin/expenses", icon: Wallet }],
+    label: "Finance & RH",
+    items: [
+      { title: "Dépenses", url: "/admin/expenses", icon: Wallet },
+      { title: "Loyer", url: "/admin/rent", icon: Home },
+      { title: "Employés", url: "/admin/employees", icon: Briefcase },
+      { title: "Salaires", url: "/admin/salaries", icon: HandCoins },
+      { title: "Rapports", url: "/admin/reports", icon: ChartBar },
+    ],
   },
   {
     label: "Configuration",
     items: [
-      { title: "Employés & rôles", url: "/admin/users", icon: UserCog },
+      { title: "Rôles utilisateurs", url: "/admin/users", icon: UserCog },
       { title: "Paramètres", url: "/admin/settings", icon: SettingsIcon },
     ],
   },
