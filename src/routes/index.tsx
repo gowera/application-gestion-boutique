@@ -1,113 +1,155 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SiteShell } from "@/components/public/site-shell";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
-import { toast } from "sonner";
+import { formatMoney, useSettings } from "@/lib/currency";
 import {
-  Zap, Sun, Camera, Wifi, Wind, Phone, Shield, Lock, PenTool, Sparkles, Wrench,
-  ArrowRight, MapPin, Mail, MessageCircle,
+  Zap, Sun, Camera, Wifi, Wind, Phone, Shield, PenTool, Sparkles, Wrench, ArrowRight,
+  Truck, ShieldCheck, HeadphonesIcon, Award,
 } from "lucide-react";
+import elecPro from "@/assets/services/electricite-pro.webp";
+import elecDom from "@/assets/services/electricite-domestique.webp";
+import elecDom2 from "@/assets/services/electricite-domestique-2.webp";
+import elecDom3 from "@/assets/services/electricite-domestique-3.webp";
+import reseaux from "@/assets/services/reseaux.webp";
+import clim from "@/assets/services/climatisation.webp";
+import decor from "@/assets/services/decor-interieur.webp";
+import decor2 from "@/assets/services/decor-interieur-2.webp";
+import habillement from "@/assets/services/habillement.webp";
 
-export const Route = createFileRoute("/")({
-  component: PublicHome,
-});
+export const Route = createFileRoute("/")({ component: PublicHome });
 
 const SERVICES = [
-  { icon: Zap, title: "Installation électrique", desc: "Conception et pose conformes aux normes." },
-  { icon: Sun, title: "Énergie solaire", desc: "Étude, installation et maintenance photovoltaïque." },
-  { icon: Camera, title: "Vidéosurveillance CCTV", desc: "Caméras, DVR, supervision distante." },
-  { icon: Shield, title: "Alarmes de sécurité", desc: "Détection d'intrusion et alertes." },
-  { icon: Lock, title: "Contrôle d'accès", desc: "Systèmes d'accès sécurisés." },
-  { icon: Wifi, title: "Réseaux & Internet", desc: "Wi-Fi, LAN, antennes, liaisons." },
-  { icon: Wind, title: "Froid & climatisation", desc: "Installation, réparation, entretien." },
-  { icon: Phone, title: "Téléphonie & VoIP", desc: "Installation et maintenance." },
-  { icon: Wrench, title: "Maintenance & dépannage", desc: "Diagnostic, réparation, entretien." },
-  { icon: PenTool, title: "Plans CAD", desc: "AutoCAD, SketchUp, schémas techniques." },
-  { icon: Sparkles, title: "Décoration intérieure", desc: "Aménagement lumineux et design." },
+  { slug: "electricite", icon: Zap, title: "Installation électrique", desc: "Conception et pose conformes aux normes.", img: elecDom3 },
+  { slug: "solaire", icon: Sun, title: "Énergie solaire", desc: "Étude, installation et maintenance photovoltaïque.", img: elecPro },
+  { slug: "cctv", icon: Camera, title: "Vidéosurveillance CCTV", desc: "Caméras, DVR, supervision distante.", img: elecDom },
+  { slug: "reseaux", icon: Wifi, title: "Réseaux & Internet", desc: "Wi-Fi, LAN, antennes, liaisons.", img: reseaux },
+  { slug: "climatisation", icon: Wind, title: "Froid & climatisation", desc: "Installation, réparation, entretien.", img: clim },
+  { slug: "decoration", icon: Sparkles, title: "Décoration intérieure", desc: "Aménagement lumineux et design.", img: decor },
+  { slug: "telephonie", icon: Phone, title: "Téléphonie & VoIP", desc: "Installation et maintenance.", img: elecDom2 },
+  { slug: "securite", icon: Shield, title: "Sécurité & alarmes", desc: "Détection d'intrusion et alertes.", img: elecPro },
+  { slug: "cad", icon: PenTool, title: "Plans CAD", desc: "AutoCAD, SketchUp, schémas techniques.", img: decor2 },
+  { slug: "habillement", icon: Award, title: "Aménagement boutique", desc: "Habillement d'espaces commerciaux.", img: habillement },
 ];
 
 function PublicHome() {
   return (
-    <div className="min-h-screen">
-      <PublicNav />
+    <SiteShell>
       <Hero />
+      <TrustStrip />
+      <FeaturedProducts />
       <ServicesGrid />
-      <QuoteSection />
-      <ContactSection />
-      <Footer />
-    </div>
-  );
-}
-
-function PublicNav() {
-  return (
-    <nav className="fixed top-0 left-0 right-0 z-40 border-b border-white/10 bg-primary/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-        <Link to="/" className="flex items-center gap-2 text-primary-foreground">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-energy text-energy-foreground">
-            <Zap className="h-5 w-5" />
-          </div>
-          <span className="text-display font-bold tracking-tight">CONETEC</span>
-        </Link>
-        <div className="hidden md:flex items-center gap-6 text-sm text-primary-foreground/80">
-          <a href="#services" className="hover:text-primary-foreground">Services</a>
-          <a href="#devis" className="hover:text-primary-foreground">Devis</a>
-          <a href="#contact" className="hover:text-primary-foreground">Contact</a>
-        </div>
-        <Link to="/auth"><Button size="sm" variant="secondary">Accès admin</Button></Link>
-      </div>
-    </nav>
+      <CtaBanner />
+    </SiteShell>
   );
 }
 
 function Hero() {
   return (
-    <section className="bg-hero-gradient pt-28 pb-24 text-primary-foreground">
-      <div className="mx-auto max-w-7xl px-4">
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-energy/40 bg-energy/10 px-3 py-1 text-xs font-medium text-energy">
-              <span className="h-1.5 w-1.5 rounded-full bg-energy"></span> Solutions techniques intégrées
-            </span>
-            <h1 className="mt-6 text-display text-4xl md:text-6xl font-bold leading-[1.05]">
-              L'énergie, la sécurité<br />et la connectivité<br />
-              <span className="text-energy">au service de vos projets.</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg text-primary-foreground/80">
-              CONETEC vous accompagne dans l'installation, la maintenance et la fourniture d'équipements pour l'électricité, l'énergie solaire, la vidéosurveillance, les réseaux, le froid et la téléphonie.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#devis">
-                <Button size="lg" className="bg-energy text-energy-foreground hover:bg-energy/90">
-                  Demander un devis <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </a>
-              <a href="#services">
-                <Button size="lg" variant="outline" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10">
-                  Nos services
-                </Button>
-              </a>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { k: "+10", v: "domaines d'expertise" },
-              { k: "24/7", v: "assistance technique" },
-              { k: "100%", v: "matériel garanti" },
-              { k: "Pro", v: "équipe certifiée" },
-            ].map((s) => (
-              <div key={s.v} className="rounded-2xl border border-primary-foreground/10 bg-primary-foreground/5 p-6 backdrop-blur">
-                <div className="text-display text-4xl font-bold text-energy">{s.k}</div>
-                <div className="mt-1 text-sm text-primary-foreground/70">{s.v}</div>
-              </div>
-            ))}
+    <section className="bg-hero-gradient py-20 md:py-28 text-primary-foreground overflow-hidden relative">
+      <div className="mx-auto max-w-7xl px-4 grid gap-10 lg:grid-cols-2 lg:items-center relative">
+        <div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-energy/40 bg-energy/10 px-3 py-1 text-xs font-medium text-energy">
+            <span className="h-1.5 w-1.5 rounded-full bg-energy"></span> Company of New Technology
+          </span>
+          <h1 className="mt-6 text-display text-4xl md:text-6xl font-bold leading-[1.05]">
+            Matériels, installation<br />& services techniques<br />
+            <span className="text-energy">à portée de clic.</span>
+          </h1>
+          <p className="mt-6 max-w-xl text-lg text-primary-foreground/80">
+            De l'électricité à l'énergie solaire, du CCTV aux réseaux, du froid à la décoration — CONETEC équipe et accompagne particuliers et professionnels.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link to="/boutique">
+              <Button size="lg" className="bg-energy text-energy-foreground hover:bg-energy/90">
+                Visiter la boutique <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/devis">
+              <Button size="lg" variant="outline" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10">
+                Demander un devis
+              </Button>
+            </Link>
           </div>
         </div>
+        <div className="grid grid-cols-2 gap-3">
+          <img src={elecDom3} alt="Éclairage LED" className="rounded-2xl h-48 md:h-56 w-full object-cover" />
+          <img src={clim} alt="Climatisation" className="rounded-2xl h-48 md:h-56 w-full object-cover mt-8" />
+          <img src={reseaux} alt="Réseaux" className="rounded-2xl h-48 md:h-56 w-full object-cover -mt-4" />
+          <img src={decor} alt="Décoration" className="rounded-2xl h-48 md:h-56 w-full object-cover mt-4" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TrustStrip() {
+  const items = [
+    { icon: Truck, title: "Livraison rapide", desc: "Kinshasa & environs" },
+    { icon: ShieldCheck, title: "Matériel garanti", desc: "Marques officielles" },
+    { icon: HeadphonesIcon, title: "Support 7j/7", desc: "Équipe technique dédiée" },
+    { icon: Award, title: "Équipe certifiée", desc: "10+ domaines d'expertise" },
+  ];
+  return (
+    <section className="border-y bg-secondary/30">
+      <div className="mx-auto max-w-7xl px-4 py-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((i) => (
+          <div key={i.title} className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><i.icon className="h-5 w-5" /></div>
+            <div>
+              <div className="font-semibold text-sm">{i.title}</div>
+              <div className="text-xs text-muted-foreground">{i.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FeaturedProducts() {
+  const { data: settings } = useSettings();
+  const { data: products } = useQuery({
+    queryKey: ["home-products"],
+    queryFn: async () => {
+      const { data } = await supabase.from("products").select("id,name,brand,sale_price,stock,images").eq("status", "active").limit(8).order("created_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+  const rate = settings?.usd_to_cdf_rate ?? 2800;
+  const cur = settings?.primary_currency ?? "USD";
+  return (
+    <section className="py-16">
+      <div className="mx-auto max-w-7xl px-4">
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <h2 className="text-display text-3xl md:text-4xl font-bold">Produits populaires</h2>
+            <p className="mt-2 text-muted-foreground">Découvrez notre sélection de matériels.</p>
+          </div>
+          <Link to="/boutique"><Button variant="outline">Voir toute la boutique <ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
+        </div>
+        {!products?.length ? (
+          <Card><CardContent className="p-12 text-center text-muted-foreground">Aucun produit publié. Ajoutez-en depuis l'administration.</CardContent></Card>
+        ) : (
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {products.map((p) => (
+              <Link key={p.id} to="/boutique/$productId" params={{ productId: p.id }}>
+                <Card className="group h-full overflow-hidden transition-all hover:shadow-lg hover:border-primary/40">
+                  <div className="aspect-square bg-secondary flex items-center justify-center overflow-hidden">
+                    {p.images?.[0] ? <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <Zap className="h-12 w-12 text-muted-foreground/30" />}
+                  </div>
+                  <CardContent className="p-3">
+                    <div className="text-xs text-muted-foreground">{p.brand ?? "—"}</div>
+                    <div className="text-sm font-medium line-clamp-2 min-h-[2.5rem]">{p.name}</div>
+                    <div className="mt-2 text-primary font-bold">{formatMoney(Number(p.sale_price), cur, rate)}</div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -115,25 +157,28 @@ function Hero() {
 
 function ServicesGrid() {
   return (
-    <section id="services" className="py-24 bg-background">
+    <section className="py-16 bg-secondary/30">
       <div className="mx-auto max-w-7xl px-4">
-        <div className="max-w-2xl">
+        <div className="max-w-2xl mb-10">
           <h2 className="text-display text-3xl md:text-4xl font-bold">Nos services techniques</h2>
-          <p className="mt-3 text-muted-foreground">
-            De l'étude à la maintenance, une seule équipe pour l'ensemble de vos installations.
-          </p>
+          <p className="mt-3 text-muted-foreground">De l'étude à la maintenance, une seule équipe pour tous vos projets.</p>
         </div>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {SERVICES.map((s) => (
-            <Card key={s.title} className="group relative overflow-hidden transition-all hover:border-primary/40 hover:shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <s.icon className="h-5 w-5" />
+            <Link key={s.slug} to="/services/$slug" params={{ slug: s.slug }}>
+              <Card className="group h-full overflow-hidden transition-all hover:shadow-lg hover:border-primary/40">
+                <div className="aspect-video overflow-hidden bg-secondary">
+                  <img src={s.img} alt={s.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                 </div>
-                <h3 className="mt-4 text-display text-lg font-semibold">{s.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{s.desc}</p>
-              </CardContent>
-            </Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><s.icon className="h-5 w-5" /></div>
+                    <h3 className="text-display font-semibold">{s.title}</h3>
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">{s.desc}</p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       </div>
@@ -141,120 +186,21 @@ function ServicesGrid() {
   );
 }
 
-function QuoteSection() {
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", service: SERVICES[0].title, message: "" });
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.name.trim() || !form.phone.trim() || !form.service) {
-      toast.error("Merci de renseigner votre nom, téléphone et service.");
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.from("quote_requests").insert({
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      email: form.email.trim() || null,
-      service: form.service,
-      message: form.message.trim() || null,
-    });
-    setLoading(false);
-    if (error) { toast.error("Envoi impossible. Réessayez."); return; }
-    toast.success("Demande envoyée ! Nous vous rappelons rapidement.");
-    setForm({ name: "", phone: "", email: "", service: SERVICES[0].title, message: "" });
-  }
-
+function CtaBanner() {
   return (
-    <section id="devis" className="bg-secondary/40 py-24">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 lg:grid-cols-2">
-        <div>
-          <h2 className="text-display text-3xl md:text-4xl font-bold">Demandez un devis gratuit</h2>
-          <p className="mt-3 text-muted-foreground">
-            Décrivez votre besoin — installation, dépannage, étude solaire, réseau, CCTV... Notre équipe vous répond sous 24h ouvrées.
-          </p>
-          <ul className="mt-8 space-y-3 text-sm">
-            {["Étude technique gratuite", "Matériel garanti", "Intervention rapide", "Devis détaillé et transparent"].map((li) => (
-              <li key={li} className="flex items-center gap-3">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-energy text-energy-foreground">✓</span>
-                {li}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <Card>
-          <CardContent className="p-6">
-            <form className="space-y-4" onSubmit={submit}>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div><Label>Nom complet *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-                <div><Label>Téléphone *</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required /></div>
-              </div>
-              <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-              <div>
-                <Label>Type de service *</Label>
-                <Select value={form.service} onValueChange={(v) => setForm({ ...form, service: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {SERVICES.map((s) => <SelectItem key={s.title} value={s.title}>{s.title}</SelectItem>)}
-                    <SelectItem value="Autre">Autre</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div><Label>Description du besoin</Label><Textarea rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} /></div>
-              <Button type="submit" size="lg" className="w-full" disabled={loading}>
-                {loading ? "Envoi..." : "Envoyer ma demande"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </section>
-  );
-}
-
-function ContactSection() {
-  return (
-    <section id="contact" className="py-24">
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 md:grid-cols-3">
-        {[
-          { icon: Phone, title: "Téléphone", value: "+243 996 886 079", href: "tel:+243996886079" },
-          { icon: MessageCircle, title: "WhatsApp", value: "+243 996 886 079", href: "https://wa.me/243996886079" },
-          { icon: Mail, title: "Email", value: "oredymusanda@gmail.com", href: "mailto:oredymusanda@gmail.com" },
-        ].map((c) => (
-          <a key={c.title} href={c.href} className="group">
-            <Card className="h-full transition-all group-hover:border-primary/40 group-hover:shadow-lg">
-              <CardContent className="flex items-center gap-4 p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <c.icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-xs uppercase tracking-widest text-muted-foreground">{c.title}</div>
-                  <div className="mt-1 text-display font-semibold">{c.value}</div>
-                </div>
-              </CardContent>
-            </Card>
-          </a>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="bg-primary text-primary-foreground/80">
-      <div className="mx-auto max-w-7xl px-4 py-12">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-energy text-energy-foreground"><Zap className="h-4 w-4" /></div>
-            <span className="text-display font-bold text-primary-foreground">CONETEC</span>
+    <section className="py-16">
+      <div className="mx-auto max-w-7xl px-4">
+        <div className="rounded-3xl bg-hero-gradient text-primary-foreground p-10 md:p-16 text-center">
+          <h2 className="text-display text-3xl md:text-4xl font-bold">Un projet ? Un dépannage ? Une étude ?</h2>
+          <p className="mt-3 text-primary-foreground/80 max-w-2xl mx-auto">Nos experts vous répondent sous 24h ouvrées. Devis gratuit, matériel garanti, intervention rapide.</p>
+          <div className="mt-8 flex justify-center gap-3 flex-wrap">
+            <Link to="/devis"><Button size="lg" className="bg-energy text-energy-foreground hover:bg-energy/90">Demander un devis</Button></Link>
+            <a href="https://wa.me/243996886079"><Button size="lg" variant="outline" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10">WhatsApp</Button></a>
           </div>
-          <div className="flex items-center gap-2 text-sm"><MapPin className="h-4 w-4" /> République Démocratique du Congo</div>
-        </div>
-        <div className="mt-8 border-t border-primary-foreground/10 pt-6 text-center text-xs text-primary-foreground/60">
-          © {new Date().getFullYear()} CONETEC. Tous droits réservés. Développé par OREDY TECHNOLOGIES.
         </div>
       </div>
-    </footer>
+    </section>
   );
 }
+
+export { SERVICES };
