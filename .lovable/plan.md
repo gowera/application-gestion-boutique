@@ -1,117 +1,123 @@
+# Plan CONETEC v1.1 — améliorations complètes
 
-# CONETEC — Plan v1 (ERP Admin d'abord)
-
-Livraison ciblée : un ERP fonctionnel utilisable en boutique dès la v1, plus une landing publique minimale. Les autres modules (boutique en ligne complète, interventions, RH/salaires, loyer, rapports avancés, achats fournisseurs) suivront dans des itérations v2, v3, etc.
-
-## Stack
-
-- React + TypeScript + Vite + Tailwind (via TanStack Start — équivalent SPA React côté utilisateur).
-- Supabase (Lovable Cloud) : PostgreSQL, Auth email/password, Storage (images produits, reçus), RLS.
-- Rôles via table `user_roles` séparée + fonction `has_role` (sécurité contre l'escalade).
-- Génération PDF (reçus, factures) via `jspdf`. Export Excel via `xlsx`.
-
-## Design
-
-Corporate tech, bleu profond (#0B1E3F base, accent énergie vert-lime #A8E635), typographie Inter/Space Grotesk, cartes nettes, dashboards denses lisibles. Design tokens définis dans `src/styles.css`, jamais de couleurs hardcodées.
-
-## Périmètre v1
-
-### 1. Auth & rôles
-- Login / logout (email + mot de passe, pas de signup public — création par admin).
-- Rôles : `admin`, `manager`, `caissier`, `vendeur`, `comptable`.
-- Table `user_roles`, fonction `has_role`, gate `_authenticated` déjà géré par l'intégration.
-- Redirection selon rôle après login.
-
-### 2. Paramètres (Settings)
-- Nom boutique, logo, coordonnées.
-- Devise principale (USD ou CDF), taux de change USD↔CDF éditable.
-- Numérotation reçus/factures.
-- Seuil alerte stock global.
-
-### 3. Produits & Stock
-- CRUD produits : nom, SKU, catégorie, marque, description, prix achat, prix vente (USD), stock, seuil alerte, images multiples (Storage), statut actif/rupture.
-- Catégories & sous-catégories.
-- Recherche, filtres, tri.
-- Mouvements de stock (table `stock_movements`) : entrée manuelle, sortie, correction avec motif. Chaque vente/retour génère automatiquement un mouvement.
-- Alerte visuelle produits en rupture / sous seuil.
-- Import CSV (v1.1 si temps).
-
-### 4. Vente directe / Caisse (POS)
-- Interface POS plein écran : recherche produit rapide, ajout au panier, quantités, remise ligne/global.
-- Sélection client (ou vente anonyme).
-- Moyens de paiement : espèces, Mobile Money, carte, crédit client, mixte.
-- Devise d'encaissement au choix (USD ou CDF) avec conversion auto via taux configuré.
-- Validation transactionnelle côté DB : décrément stock atomique, refus si insuffisant, création vente + lignes + mouvement stock + entrée caisse.
-- Reçu PDF téléchargeable/imprimable.
-- Ouverture / fermeture de caisse par session avec rapport de journée.
-
-### 5. Ventes (liste)
-- Liste unifiée (en ligne v2 + directes v1), filtres par date/client/vendeur/statut, détail, réimpression reçu, annulation avec autorisation (réinjecte le stock).
-
-### 6. Clients & Crédits
-- CRUD client : nom, téléphone, email, adresse, notes.
-- Historique achats, solde crédit / dette, limite de crédit.
-- Enregistrement remboursement.
-- Export relevé PDF.
-
-### 7. Dépenses
-- CRUD dépense : catégorie (transport, carburant, internet, électricité, fournitures, autre), montant, devise, moyen paiement, employé responsable, preuve (photo Storage), date.
-- Filtres par période et catégorie, export.
-
-### 8. Tableau de bord
-- CA jour / semaine / mois (USD converti).
-- Ventes directes du jour, commandes en attente (placeholder v1).
-- Produits en rupture / sous seuil.
-- Crédits clients en cours.
-- Dépenses récentes.
-- Solde caisse ouverte.
-- Graphiques : ventes 30 jours, top produits, dépenses par catégorie (Recharts).
-
-### 9. Journal d'activité
-- Log automatique des actions sensibles (ventes annulées, corrections de stock, remboursements crédit, changement de rôles).
-
-### 10. Landing publique minimale
-- Une page unique `/` : hero CONETEC, liste des 11 services, section "Demander un devis" (formulaire → table `quote_requests`, visible dans un module Messages basique en admin), contact (tel, WhatsApp, email), footer.
-- SEO propre (title, description, OG).
-- Le catalogue e-commerce complet vient en v2.
-
-## Schéma DB (résumé)
-
-```
-profiles(id, full_name, phone, avatar_url)
-user_roles(user_id, role)                       -- enum: admin, manager, caissier, vendeur, comptable
-settings(id=1, shop_name, currency, usd_to_cdf_rate, ...)
-categories(id, name, parent_id)
-products(id, sku, name, category_id, brand, description, cost_price, sale_price, stock, low_stock_threshold, status, images[])
-stock_movements(id, product_id, delta, reason, ref_type, ref_id, user_id, created_at)
-customers(id, name, phone, email, address, credit_limit, notes)
-customer_ledger(id, customer_id, delta, reason, ref_id, created_at)   -- +debt / -payment
-cash_sessions(id, user_id, opened_at, closed_at, opening_amount, closing_amount, notes)
-sales(id, code, customer_id, user_id, session_id, subtotal, discount, total_usd, paid_usd, status, channel, created_at)
-sale_items(id, sale_id, product_id, qty, unit_price, discount, line_total)
-payments(id, sale_id, method, amount, currency, amount_usd, reference)
-expense_categories(id, name)
-expenses(id, category_id, amount, currency, amount_usd, method, user_id, note, proof_url, spent_at)
-quote_requests(id, name, phone, email, service, message, status, created_at)
-activity_log(id, user_id, action, entity, entity_id, metadata, created_at)
-```
-
-RLS activée partout. Toutes les tables publiques ont des `GRANT` explicites. Le POS passe par une fonction SQL `create_sale(...)` `SECURITY DEFINER` pour garantir : vérification stock + décrément + insertions ventes/lignes/paiements/mouvements dans une transaction.
-
-## Livrables v1
-
-- App déployable, auth fonctionnelle, POS opérationnel, stock cohérent, dashboard vivant, landing publique + formulaire devis.
-- Reçus PDF, export Excel des ventes/dépenses.
-- Documentation courte dans le README.
-
-## Hors v1 (itérations suivantes)
-
-v2 — Boutique en ligne complète (catalogue public, panier, checkout, commandes, suivi client).
-v3 — Interventions / devis / SAV / techniciens.
-v4 — Achats fournisseurs, bons de commande, réception.
-v5 — Employés & salaires, loyer, rapports avancés multi-format.
-v6 — Notifications WhatsApp/email, PWA, multi-boutique.
+Le périmètre demandé est très large. Je propose de le livrer en **5 lots successifs**, chacun testable indépendamment. Chaque lot inclut migration DB + UI + intégration.
 
 ---
 
-Confirmez pour que je démarre par : activation Lovable Cloud → schéma DB + RLS → auth + rôles → design system → modules dans l'ordre ci-dessus.
+## Lot 1 — Pilotage & Ventes directes (POS)
+
+**Tableau de bord**
+- Graphiques Recharts : CA jour/semaine/mois, top produits, ventes par canal, dépenses vs recettes.
+- Carte **« À recouvrer »** : total dettes clients + top débiteurs (lien vers Crédits).
+- Bouton **« Caisse »** ouvrant sous-page : ouvrir/fermer session, fond de caisse, écart, historique sessions (`cash_sessions` existe déjà).
+
+**POS / Vente directe**
+- Toggle **« Vente à crédit »** avec `due_date` (échéance) et note de prise de dette.
+- Bouton **« + Nouveau client »** dans le formulaire (modal inline).
+- Décrément stock déjà en place (`create_pos_sale`) — vérifier + afficher indicateur stock temps réel.
+
+**DB** : ajouter `sales.due_date`, `cash_sessions` déjà en place.
+
+---
+
+## Lot 2 — Commercial (Clients, Crédits, Devis/Messages)
+
+**Clients & crédits** (2 onglets)
+- Onglet **Clients** : répertoire CRUD complet (édition, archivage, historique achats).
+- Onglet **Crédits & dettes** : liste des dettes ouvertes, formulaire d'octroi manuel, encaissement partiel avec calcul auto du reste, historique paiements par client.
+
+**Devis & messages**
+- Réponse directe depuis l'admin (email via Resend/Lovable AI, ou WhatsApp deep-link `wa.me`).
+- Envoi de messages sortants aux clients existants (WhatsApp + mailto).
+- Historique des échanges par demande.
+
+**DB** : `message_threads`, `message_replies`.
+
+---
+
+## Lot 3 — Stock, Catégories, Fournisseurs, Achats
+
+**Produits**
+- **Upload images** (Storage bucket `product-images`) + saisie par URL.
+- **Slug auto-généré** depuis le nom.
+- Ajout catégorie inline depuis le formulaire produit.
+- Case **« Afficher le stock sur la boutique en ligne »** (`show_stock_public`).
+- **Notifications rupture** : cloche dans le header + centre notifications.
+- Bouton **« Ravitailler »** → crée un bon d'achat pré-rempli avec le fournisseur associé.
+
+**Catégories**
+- Colonne `product_count` calculée.
+- Suppression → modal de choix de catégorie de migration si produits associés.
+
+**Fournisseurs**
+- Boutons contact direct (tel, mail, WhatsApp).
+- Association produits ↔ fournisseurs (table `product_suppliers`).
+
+**Achats**
+- Formulaire complet : sélection fournisseur, lignes produits (existants ou nouveaux), coûts, dates livraison prévue/réelle, statut, PDF bon d'achat.
+
+**DB** : `product_suppliers`, `products.show_stock_public`, `products.slug`, bucket Storage, table `notifications`.
+
+---
+
+## Lot 4 — Finances & RH
+
+**Dépenses (agrégation auto)**
+- Vue unifiée intégrant : dépenses manuelles + loyers (`rent_payments`) + salaires (`salary_payments`) + achats fournisseurs (`purchases`).
+- Filtres par période/catégorie, total dépenses vs CA.
+
+**Employés**
+- Bouton **Licencier** avec motif + date → `is_terminated`, `termination_reason`, `terminated_at` (données conservées).
+- Filtre actifs / licenciés.
+
+**Salaires**
+- Formulaire : sélecteur **mois (période début/fin auto)** au lieu de dates libres → « Salaire de juin 2026 ».
+- **Mode de paiement** (cash, mobile money, virement).
+- **Reçu PDF** avec **lien unique de confirmation** (`confirmation_token`).
+- Notification employé (WhatsApp/email) avec le lien.
+- Après confirmation, token invalidé, statut → `confirmed`.
+
+**DB** : `employees.is_terminated/termination_reason/terminated_at`, `salary_payments.period_month/payment_method/confirmation_token/confirmed_at`, route publique `/salaire/confirmer/$token`.
+
+---
+
+## Lot 5 — Configuration, Corbeille, Historique
+
+**Paramètres** (onglets)
+- **Documents** : éditeur canvas (couleur, logo, signature, mentions légales) pour factures/reçus/bons.
+- **Site en ligne** : nom boutique, adresse, contacts, upload images galerie services.
+- **Paiements** : configuration agrégateurs mobile money (clés, activation).
+- **Infos entreprise** : coordonnées + Google Maps (lat/lng), utilisées sur documents + site public.
+- **Nettoyage BDD** : export complet CSV/JSON puis purge sélective (employés licenciés, corbeille vidée, logs anciens).
+
+**Rôles utilisateurs**
+- Invitation par WhatsApp/email/SMS (lien magique Supabase + deep-link `wa.me`).
+- Table `invitations` avec token, rôle pré-assigné, expiration.
+
+**Corbeille**
+- Colonne `deleted_at` (soft-delete) sur produits, clients, employés, fournisseurs, catégories.
+- Page **Corbeille** : restaurer / supprimer définitivement.
+- Paramètre : délai auto-purge (jours), job scheduled.
+
+**Historique**
+- Page dédiée listant `activity_log` (déjà en place) avec filtres user/action/entité/date.
+
+**DB** : `documents_settings`, `payment_gateways`, `invitations`, colonnes `deleted_at` + `terminated_*`, `settings.trash_retention_days` + `map_lat/lng` + `services_gallery`.
+
+---
+
+## Détails techniques
+
+- **Storage** : bucket `product-images` (public) + `service-gallery` (public) + `signatures` (privé).
+- **PDFs** : extension de `src/lib/pdf.ts` avec templates paramétrables.
+- **Notifications** : table `notifications` + composant cloche header + realtime.
+- **Confirmations salaire** : route publique `/salaire/confirmer/$token`.
+- **Nettoyage BDD** : server function admin exportant en ZIP puis exécutant les DELETE.
+
+---
+
+## Ordre d'exécution proposé
+
+Je livre **Lot 1 en premier**, puis j'attends votre retour avant d'enchaîner. Chaque lot ≈ 1 tour de conversation.
+
+**Souhaitez-vous approuver ce plan et démarrer par le Lot 1 ?** Ou préférez-vous réorganiser les priorités (par exemple commencer par Corbeille + Historique, ou par Configuration) ?

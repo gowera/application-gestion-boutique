@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt, Users, Wallet, Settings as SettingsIcon,
-  Inbox, UserCog, Zap, Truck, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, HandCoins,
+  Inbox, UserCog, Zap, Truck, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, HandCoins, Banknote,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -13,6 +13,7 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
     label: "Pilotage",
     items: [
       { title: "Tableau de bord", url: "/admin", icon: LayoutDashboard },
+      { title: "Caisse", url: "/admin/caisse", icon: Banknote },
       { title: "Vente directe (POS)", url: "/admin/pos", icon: ShoppingCart },
     ],
   },

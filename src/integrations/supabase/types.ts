@@ -1005,6 +1005,7 @@ export type Database = {
           credit_usd: number
           customer_id: string | null
           discount_usd: number
+          due_date: string | null
           id: string
           note: string | null
           paid_usd: number
@@ -1021,6 +1022,7 @@ export type Database = {
           credit_usd?: number
           customer_id?: string | null
           discount_usd?: number
+          due_date?: string | null
           id?: string
           note?: string | null
           paid_usd?: number
@@ -1037,6 +1039,7 @@ export type Database = {
           credit_usd?: number
           customer_id?: string | null
           discount_usd?: number
+          due_date?: string | null
           id?: string
           note?: string | null
           paid_usd?: number

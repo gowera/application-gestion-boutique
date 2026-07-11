@@ -1,13 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useSettings, formatMoney } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar,
 } from "recharts";
-import { AlertTriangle, DollarSign, ShoppingCart, Package, Users } from "lucide-react";
+import { AlertTriangle, DollarSign, ShoppingCart, Package, Users, Banknote, HandCoins, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: DashboardPage,
@@ -82,18 +83,49 @@ function DashboardPage() {
     },
   });
 
+  const debtsTotal = (kpis?.debts ?? []).reduce((a, b) => a + Number(b.balance), 0);
+  const topDebtors = [...(kpis?.debts ?? [])].sort((a, b) => Number(b.balance) - Number(a.balance)).slice(0, 5);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-display text-2xl md:text-3xl font-bold">Tableau de bord</h1>
-        <p className="text-sm text-muted-foreground">Vue synthétique de l'activité de la boutique.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-display text-2xl md:text-3xl font-bold">Tableau de bord</h1>
+          <p className="text-sm text-muted-foreground">Vue synthétique de l'activité de la boutique.</p>
+        </div>
+        <Button asChild size="lg" className="gap-2"><Link to="/admin/caisse"><Banknote className="h-4 w-4" />Caisse</Link></Button>
       </div>
+
+      {/* À recouvrer — highlight */}
+      <Card className="border-warning/40 bg-gradient-to-br from-warning/5 to-transparent">
+        <CardContent className="p-5 flex flex-wrap items-center gap-6">
+          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-warning/15 text-warning-foreground">
+            <HandCoins className="h-7 w-7" />
+          </div>
+          <div className="flex-1 min-w-[180px]">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground">À recouvrer</div>
+            <div className="text-display text-3xl font-bold">{formatMoney(debtsTotal, currency, rate)}</div>
+            <div className="text-xs text-muted-foreground mt-1">{kpis?.debts.length ?? 0} client{(kpis?.debts.length ?? 0) > 1 ? "s" : ""} en dette</div>
+          </div>
+          {topDebtors.length > 0 && (
+            <ul className="text-sm space-y-1 flex-1 min-w-[220px]">
+              {topDebtors.map((d) => (
+                <li key={d.id} className="flex justify-between gap-4">
+                  <span className="truncate">{d.name}</span>
+                  <span className="font-semibold text-warning-foreground">{formatMoney(Number(d.balance), currency, rate)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Button asChild variant="outline"><Link to="/admin/customers">Gérer les crédits<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Kpi icon={DollarSign} label="CA du jour" value={formatMoney(kpis?.today ?? 0, currency, rate)} sub={`${kpis?.todayCount ?? 0} ventes`} />
         <Kpi icon={ShoppingCart} label="CA semaine (7j)" value={formatMoney(kpis?.week ?? 0, currency, rate)} />
         <Kpi icon={DollarSign} label="CA mois en cours" value={formatMoney(kpis?.month ?? 0, currency, rate)} />
-        <Kpi icon={Users} label="Créances clients" value={formatMoney((kpis?.debts ?? []).reduce((a, b) => a + Number(b.balance), 0), currency, rate)} sub={`${kpis?.debts.length ?? 0} clients`} />
+        <Kpi icon={Users} label="Créances clients" value={formatMoney(debtsTotal, currency, rate)} sub={`${kpis?.debts.length ?? 0} clients`} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

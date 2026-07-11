@@ -11,6 +11,8 @@ import { formatMoney, useSettings, convertToUsd, type Currency } from "@/lib/cur
 import { Search, Plus, Minus, Trash2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { downloadReceipt } from "@/lib/pdf";
+import { CustomerQuickAdd } from "@/components/customer-quick-add";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/admin/pos")({
   component: PosPage,
@@ -30,6 +32,8 @@ function PosPage() {
   const [discount, setDiscount] = useState(0);
   const [payments, setPayments] = useState<PaymentLine[]>([{ method: "cash", amount: 0, currency }]);
   const [note, setNote] = useState("");
+  const [isCredit, setIsCredit] = useState(false);
+  const [dueDate, setDueDate] = useState("");
   const qc = useQueryClient();
 
   const { data: products } = useQuery({
@@ -66,7 +70,7 @@ function PosPage() {
   const submit = useMutation({
     mutationFn: async () => {
       if (cart.length === 0) throw new Error("Panier vide");
-      if (remaining > 0.01 && !customerId) throw new Error("Un client est requis pour un paiement à crédit.");
+      if ((isCredit || remaining > 0.01) && !customerId) throw new Error("Un client est requis pour un paiement à crédit.");
       const { data, error } = await supabase.rpc("create_pos_sale", {
         _customer_id: (customerId ?? null) as unknown as string,
         _items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty, unit_price_usd: l.unit_price_usd, discount_usd: l.discount_usd })),
@@ -75,11 +79,14 @@ function PosPage() {
         _note: note || undefined,
       });
       if (error) throw error;
-      return data as string;
+      const saleId = data as string;
+      if (isCredit && dueDate) {
+        await supabase.from("sales").update({ due_date: dueDate }).eq("id", saleId);
+      }
+      return saleId;
     },
     onSuccess: async (saleId) => {
       toast.success("Vente enregistrée");
-      // fetch full sale for receipt
       const [{ data: sale }, { data: items }] = await Promise.all([
         supabase.from("sales").select("*, customers(name)").eq("id", saleId).maybeSingle(),
         supabase.from("sale_items").select("*").eq("sale_id", saleId),
@@ -93,7 +100,7 @@ function PosPage() {
         subtotal: Number(sale.subtotal_usd), discount: Number(sale.discount_usd), total: Number(sale.total_usd),
         paid: Number(sale.paid_usd), credit: Number(sale.credit_usd), currency, rate,
       });
-      setCart([]); setDiscount(0); setNote(""); setPayments([{ method: "cash", amount: 0, currency }]); setCustomerId(null);
+      setCart([]); setDiscount(0); setNote(""); setPayments([{ method: "cash", amount: 0, currency }]); setCustomerId(null); setIsCredit(false); setDueDate("");
       qc.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message.replace("insufficient_stock:", "Stock insuffisant: ")),
@@ -133,7 +140,10 @@ function PosPage() {
         <CardContent className="p-4 space-y-4">
           <h2 className="text-display font-semibold flex items-center gap-2"><Receipt className="h-4 w-4" /> Panier ({cart.length})</h2>
           <div>
-            <Label>Client</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label>Client</Label>
+              <CustomerQuickAdd onCreated={(id) => setCustomerId(id)} triggerLabel="+ Nouveau client" />
+            </div>
             <Select value={customerId ?? "none"} onValueChange={(v) => setCustomerId(v === "none" ? null : v)}>
               <SelectTrigger><SelectValue placeholder="Client anonyme" /></SelectTrigger>
               <SelectContent>
@@ -141,6 +151,13 @@ function PosPage() {
                 {customers?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ""}</SelectItem>)}
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex items-center gap-2 rounded-md border p-2 bg-muted/30">
+            <Checkbox id="credit-toggle" checked={isCredit} onCheckedChange={(v) => setIsCredit(!!v)} />
+            <label htmlFor="credit-toggle" className="text-sm font-medium cursor-pointer">Vente à crédit</label>
+            {isCredit && (
+              <Input type="date" className="h-8 ml-auto w-40" value={dueDate} onChange={(e) => setDueDate(e.target.value)} placeholder="Échéance" />
+            )}
           </div>
           <div className="max-h-64 overflow-auto space-y-2">
             {cart.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Ajoutez des produits…</p>}
