@@ -112,8 +112,9 @@ function CaissePage() {
           {active ? (
             <div className="grid gap-4 md:grid-cols-4">
               <Stat label="Ouverte le" value={formatDate(active.opened_at, true)} />
-              <Stat label="Fond de caisse" value={formatMoney(Number(active.opening_float_usd), currency, rate)} />
-              <Stat label="Encaisse attendue" value={formatMoney(expected ?? Number(active.opening_float_usd), currency, rate)} />
+              <Stat label="Fond de caisse" value={formatMoney(Number(active.opening_amount), currency, rate)} />
+              <Stat label="Encaisse attendue" value={formatMoney(expected ?? Number(active.opening_amount), currency, rate)} />
+
               <div className="flex items-end">
                 <Button className="w-full" variant="destructive" onClick={() => setCloseDlg(true)}><StopCircle className="mr-2 h-4 w-4" />Fermer la caisse</Button>
               </div>
