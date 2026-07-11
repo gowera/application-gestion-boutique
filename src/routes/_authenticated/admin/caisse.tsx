@@ -139,19 +139,22 @@ function CaissePage() {
               <TableHead>Statut</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {(history ?? []).map((s) => (
+              {(history ?? []).map((s) => {
+                const variance = s.closing_amount != null && s.expected_amount != null
+                  ? Number(s.closing_amount) - Number(s.expected_amount) : null;
+                return (
                 <TableRow key={s.id}>
                   <TableCell>{formatDate(s.opened_at, true)}</TableCell>
                   <TableCell>{s.closed_at ? formatDate(s.closed_at, true) : "—"}</TableCell>
-                  <TableCell className="text-right">{formatMoney(Number(s.opening_float_usd), currency, rate)}</TableCell>
-                  <TableCell className="text-right">{s.expected_amount_usd != null ? formatMoney(Number(s.expected_amount_usd), currency, rate) : "—"}</TableCell>
-                  <TableCell className="text-right">{s.closing_amount_usd != null ? formatMoney(Number(s.closing_amount_usd), currency, rate) : "—"}</TableCell>
-                  <TableCell className={`text-right ${s.variance_usd != null && Number(s.variance_usd) < 0 ? "text-destructive font-semibold" : ""}`}>
-                    {s.variance_usd != null ? formatMoney(Number(s.variance_usd), currency, rate) : "—"}
+                  <TableCell className="text-right">{formatMoney(Number(s.opening_amount), currency, rate)}</TableCell>
+                  <TableCell className="text-right">{s.expected_amount != null ? formatMoney(Number(s.expected_amount), currency, rate) : "—"}</TableCell>
+                  <TableCell className="text-right">{s.closing_amount != null ? formatMoney(Number(s.closing_amount), currency, rate) : "—"}</TableCell>
+                  <TableCell className={`text-right ${variance != null && variance < 0 ? "text-destructive font-semibold" : ""}`}>
+                    {variance != null ? formatMoney(variance, currency, rate) : "—"}
                   </TableCell>
                   <TableCell><Badge variant={s.closed_at ? "secondary" : "default"}>{s.closed_at ? "Fermée" : "Ouverte"}</Badge></TableCell>
                 </TableRow>
-              ))}
+              );})}
               {(history ?? []).length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune session.</TableCell></TableRow>}
             </TableBody>
           </Table>
