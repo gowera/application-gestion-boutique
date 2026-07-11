@@ -13,6 +13,7 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
     label: "Pilotage",
     items: [
       { title: "Tableau de bord", url: "/admin", icon: LayoutDashboard },
+      { title: "Caisse", url: "/admin/caisse", icon: Banknote },
       { title: "Vente directe (POS)", url: "/admin/pos", icon: ShoppingCart },
     ],
   },
