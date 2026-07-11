@@ -25,7 +25,7 @@ type Session = {
 };
 
 function CaissePage() {
-  const { user } = useAuth();
+  const { user } = useCurrentUser();
   const { data: settings } = useSettings();
   const currency = settings?.primary_currency ?? "USD";
   const rate = settings?.usd_to_cdf_rate ?? 2800;
