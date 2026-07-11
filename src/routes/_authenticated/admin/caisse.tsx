@@ -13,7 +13,7 @@ import { useSettings, formatMoney } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import { Banknote, PlayCircle, StopCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
+import { useCurrentUser } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/caisse")({ component: CaissePage });
 
