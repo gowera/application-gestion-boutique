@@ -19,9 +19,9 @@ export const Route = createFileRoute("/_authenticated/admin/caisse")({ component
 
 type Session = {
   id: string; opened_at: string; closed_at: string | null;
-  opening_float_usd: number; closing_amount_usd: number | null;
-  expected_amount_usd: number | null; variance_usd: number | null;
-  user_id: string; note: string | null;
+  opening_amount: number; closing_amount: number | null;
+  expected_amount: number | null;
+  user_id: string; notes: string | null;
 };
 
 function CaissePage() {
@@ -57,7 +57,7 @@ function CaissePage() {
   const openSess = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("cash_sessions").insert({
-        user_id: user!.id, opening_float_usd: openFloat,
+        user_id: user!.id, opening_amount: openFloat,
       });
       if (error) throw error;
     },
@@ -70,24 +70,23 @@ function CaissePage() {
     queryKey: ["cash-session-expected", active?.id],
     enabled: !!active?.id,
     queryFn: async () => {
-      const { data } = await supabase.from("sales").select("id, paid_usd, created_at, payments(method, amount_usd)")
+      const { data } = await supabase.from("sales").select("id, payments(method, amount_usd)")
         .eq("session_id", active!.id).eq("status", "completed");
       const cash = (data ?? []).flatMap((s: { payments?: { method: string; amount_usd: number }[] }) => s.payments ?? [])
         .filter((p) => p.method === "cash").reduce((a, p) => a + Number(p.amount_usd || 0), 0);
-      return Number(active!.opening_float_usd) + cash;
+      return Number(active!.opening_amount) + cash;
     },
   });
 
   const closeSess = useMutation({
     mutationFn: async () => {
       if (!active) throw new Error("Aucune session");
-      const exp = expected ?? Number(active.opening_float_usd);
+      const exp = expected ?? Number(active.opening_amount);
       const { error } = await supabase.from("cash_sessions").update({
         closed_at: new Date().toISOString(),
-        closing_amount_usd: closeAmount,
-        expected_amount_usd: exp,
-        variance_usd: closeAmount - exp,
-        note: closeNote || null,
+        closing_amount: closeAmount,
+        expected_amount: exp,
+        notes: closeNote || null,
       }).eq("id", active.id);
       if (error) throw error;
     },
