@@ -1,13 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useSettings, formatMoney } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar,
 } from "recharts";
-import { AlertTriangle, DollarSign, ShoppingCart, Package, Users } from "lucide-react";
+import { AlertTriangle, DollarSign, ShoppingCart, Package, Users, Banknote, HandCoins, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: DashboardPage,
