@@ -40,6 +40,7 @@ import { Route as AuthenticatedAdminExpensesRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminEmployeesRouteImport } from './routes/_authenticated/admin/employees'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin/categories'
+import { Route as AuthenticatedAdminCaisseRouteImport } from './routes/_authenticated/admin/caisse'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
@@ -208,6 +209,12 @@ const AuthenticatedAdminCategoriesRoute =
     path: '/admin/categories',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminCaisseRoute =
+  AuthenticatedAdminCaisseRouteImport.update({
+    id: '/admin/caisse',
+    path: '/admin/caisse',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -222,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/boutique/$productId': typeof BoutiqueProductIdRoute
   '/commande/$code': typeof CommandeCodeRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/employees': typeof AuthenticatedAdminEmployeesRoute
@@ -254,6 +262,7 @@ export interface FileRoutesByTo {
   '/boutique/$productId': typeof BoutiqueProductIdRoute
   '/commande/$code': typeof CommandeCodeRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/employees': typeof AuthenticatedAdminEmployeesRoute
@@ -288,6 +297,7 @@ export interface FileRoutesById {
   '/boutique/$productId': typeof BoutiqueProductIdRoute
   '/commande/$code': typeof CommandeCodeRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/_authenticated/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/employees': typeof AuthenticatedAdminEmployeesRoute
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/boutique/$productId'
     | '/commande/$code'
     | '/services/$slug'
+    | '/admin/caisse'
     | '/admin/categories'
     | '/admin/customers'
     | '/admin/employees'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/boutique/$productId'
     | '/commande/$code'
     | '/services/$slug'
+    | '/admin/caisse'
     | '/admin/categories'
     | '/admin/customers'
     | '/admin/employees'
@@ -387,6 +399,7 @@ export interface FileRouteTypes {
     | '/boutique/$productId'
     | '/commande/$code'
     | '/services/$slug'
+    | '/_authenticated/admin/caisse'
     | '/_authenticated/admin/categories'
     | '/_authenticated/admin/customers'
     | '/_authenticated/admin/employees'
@@ -640,10 +653,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCategoriesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/caisse': {
+      id: '/_authenticated/admin/caisse'
+      path: '/admin/caisse'
+      fullPath: '/admin/caisse'
+      preLoaderRoute: typeof AuthenticatedAdminCaisseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminCaisseRoute: typeof AuthenticatedAdminCaisseRoute
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRoute
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminEmployeesRoute: typeof AuthenticatedAdminEmployeesRoute
@@ -665,6 +686,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminCaisseRoute: AuthenticatedAdminCaisseRoute,
   AuthenticatedAdminCategoriesRoute: AuthenticatedAdminCategoriesRoute,
   AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
   AuthenticatedAdminEmployeesRoute: AuthenticatedAdminEmployeesRoute,
