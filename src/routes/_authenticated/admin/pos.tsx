@@ -32,6 +32,8 @@ function PosPage() {
   const [discount, setDiscount] = useState(0);
   const [payments, setPayments] = useState<PaymentLine[]>([{ method: "cash", amount: 0, currency }]);
   const [note, setNote] = useState("");
+  const [isCredit, setIsCredit] = useState(false);
+  const [dueDate, setDueDate] = useState("");
   const qc = useQueryClient();
 
   const { data: products } = useQuery({
