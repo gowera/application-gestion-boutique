@@ -11,6 +11,8 @@ import { formatMoney, useSettings, convertToUsd, type Currency } from "@/lib/cur
 import { Search, Plus, Minus, Trash2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { downloadReceipt } from "@/lib/pdf";
+import { CustomerQuickAdd } from "@/components/customer-quick-add";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/admin/pos")({
   component: PosPage,
