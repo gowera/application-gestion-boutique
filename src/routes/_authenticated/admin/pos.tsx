@@ -140,7 +140,10 @@ function PosPage() {
         <CardContent className="p-4 space-y-4">
           <h2 className="text-display font-semibold flex items-center gap-2"><Receipt className="h-4 w-4" /> Panier ({cart.length})</h2>
           <div>
-            <Label>Client</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label>Client</Label>
+              <CustomerQuickAdd onCreated={(id) => setCustomerId(id)} triggerLabel="+ Nouveau client" />
+            </div>
             <Select value={customerId ?? "none"} onValueChange={(v) => setCustomerId(v === "none" ? null : v)}>
               <SelectTrigger><SelectValue placeholder="Client anonyme" /></SelectTrigger>
               <SelectContent>
@@ -148,6 +151,13 @@ function PosPage() {
                 {customers?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ""}</SelectItem>)}
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex items-center gap-2 rounded-md border p-2 bg-muted/30">
+            <Checkbox id="credit-toggle" checked={isCredit} onCheckedChange={(v) => setIsCredit(!!v)} />
+            <label htmlFor="credit-toggle" className="text-sm font-medium cursor-pointer">Vente à crédit</label>
+            {isCredit && (
+              <Input type="date" className="h-8 ml-auto w-40" value={dueDate} onChange={(e) => setDueDate(e.target.value)} placeholder="Échéance" />
+            )}
           </div>
           <div className="max-h-64 overflow-auto space-y-2">
             {cart.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Ajoutez des produits…</p>}
