@@ -450,6 +450,41 @@ export type Database = {
           },
         ]
       }
+      message_replies: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          id: string
+          quote_request_id: string
+          user_id: string | null
+        }
+        Insert: {
+          body: string
+          channel: string
+          created_at?: string
+          id?: string
+          quote_request_id: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          quote_request_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_replies_quote_request_id_fkey"
+            columns: ["quote_request_id"]
+            isOneToOne: false
+            referencedRelation: "quote_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       online_orders: {
         Row: {
           code: string
