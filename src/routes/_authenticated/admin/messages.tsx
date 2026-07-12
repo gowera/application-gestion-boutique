@@ -108,7 +108,7 @@ function InboxTab() {
   );
 }
 
-function ThreadDialog({ request, onClose, onMark }: { request: QuoteRequest | null; onClose: () => void; onMark: (s: string) => void }) {
+function ThreadDialog({ request, onClose, onMark }: { request: QuoteRequest | null; onClose: () => void; onMark: (s: "new" | "read" | "replied" | "closed") => void }) {
   const { data: settings } = useSettings();
   const qc = useQueryClient();
   const [channel, setChannel] = useState<"whatsapp" | "email" | "note">("whatsapp");
