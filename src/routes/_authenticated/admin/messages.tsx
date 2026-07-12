@@ -53,7 +53,7 @@ function InboxTab() {
     queryKey: ["quote-requests", filter],
     queryFn: async () => {
       const q = supabase.from("quote_requests").select("*").order("created_at", { ascending: false });
-      const { data, error } = filter === "all" ? await q : await q.eq("status", filter);
+      const { data, error } = filter === "all" ? await q : await q.eq("status", filter as "new" | "read" | "replied" | "closed");
       if (error) throw error;
       return (data ?? []) as QuoteRequest[];
     },
