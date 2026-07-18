@@ -218,6 +218,7 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
       };
       if (!payload.name.trim()) throw new Error("Nom requis");
       let productId = product?.id;
+      const previousStock = product?.stock ?? null;
       if (isEdit) {
         const { error } = await supabase.from("products").update(payload).eq("id", product!.id);
         if (error) throw error;
@@ -235,9 +236,24 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
           if (relErr) throw relErr;
         }
       }
-      return productId;
+      return { productId, previousStock, nextStock: payload.stock };
     },
-    onSuccess: () => { toast.success("Enregistré"); qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["suppliers-list"] }); onSaved(); onOpenChange(false); setUploadingImages(false); },
+    onSuccess: async ({ productId, previousStock, nextStock }) => {
+      if (productId) {
+        const threshold = Number(form.low_stock_threshold ?? settings?.low_stock_threshold ?? 5);
+        const shouldAlert = nextStock <= threshold && (previousStock == null || previousStock > threshold || previousStock > nextStock);
+        if (shouldAlert) {
+          await createNotification({
+            title: nextStock <= 0 ? "Rupture de stock" : "Stock faible",
+            message: `${form.name ?? "Produit"} est à ${nextStock} unité${nextStock > 1 ? "s" : ""}.`,
+            type: "warning",
+            entity_type: "product",
+            entity_id: productId,
+          });
+        }
+      }
+      toast.success("Enregistré"); qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["suppliers-list"] }); onSaved(); onOpenChange(false); setUploadingImages(false);
+    },
     onError: (e: Error) => { toast.error(e.message); setUploadingImages(false); },
   });
 

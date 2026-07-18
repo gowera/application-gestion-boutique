@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCheck } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,11 +15,14 @@ type NotificationRow = {
   type: string;
   is_read: boolean;
   created_at: string;
+  entity_type?: string | null;
+  entity_id?: string | null;
 };
 
 export function NotificationsCenter() {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["notifications"],
@@ -27,7 +31,26 @@ export function NotificationsCenter() {
       if (error) throw error;
       return (data ?? []) as NotificationRow[];
     },
+    refetchInterval: 5000,
   });
+
+  useEffect(() => {
+    const channel = supabase.channel("notifications-realtime");
+
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "notifications" },
+      () => {
+        qc.invalidateQueries({ queryKey: ["notifications"] });
+      },
+    );
+
+    void channel.subscribe();
+
+    return () => {
+      void channel.unsubscribe();
+    };
+  }, [qc]);
 
   const markAllAsRead = useMutation({
     mutationFn: async () => {
@@ -43,7 +66,45 @@ export function NotificationsCenter() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const markOneAsRead = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const unread = notifications.filter((n) => !n.is_read).length;
+
+  const handleNotificationClick = (item: NotificationRow) => {
+    if (!item.is_read) {
+      void markOneAsRead.mutateAsync(item.id);
+    }
+
+    const target = getNotificationRoute(item);
+    if (target) {
+      setOpen(false);
+      void navigate({ to: target });
+    }
+  };
+
+  const getNotificationRoute = (item: NotificationRow) => {
+    switch (item.entity_type) {
+      case "online_order":
+        return "/admin/orders";
+      case "sale":
+        return "/admin/pos";
+      case "customer":
+        return "/admin/customers";
+      case "product":
+        return "/admin/products";
+      default:
+        return null;
+    }
+  };
 
   return (
     <>
@@ -60,7 +121,12 @@ export function NotificationsCenter() {
           <div className="space-y-3">
             {!notifications.length && <p className="text-sm text-muted-foreground">Aucune notification pour le moment.</p>}
             {notifications.map((item) => (
-              <div key={item.id} className={`rounded-lg border p-3 ${item.is_read ? "bg-background" : "bg-muted/40"}`}>
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleNotificationClick(item)}
+                className={`w-full rounded-lg border p-3 text-left transition-colors ${item.is_read ? "bg-background" : "bg-muted/40 hover:bg-muted/60"}`}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium">{item.title}</p>
@@ -68,7 +134,7 @@ export function NotificationsCenter() {
                   </div>
                   <span className="text-[11px] text-muted-foreground">{new Date(item.created_at).toLocaleString("fr-FR")}</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
           <DialogFooter>
