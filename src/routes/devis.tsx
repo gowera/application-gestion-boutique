@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { createNotification } from "@/lib/notifications";
 import { SERVICES } from "./index";
 
 export const Route = createFileRoute("/devis")({ component: QuotePage });
@@ -24,6 +25,9 @@ function QuotePage() {
     const { error } = await supabase.from("quote_requests").insert({ name: form.name, phone: form.phone, email: form.email || null, service: form.service, message: form.message || null });
     setLoading(false);
     if (error) return toast.error("Envoi impossible");
+    await createNotification({
+      title: "Nouveau devis demandé", message: `${form.name} a demandé un devis pour ${form.service}.`, type: "info", entity_type: "quote_request"
+    });
     toast.success("Demande envoyée !");
     setForm({ name: "", phone: "", email: "", service: SERVICES[0].title, message: "" });
   }

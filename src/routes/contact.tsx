@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { createNotification } from "@/lib/notifications";
 import { Phone, Mail, MessageCircle, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/contact")({ component: ContactPage });
@@ -22,6 +23,9 @@ function ContactPage() {
     const { error } = await supabase.from("quote_requests").insert({ name: form.name, phone: form.phone, email: form.email || null, service: "Contact", message: form.message || null });
     setLoading(false);
     if (error) return toast.error("Envoi impossible");
+    await createNotification({
+      title: "Nouvelle demande de contact", message: `${form.name} a envoyé un message depuis le site.`, type: "info", entity_type: "quote_request"
+    });
     toast.success("Message envoyé !");
     setForm({ name: "", phone: "", email: "", message: "" });
   }

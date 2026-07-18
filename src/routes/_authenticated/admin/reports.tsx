@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatMoney, useSettings } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import { exportToXlsx } from "@/lib/xlsx-export";
+import { downloadReportPdf } from "@/lib/pdf";
 import { Download } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/reports")({ component: Page });
@@ -30,14 +31,36 @@ function Page() {
   const totalSales = (sales ?? []).filter((s) => s.status === "completed").reduce((a, s) => a + Number(s.total_usd), 0);
   const totalOrders = (orders ?? []).reduce((a, o) => a + Number(o.total_usd), 0);
   const totalExp = (exp ?? []).reduce((a, e) => a + Number(e.amount_usd), 0);
+  const totalCredit = (sales ?? []).reduce((a, s) => a + Number(s.credit_usd ?? 0), 0);
   const profit = totalSales + totalOrders - totalExp;
+
+  const exportSummaryPdf = () => {
+    downloadReportPdf({
+      title: "Rapport de période",
+      summary: [
+        { label: "Période", value: `${from} → ${to}` },
+        { label: "Ventes POS", value: formatMoney(totalSales, cur, rate) },
+        { label: "Commandes en ligne", value: formatMoney(totalOrders, cur, rate) },
+        { label: "Dépenses", value: formatMoney(totalExp, cur, rate) },
+        { label: "Solde", value: formatMoney(profit, cur, rate) },
+        { label: "Crédit", value: formatMoney(totalCredit, cur, rate) },
+      ],
+      sections: [
+        { title: "Ventes directes (POS)", rows: (sales ?? []).slice(0, 8).map((s) => ({ label: s.code, value: formatMoney(Number(s.total_usd), cur, rate) })) },
+        { title: "Commandes en ligne", rows: (orders ?? []).slice(0, 8).map((o) => ({ label: o.code, value: formatMoney(Number(o.total_usd), cur, rate) })) },
+      ],
+    });
+  };
 
   return (
     <div className="space-y-6">
       <h1 className="text-display text-2xl font-bold">Rapports</h1>
-      <Card><CardContent className="p-4 flex flex-wrap items-end gap-3">
-        <div><Label>Du</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-        <div><Label>Au</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+      <Card><CardContent className="p-4 flex flex-wrap items-end gap-3 justify-between">
+        <div className="flex flex-wrap gap-3">
+          <div><Label>Du</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div><Label>Au</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+        </div>
+        <Button size="sm" variant="outline" onClick={exportSummaryPdf}><Download className="mr-2 h-4 w-4" />PDF</Button>
       </CardContent></Card>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -45,7 +68,8 @@ function Page() {
           { label: "Ventes POS", val: totalSales },
           { label: "Commandes en ligne", val: totalOrders },
           { label: "Dépenses", val: totalExp },
-          { label: "Marge estimée", val: profit },
+          { label: "Solde", val: profit },
+          { label: "Crédit", val: totalCredit },
         ].map((k) => (
           <Card key={k.label}><CardContent className="p-5">
             <div className="text-xs uppercase text-muted-foreground">{k.label}</div>

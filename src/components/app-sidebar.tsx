@@ -3,6 +3,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Receipt, Users, Wallet, Settings as SettingsIcon,
   Inbox, UserCog, Zap, Truck, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, HandCoins, Banknote,
 } from "lucide-react";
+import logo from "@/assets/brand/logo.png";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -64,8 +65,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border/50">
         <Link to="/admin" className="flex items-center gap-2 px-2 py-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-            <Zap className="h-5 w-5" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white/90 p-1 shadow-sm">
+            <img src={logo} alt="CONETEC" className="h-7 w-7 object-contain" />
           </div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="text-display text-sm font-bold text-sidebar-foreground">CONETEC</span>

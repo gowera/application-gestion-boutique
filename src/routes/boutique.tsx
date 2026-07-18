@@ -89,6 +89,7 @@ function ShopPage() {
                       <ShoppingCart className="h-3.5 w-3.5" />
                     </Button>
                   </div>
+                  {p.show_stock_public && <div className="text-xs text-muted-foreground">Stock: {p.stock}</div>}
                 </CardContent>
               </Card>
             ))}

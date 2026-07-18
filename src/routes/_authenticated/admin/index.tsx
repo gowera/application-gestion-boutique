@@ -93,7 +93,10 @@ function DashboardPage() {
           <h1 className="text-display text-2xl md:text-3xl font-bold">Tableau de bord</h1>
           <p className="text-sm text-muted-foreground">Vue synthétique de l'activité de la boutique.</p>
         </div>
-        <Button asChild size="lg" className="gap-2"><Link to="/admin/caisse"><Banknote className="h-4 w-4" />Caisse</Link></Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="lg" className="gap-2"><Link to="/boutique" target="_blank" rel="noreferrer"><ArrowRight className="h-4 w-4" />Voir le site</Link></Button>
+          <Button asChild size="lg" className="gap-2"><Link to="/admin/caisse"><Banknote className="h-4 w-4" />Caisse</Link></Button>
+        </div>
       </div>
 
       {/* À recouvrer — highlight */}

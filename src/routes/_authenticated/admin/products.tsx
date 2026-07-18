@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatMoney, useSettings } from "@/lib/currency";
 import { Plus, Pencil, Search, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { createNotification } from "@/lib/notifications";
 
 export const Route = createFileRoute("/_authenticated/admin/products")({
   component: ProductsPage,
@@ -23,7 +24,22 @@ type Product = {
   id: string; sku: string | null; name: string; category_id: string | null; brand: string | null;
   description: string | null; cost_price: number; sale_price: number; stock: number;
   low_stock_threshold: number | null; status: "active" | "inactive" | "on_order"; images: string[];
+  slug: string | null; show_stock_public: boolean | null;
 };
+
+type Supplier = { id: string; name: string };
+
+type ProductSupplier = { id: string; supplier_id: string; preferred: boolean };
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
 
 function ProductsPage() {
   const { data: settings } = useSettings();
@@ -33,9 +49,31 @@ function ProductsPage() {
   const [adjust, setAdjust] = useState<Product | null>(null);
   const qc = useQueryClient();
 
+  const replenishment = useMutation({
+    mutationFn: async (product: Product) => {
+      const { data: links = [] } = await supabase.from("product_suppliers").select("supplier_id").eq("product_id", product.id).order("preferred", { ascending: false });
+      const supplierId = (links as { supplier_id: string }[])[0]?.supplier_id ?? null;
+      const code = crypto.randomUUID().slice(0, 8).toUpperCase();
+      const subtotal = Number(product.cost_price || 0) * 1;
+      const total = subtotal;
+      const { data: purchase, error: purchaseError } = await supabase.from("purchases").insert({ code, supplier_id: supplierId, subtotal_usd: subtotal, total_usd: total, shipping_usd: 0, note: `Ravitaillement automatique pour ${product.name}`, status: "draft" }).select("id").single();
+      if (purchaseError || !purchase) throw purchaseError ?? new Error("Création impossible");
+      const { error: itemError } = await supabase.from("purchase_items").insert({ purchase_id: purchase.id, product_name: product.name, qty: 1, unit_cost_usd: Number(product.cost_price || 0), line_total_usd: subtotal });
+      if (itemError) throw itemError;
+      return purchase.id;
+    },
+    onSuccess: () => { toast.success("Bon d'achat créé"); qc.invalidateQueries({ queryKey: ["purchases"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const { data: cats } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => (await supabase.from("categories").select("*").order("name")).data ?? [],
+  });
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["suppliers-list"],
+    queryFn: async () => (await supabase.from("suppliers").select("id,name").order("name")).data ?? [],
   });
 
   const { data: products, isLoading } = useQuery({
@@ -103,6 +141,7 @@ function ProductsPage() {
                       <div className="flex gap-1">
                         <Button size="sm" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
                         <Button size="sm" variant="outline" onClick={() => setAdjust(p)}>Stock</Button>
+                        <Button size="sm" variant="secondary" onClick={() => replenishment.mutate(p)}>Ravitailler</Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -113,27 +152,59 @@ function ProductsPage() {
         </CardContent>
       </Card>
 
-      <ProductDialog open={open} onOpenChange={setOpen} product={editing} categories={cats ?? []} onSaved={() => qc.invalidateQueries({ queryKey: ["products"] })} />
+      <ProductDialog open={open} onOpenChange={setOpen} product={editing} categories={cats ?? []} suppliers={suppliers} onSaved={() => qc.invalidateQueries({ queryKey: ["products"] })} />
       <StockAdjustDialog product={adjust} onOpenChange={(v) => !v && setAdjust(null)} onSaved={() => qc.invalidateQueries({ queryKey: ["products"] })} />
     </div>
   );
 }
 
-function ProductDialog({ open, onOpenChange, product, categories, onSaved }: {
+function ProductDialog({ open, onOpenChange, product, categories, suppliers, onSaved }: {
   open: boolean; onOpenChange: (v: boolean) => void; product: Product | null;
-  categories: { id: string; name: string }[]; onSaved: () => void;
+  categories: { id: string; name: string }[]; suppliers: Supplier[]; onSaved: () => void;
 }) {
   const [form, setForm] = useState<Partial<Product>>({});
+  const [imageInput, setImageInput] = useState("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
+  const [preferredSupplier, setPreferredSupplier] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const isEdit = !!product;
+  const qc = useQueryClient();
 
-  // reset when opening
-  useState(() => { setForm(product ?? {}); });
+  useEffect(() => {
+    if (open) {
+      setForm(product ?? {});
+      setImageInput((product?.images ?? []).join("\n"));
+      setImageFiles([]);
+      setSlugManuallyEdited(false);
+      if (product?.id) {
+        supabase.from("product_suppliers").select("supplier_id,preferred").eq("product_id", product.id).then(({ data }) => {
+          const ids = (data ?? []).map((row: ProductSupplier) => row.supplier_id);
+          setSelectedSuppliers(ids);
+          setPreferredSupplier((data ?? []).find((row: ProductSupplier) => row.preferred)?.supplier_id ?? null);
+        });
+      } else {
+        setSelectedSuppliers([]);
+        setPreferredSupplier(null);
+      }
+    }
+  }, [open, product]);
 
   const save = useMutation({
     mutationFn: async () => {
+      setUploadingImages(true);
+      const uploadedUrls = await Promise.all(imageFiles.map(async (file) => {
+        const path = `${crypto.randomUUID()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage.from("product-images").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
+        if (uploadError) throw uploadError;
+        return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+      }));
       const payload = {
         name: form.name ?? "",
         sku: form.sku || null,
+        slug: (form.slug || form.name || "").toString().trim() || null,
         category_id: form.category_id || null,
         brand: form.brand || null,
         description: form.description || null,
@@ -142,28 +213,62 @@ function ProductDialog({ open, onOpenChange, product, categories, onSaved }: {
         stock: Number(form.stock ?? 0),
         low_stock_threshold: form.low_stock_threshold != null ? Number(form.low_stock_threshold) : null,
         status: (form.status as Product["status"]) ?? "active",
+        images: [...uploadedUrls, ...imageInput.split(/\n|,/).map((v) => v.trim()).filter(Boolean)],
+        show_stock_public: Boolean(form.show_stock_public),
       };
       if (!payload.name.trim()) throw new Error("Nom requis");
+      let productId = product?.id;
       if (isEdit) {
         const { error } = await supabase.from("products").update(payload).eq("id", product!.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("products").insert(payload);
+        const { data, error } = await supabase.from("products").insert(payload).select("id").single();
         if (error) throw error;
+        productId = data?.id;
       }
+
+      if (productId) {
+        await supabase.from("product_suppliers").delete().eq("product_id", productId);
+        if (selectedSuppliers.length) {
+          const rows = selectedSuppliers.map((supplierId) => ({ product_id: productId, supplier_id: supplierId, preferred: supplierId === preferredSupplier }));
+          const { error: relErr } = await supabase.from("product_suppliers").insert(rows);
+          if (relErr) throw relErr;
+        }
+      }
+      return productId;
     },
-    onSuccess: () => { toast.success("Enregistré"); onSaved(); onOpenChange(false); },
+    onSuccess: () => { toast.success("Enregistré"); qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["suppliers-list"] }); onSaved(); onOpenChange(false); setUploadingImages(false); },
+    onError: (e: Error) => { toast.error(e.message); setUploadingImages(false); },
+  });
+
+  const createCategoryInline = useMutation({
+    mutationFn: async () => {
+      if (!newCategoryName.trim()) throw new Error("Nom requis");
+      const { data, error } = await supabase.from("categories").insert({ name: newCategoryName.trim(), slug: newCategoryName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") }).select("id").single();
+      if (error || !data) throw error ?? new Error("Catégorie non créée");
+      return data.id;
+    },
+    onSuccess: (categoryId) => {
+      setForm({ ...form, category_id: categoryId });
+      setNewCategoryName("");
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Catégorie créée");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (v) setForm(product ?? {}); }}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader><DialogTitle>{isEdit ? "Modifier le produit" : "Nouveau produit"}</DialogTitle></DialogHeader>
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="md:col-span-2"><Label>Nom *</Label><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-          <div><Label>SKU / Référence</Label><Input value={form.sku ?? ""} onChange={(e) => setForm({ ...form, sku: e.target.value })} /></div>
-          <div><Label>Marque</Label><Input value={form.brand ?? ""} onChange={(e) => setForm({ ...form, brand: e.target.value })} /></div>
+          <div className="md:col-span-2"><Label>Nom *</Label><Input value={form.name ?? ""} onChange={(e) => {
+            const nextName = e.target.value;
+            setForm((prev) => ({ ...prev, name: nextName, slug: slugManuallyEdited ? prev.slug : slugify(nextName) }));
+          }} placeholder="Ex : Disjoncteur 20A" /></div>
+          <div><Label>Slug</Label><Input value={form.slug ?? ""} onChange={(e) => { setSlugManuallyEdited(true); setForm((prev) => ({ ...prev, slug: e.target.value })); }} placeholder="slug-automatique" /></div>
+          <div><Label>SKU / Référence</Label><Input value={form.sku ?? ""} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="REF-001" /></div>
+          <div><Label>Marque</Label><Input value={form.brand ?? ""} onChange={(e) => setForm({ ...form, brand: e.target.value })} placeholder="Ex : Schneider" /></div>
           <div>
             <Label>Catégorie</Label>
             <Select value={form.category_id ?? "none"} onValueChange={(v) => setForm({ ...form, category_id: v === "none" ? null : v })}>
@@ -173,6 +278,10 @@ function ProductDialog({ open, onOpenChange, product, categories, onSaved }: {
                 {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
+            <div className="mt-2 flex gap-2">
+              <Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Ajouter une catégorie" />
+              <Button type="button" variant="outline" onClick={() => createCategoryInline.mutate()} disabled={createCategoryInline.isPending}>Créer</Button>
+            </div>
           </div>
           <div>
             <Label>Statut</Label>
@@ -185,15 +294,59 @@ function ProductDialog({ open, onOpenChange, product, categories, onSaved }: {
               </SelectContent>
             </Select>
           </div>
-          <div><Label>Prix d'achat (USD)</Label><Input type="number" step="0.01" value={form.cost_price ?? 0} onChange={(e) => setForm({ ...form, cost_price: +e.target.value })} /></div>
-          <div><Label>Prix de vente (USD)</Label><Input type="number" step="0.01" value={form.sale_price ?? 0} onChange={(e) => setForm({ ...form, sale_price: +e.target.value })} /></div>
-          <div><Label>Stock initial</Label><Input type="number" value={form.stock ?? 0} onChange={(e) => setForm({ ...form, stock: +e.target.value })} disabled={isEdit} />{isEdit && <p className="mt-1 text-xs text-muted-foreground">Utilisez « Stock » pour ajuster.</p>}</div>
-          <div><Label>Seuil d'alerte</Label><Input type="number" value={form.low_stock_threshold ?? ""} onChange={(e) => setForm({ ...form, low_stock_threshold: e.target.value === "" ? null : +e.target.value })} /></div>
-          <div className="md:col-span-2"><Label>Description</Label><Textarea rows={3} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+          <div><Label>Prix d'achat (USD)</Label><Input type="number" step="0.01" value={form.cost_price ?? 0} onChange={(e) => setForm({ ...form, cost_price: +e.target.value })} placeholder="0.00" /></div>
+          <div><Label>Prix de vente (USD)</Label><Input type="number" step="0.01" value={form.sale_price ?? 0} onChange={(e) => setForm({ ...form, sale_price: +e.target.value })} placeholder="0.00" /></div>
+          <div><Label>Stock initial</Label><Input type="number" value={form.stock ?? 0} onChange={(e) => setForm({ ...form, stock: +e.target.value })} disabled={isEdit} placeholder="0" />{isEdit && <p className="mt-1 text-xs text-muted-foreground">Utilisez « Stock » pour ajuster.</p>}</div>
+          <div><Label>Seuil d'alerte</Label><Input type="number" value={form.low_stock_threshold ?? ""} onChange={(e) => setForm({ ...form, low_stock_threshold: e.target.value === "" ? null : +e.target.value })} placeholder="5" /></div>
+          <div className="md:col-span-2">
+            <Label>Images du produit</Label>
+            <p className="mt-1 text-xs text-muted-foreground">Choisissez un ou plusieurs fichiers image, ou ajoutez une ou plusieurs URL d’image ci-dessous, une par ligne.</p>
+            <input type="file" accept="image/*" multiple className="mt-2 block w-full text-sm" title="Choisir des fichiers" onChange={(e) => setImageFiles(Array.from(e.target.files ?? []))} />
+            <Textarea rows={3} value={imageInput} onChange={(e) => setImageInput(e.target.value)} className="mt-2" placeholder="https://exemple.com/image1.jpg" />
+          </div>
+          <div className="md:col-span-2 rounded-lg border p-3">
+            <Label className="mb-2 block">Fournisseurs associés</Label>
+            <div className="flex flex-wrap gap-2">
+              {suppliers.map((supplier) => {
+                const checked = selectedSuppliers.includes(supplier.id);
+                return (
+                  <label key={supplier.id} className="flex items-center gap-2 rounded border px-2 py-1 text-sm">
+                    <input type="checkbox" checked={checked} onChange={() => {
+                      const next = checked ? selectedSuppliers.filter((id) => id !== supplier.id) : [...selectedSuppliers, supplier.id];
+                      setSelectedSuppliers(next);
+                      if (!checked && preferredSupplier === supplier.id) setPreferredSupplier(null);
+                      if (checked && preferredSupplier === supplier.id) setPreferredSupplier(null);
+                    }} />
+                    <span>{supplier.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {selectedSuppliers.length > 0 && (
+              <div className="mt-3">
+                <Label>Fournisseur principal</Label>
+                <Select value={preferredSupplier ?? "none"} onValueChange={(value) => setPreferredSupplier(value === "none" ? null : value)}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucun</SelectItem>
+                    {selectedSuppliers.map((id) => {
+                      const s = suppliers.find((item) => item.id === id);
+                      return s ? <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem> : null;
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <div className="md:col-span-2 flex items-center gap-2 rounded-md border p-3">
+            <input type="checkbox" checked={Boolean(form.show_stock_public)} onChange={(e) => setForm({ ...form, show_stock_public: e.target.checked })} />
+            <Label>Afficher le stock sur la boutique en ligne</Label>
+          </div>
+          <div className="md:col-span-2"><Label>Description</Label><Textarea rows={3} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Décrivez les caractéristiques du produit..." /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? "…" : "Enregistrer"}</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || uploadingImages}>{save.isPending || uploadingImages ? "…" : "Enregistrer"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -212,7 +365,18 @@ function StockAdjustDialog({ product, onOpenChange, onSaved }: { product: Produc
       const { error } = await supabase.rpc("adjust_stock", { _product_id: product.id, _delta: signed, _reason: reason, _note: note || undefined });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Stock mis à jour"); onSaved(); onOpenChange(false); setDelta(0); setNote(""); },
+    onSuccess: async () => {
+      if (product) {
+        await createNotification({
+          title: "Mouvement de stock",
+          message: `${product.name} a été ajusté${reason === "manual_out" ? " en sortie" : reason === "manual_in" ? " en entrée" : reason === "return" ? " en retour" : ""}.`,
+          type: "warning",
+          entity_type: "product",
+          entity_id: product.id,
+        });
+      }
+      toast.success("Stock mis à jour"); onSaved(); onOpenChange(false); setDelta(0); setNote("");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 

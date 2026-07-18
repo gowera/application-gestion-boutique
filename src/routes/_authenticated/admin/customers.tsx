@@ -15,6 +15,7 @@ import { useSettings, formatMoney } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import { Plus, Wallet, Pencil, Archive, History, MessageCircle, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
+import { createNotification } from "@/lib/notifications";
 
 export const Route = createFileRoute("/_authenticated/admin/customers")({ component: Page });
 
@@ -85,7 +86,14 @@ function CustomersTab() {
         : await supabase.from("customers").insert(payload);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Enregistré"); qc.invalidateQueries({ queryKey: ["customers"] }); setEdit(null); },
+    onSuccess: async () => {
+      if (c.id) {
+        await createNotification({ title: "Client mis à jour", message: `${c.name} a été mis à jour.`, type: "info", entity_type: "customer" });
+      } else {
+        await createNotification({ title: "Nouveau client", message: `${c.name} a été ajouté au carnet.`, type: "info", entity_type: "customer" });
+      }
+      toast.success("Enregistré"); qc.invalidateQueries({ queryKey: ["customers"] }); setEdit(null);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -175,7 +183,7 @@ function CustomerHistoryDialog({ customer, onClose }: { customer: Customer | nul
   const { data: sales } = useQuery({
     queryKey: ["customer-sales", customer?.id],
     enabled: !!customer,
-    queryFn: async () => (await supabase.from("sales").select("id,code,total_usd,paid_usd,credit_usd,status,created_at").eq("customer_id", customer!.id).order("created_at", { ascending: false }).limit(50)).data ?? [],
+    queryFn: async () => (await supabase.from("sales").select("id,code,total_usd,paid_usd,credit_usd,status,created_at,due_date").eq("customer_id", customer!.id).order("created_at", { ascending: false }).limit(50)).data ?? [],
   });
   const { data: ledger } = useQuery({
     queryKey: ["customer-ledger", customer?.id],
@@ -194,7 +202,7 @@ function CustomerHistoryDialog({ customer, onClose }: { customer: Customer | nul
           </TabsList>
           <TabsContent value="sales" className="max-h-[400px] overflow-y-auto">
             <Table>
-              <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Code</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Payé</TableHead><TableHead className="text-right">Crédit</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Code</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Payé</TableHead><TableHead className="text-right">Échéance</TableHead></TableRow></TableHeader>
               <TableBody>
                 {sales?.map((s) => (
                   <TableRow key={s.id}>
@@ -202,7 +210,7 @@ function CustomerHistoryDialog({ customer, onClose }: { customer: Customer | nul
                     <TableCell className="font-mono text-xs">{s.code}</TableCell>
                     <TableCell className="text-right">{formatMoney(Number(s.total_usd), currency, rate)}</TableCell>
                     <TableCell className="text-right">{formatMoney(Number(s.paid_usd), currency, rate)}</TableCell>
-                    <TableCell className={`text-right ${Number(s.credit_usd) > 0 ? "text-destructive" : ""}`}>{formatMoney(Number(s.credit_usd), currency, rate)}</TableCell>
+                    <TableCell className={`text-right ${Number(s.credit_usd) > 0 ? "text-destructive" : ""}`}>{s.due_date ? formatDate(s.due_date) : "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

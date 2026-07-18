@@ -11,6 +11,7 @@ import { formatMoney, useSettings } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
+import { createNotification } from "@/lib/notifications";
 
 export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
 
@@ -44,6 +45,9 @@ function CheckoutPage() {
     if (error) return toast.error(error.message);
     const orderId = data as unknown as string;
     const { data: order } = await supabase.from("online_orders").select("code").eq("id", orderId).maybeSingle();
+    await createNotification({
+      title: "Nouvelle commande", message: `Commande ${order?.code ?? orderId} reçue de ${form.name}.`, type: "info", entity_type: "online_order", entity_id: orderId,
+    });
     clear();
     toast.success("Commande enregistrée !");
     if (order?.code) nav({ to: "/commande/$code", params: { code: order.code } });

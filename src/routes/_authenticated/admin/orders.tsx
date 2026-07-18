@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatMoney, useSettings } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
+import { createNotification } from "@/lib/notifications";
 
 export const Route = createFileRoute("/_authenticated/admin/orders")({ component: Page });
 
@@ -23,7 +24,11 @@ function Page() {
   const { data: orders } = useQuery({ queryKey: ["admin-orders"], queryFn: async () => (await supabase.from("online_orders").select("*").order("created_at", { ascending: false })).data ?? [] });
   const upd = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => { const { error } = await supabase.from("online_orders").update({ status: status as "pending" }).eq("id", id); if (error) throw error; },
-    onSuccess: () => { toast.success("Statut mis à jour"); qc.invalidateQueries({ queryKey: ["admin-orders"] }); },
+    onSuccess: async (_data, variables) => {
+      const { data: order } = await supabase.from("online_orders").select("code").eq("id", variables.id).maybeSingle();
+      await createNotification({ title: "Commande mise à jour", message: `La commande ${order?.code ?? variables.id} est passée au statut ${LABEL[variables.status] ?? variables.status}.`, type: "info", entity_type: "online_order", entity_id: variables.id });
+      toast.success("Statut mis à jour"); qc.invalidateQueries({ queryKey: ["admin-orders"] });
+    },
   });
   return (
     <div className="space-y-6">

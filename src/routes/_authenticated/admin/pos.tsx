@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatMoney, useSettings, convertToUsd, type Currency } from "@/lib/currency";
 import { Search, Plus, Minus, Trash2, Receipt } from "lucide-react";
 import { toast } from "sonner";
+import { createNotification } from "@/lib/notifications";
 import { downloadReceipt } from "@/lib/pdf";
 import { CustomerQuickAdd } from "@/components/customer-quick-add";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,6 +35,7 @@ function PosPage() {
   const [note, setNote] = useState("");
   const [isCredit, setIsCredit] = useState(false);
   const [dueDate, setDueDate] = useState("");
+  const [documentType, setDocumentType] = useState<"Facture" | "Reçu">("Reçu");
   const qc = useQueryClient();
 
   const { data: products } = useQuery({
@@ -86,6 +88,12 @@ function PosPage() {
       return saleId;
     },
     onSuccess: async (saleId) => {
+      await createNotification({
+        title: "Nouvelle vente",
+        message: `Une vente a été enregistrée pour ${cart.length} article${cart.length > 1 ? "s" : ""}.`,
+        type: "success",
+        entity_type: "sale"
+      });
       toast.success("Vente enregistrée");
       const [{ data: sale }, { data: items }] = await Promise.all([
         supabase.from("sales").select("*, customers(name)").eq("id", saleId).maybeSingle(),
@@ -100,7 +108,7 @@ function PosPage() {
         subtotal: Number(sale.subtotal_usd), discount: Number(sale.discount_usd), total: Number(sale.total_usd),
         paid: Number(sale.paid_usd), credit: Number(sale.credit_usd), currency, rate,
       });
-      setCart([]); setDiscount(0); setNote(""); setPayments([{ method: "cash", amount: 0, currency }]); setCustomerId(null); setIsCredit(false); setDueDate("");
+      setCart([]); setDiscount(0); setNote(""); setPayments([{ method: "cash", amount: 0, currency }]); setCustomerId(null); setIsCredit(false); setDueDate(""); setDocumentType("Reçu");
       qc.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message.replace("insufficient_stock:", "Stock insuffisant: ")),
@@ -154,7 +162,7 @@ function PosPage() {
           </div>
           <div className="flex items-center gap-2 rounded-md border p-2 bg-muted/30">
             <Checkbox id="credit-toggle" checked={isCredit} onCheckedChange={(v) => setIsCredit(!!v)} />
-            <label htmlFor="credit-toggle" className="text-sm font-medium cursor-pointer">Vente à crédit</label>
+            <label htmlFor="credit-toggle" className="text-sm font-medium cursor-pointer">Accorder un crédit</label>
             {isCredit && (
               <Input type="date" className="h-8 ml-auto w-40" value={dueDate} onChange={(e) => setDueDate(e.target.value)} placeholder="Échéance" />
             )}
@@ -180,7 +188,7 @@ function PosPage() {
           <div className="border-t pt-3 space-y-2">
             <div className="flex justify-between text-sm"><span>Sous-total</span><span>{formatMoney(subtotal, currency, rate)}</span></div>
             <div className="flex items-center justify-between text-sm">
-              <span>Remise globale (USD)</span>
+              <span>Accorder un crédit</span>
               <Input type="number" step="0.01" className="w-24 h-8" value={discount} onChange={(e) => setDiscount(+e.target.value)} />
             </div>
             <div className="flex justify-between text-lg font-bold text-display"><span>Total</span><span>{formatMoney(total, currency, rate)}</span></div>
@@ -217,6 +225,16 @@ function PosPage() {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>Type de document</Label>
+            <Select value={documentType} onValueChange={(v) => setDocumentType(v as "Facture" | "Reçu")}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Reçu">Reçu</SelectItem>
+                <SelectItem value="Facture">Facture</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Input placeholder="Note (optionnel)" value={note} onChange={(e) => setNote(e.target.value)} />
           <Button className="w-full" size="lg" disabled={submit.isPending || cart.length === 0} onClick={() => submit.mutate()}>
             {submit.isPending ? "Enregistrement…" : "Valider la vente"}

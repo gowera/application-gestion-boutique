@@ -44,6 +44,7 @@ function ProductPage() {
             <h1 className="text-display text-3xl font-bold mt-1">{p.name}</h1>
             <div className="mt-2 flex gap-2">
               {p.stock > 0 ? <Badge>En stock ({p.stock})</Badge> : <Badge variant="destructive">Rupture</Badge>}
+              {p.show_stock_public && <Badge variant="outline">Stock public: {p.stock}</Badge>}
               {p.sku && <Badge variant="outline">SKU: {p.sku}</Badge>}
             </div>
             <div className="mt-6 text-4xl font-bold text-primary">{formatMoney(Number(p.sale_price), cur, rate)}</div>
