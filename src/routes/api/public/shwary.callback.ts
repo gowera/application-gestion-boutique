@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/api/public/shwary/callback")({
-  ...({} as Record<string, never>),
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
