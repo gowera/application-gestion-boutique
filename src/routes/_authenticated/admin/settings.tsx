@@ -172,7 +172,7 @@ function Page() {
               <DialogContent>
                 <DialogTitle>Éditeur de modèle - facture / reçu</DialogTitle>
                 <div className="mt-4">
-                  <EditorCanvas onSaved={() => { toast.success('Modèle personnalisé enregistré'); qc.invalidateQueries({ queryKey: ['settings'] }); }} />
+                  <EditorCanvas kind="recu" onSaved={() => { toast.success('Modèle personnalisé enregistré'); qc.invalidateQueries({ queryKey: ['settings'] }); }} />
                 </div>
               </DialogContent>
             </Dialog>
