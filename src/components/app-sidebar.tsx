@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt, Users, Wallet, Settings as SettingsIcon,
-  Inbox, UserCog, Zap, Truck, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, HandCoins, Banknote, Activity, FileText,
+  Inbox, UserCog, Zap, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, Activity, FileText,
 } from "lucide-react";
 import logo from "@/assets/brand/logo.png";
 import {
@@ -14,7 +14,6 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
     label: "Pilotage",
     items: [
       { title: "Tableau de bord", url: "/admin", icon: LayoutDashboard },
-      { title: "Caisse", url: "/admin/caisse", icon: Banknote },
       { title: "Vente directe (POS)", url: "/admin/pos", icon: ShoppingCart },
     ],
   },
@@ -35,8 +34,7 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
       { title: "Produits & stock", url: "/admin/products", icon: Package },
       { title: "Traçabilité stock", url: "/admin/stock", icon: Activity },
       { title: "Catégories", url: "/admin/categories", icon: FolderTree },
-      { title: "Fournisseurs", url: "/admin/suppliers", icon: Truck },
-      { title: "Achats", url: "/admin/purchases", icon: Boxes },
+      { title: "Achats & fournisseurs", url: "/admin/purchases", icon: Boxes },
     ],
   },
   {
@@ -44,9 +42,8 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
     items: [
       { title: "Dépenses", url: "/admin/expenses", icon: Wallet },
       { title: "Loyer", url: "/admin/rent", icon: Home },
-      { title: "Employés", url: "/admin/employees", icon: Briefcase },
-      { title: "Salaires", url: "/admin/salaries", icon: HandCoins },
-      { title: "Rapports", url: "/admin/reports", icon: ChartBar },
+      { title: "Employés & salaires", url: "/admin/employees", icon: Briefcase },
+      { title: "Rapports de caisse", url: "/admin/reports", icon: ChartBar },
     ],
   },
   {
