@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { getCustomTemplate } from "@/lib/document-template";
+import { getCustomTemplate, type CanvasElement, type CanvasTemplate, type DocumentKind } from "@/lib/document-template";
 import type { Currency } from "./currency";
 import { formatMoney } from "./currency";
 
@@ -20,6 +20,7 @@ export interface ReceiptData {
   rate: number;
   documentType?: "Facture" | "Reçu";
   template?: "standard" | "pro" | "custom";
+  logoDataUrl?: string;
 }
 
 export interface PurchasePdfData {
@@ -168,39 +169,98 @@ export function downloadReportPdf(data: ReportPdfData) {
   doc.save(`${data.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`);
 }
 
-export function downloadReceipt(data: ReceiptData) {
-  const doc = new jsPDF({ unit: "mm", format: [80, 220] });
-  const w = 80;
-  const custom = data.template === "custom" ? getCustomTemplate() : null;
-  if (custom && custom.elements && custom.elements.length > 0) {
-    // Render a very simple absolute layout from the saved template.
-    const canvasWidth = custom.width ?? 800;
-    const canvasHeight = custom.height ?? 1120;
-    const scaleX = (w - 8) / canvasWidth; // 4mm margin left/right
-    const scaleY = 1; // rely on y scaling using same px->mm ratio as X
-    function repl(text: string | undefined) {
-      if (!text) return "";
-      return text.replace(/\{\{(\w+)\}\}/g, (_, key) => String((data as any)[key] ?? ""));
-    }
-    custom.elements.forEach((el: any) => {
-      const x = 4 + (el.x ?? 0) * scaleX;
-      const y = 8 + (el.y ?? 0) * ( (custom.height ? ( (220 - 16) / custom.height) : scaleX) );
-      if (el.type === "text") {
-        const fontSize = el.fontSize ?? 9;
-        doc.setFontSize(fontSize);
-        doc.setTextColor(el.color ?? "#000000");
-        doc.text(repl(el.text), x, y);
-      } else if (el.type === "rect") {
-        const rw = (el.w ?? 80) * scaleX;
-        const rh = (el.h ?? 30) * scaleX;
-        const [rc, gc, bc] = el.color ? hexToRgbArray(el.color) : [238, 238, 238];
-        doc.setFillColor(rc, gc, bc);
-        doc.rect(x, y, rw, rh, "F");
+function hexToRgbArray(hex: string): [number, number, number] {
+  const sanitized = (hex || "#000000").replace("#", "");
+  if (sanitized.length === 3) {
+    return [
+      parseInt(sanitized[0] + sanitized[0], 16),
+      parseInt(sanitized[1] + sanitized[1], 16),
+      parseInt(sanitized[2] + sanitized[2], 16),
+    ];
+  }
+  const bigint = parseInt(sanitized, 16);
+  return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+}
+
+function buildVariables(data: ReceiptData): Record<string, string> {
+  return {
+    shopName: data.shopName,
+    address: data.address,
+    phone: data.phone,
+    code: data.code,
+    customer: data.customer,
+    date: new Date().toLocaleString("fr-FR"),
+    subtotal: formatMoney(data.subtotal, data.currency, data.rate),
+    discount: formatMoney(data.discount, data.currency, data.rate),
+    total: formatMoney(data.total, data.currency, data.rate),
+    paid: formatMoney(data.paid, data.currency, data.rate),
+    credit: formatMoney(data.credit, data.currency, data.rate),
+  };
+}
+
+function interpolate(text: string, vars: Record<string, string>) {
+  return (text || "").replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? "");
+}
+
+function renderCustomTemplate(doc: jsPDF, tpl: CanvasTemplate, data: ReceiptData) {
+  const vars = buildVariables(data);
+  tpl.elements.forEach((el: CanvasElement) => {
+    if (el.type === "rect") {
+      const [r, g, b] = hexToRgbArray(el.fill ?? "#EEEEEE");
+      doc.setFillColor(r, g, b);
+      doc.rect(el.x, el.y, el.w ?? 40, el.h ?? 10, "F");
+    } else if (el.type === "line") {
+      const [r, g, b] = hexToRgbArray(el.color ?? "#000000");
+      doc.setDrawColor(r, g, b);
+      doc.setLineWidth(el.strokeWidth ?? 0.4);
+      doc.line(el.x, el.y, el.x + (el.w ?? 60), el.y);
+    } else if (el.type === "image") {
+      if (data.logoDataUrl) {
+        try { doc.addImage(data.logoDataUrl, "PNG", el.x, el.y, el.w ?? 30, el.h ?? 15); } catch { /* ignore */ }
       }
-    });
-    doc.save(`recu-${data.code}.pdf`);
+    } else if (el.type === "text") {
+      const [r, g, b] = hexToRgbArray(el.color ?? "#000000");
+      doc.setTextColor(r, g, b);
+      doc.setFontSize(el.fontSize ?? 10);
+      doc.setFont("helvetica", el.bold ? "bold" : el.italic ? "italic" : "normal");
+      const txt = interpolate(el.text ?? "", vars);
+      doc.text(txt, el.x, el.y, { align: (el.align ?? "left") as "left" | "center" | "right" });
+    } else if (el.type === "items_table") {
+      const cols = el.columns ?? ["name", "qty", "unit", "total"];
+      const head = cols.map((c) => c === "name" ? "Article" : c === "qty" ? "Qt" : c === "unit" ? "P.U." : "Total");
+      const body = data.items.map((it) => cols.map((c) => {
+        if (c === "name") return it.name;
+        if (c === "qty") return String(it.qty);
+        if (c === "unit") return formatMoney(it.unit, data.currency, data.rate);
+        return formatMoney(it.total, data.currency, data.rate);
+      }));
+      autoTable(doc, {
+        startY: el.y,
+        head: [head],
+        body,
+        styles: { fontSize: el.fontSize ?? 9, cellPadding: 1 },
+        headStyles: { fillColor: hexToRgbArray(el.headerFill ?? "#0B1E3F"), textColor: hexToRgbArray(el.headerColor ?? "#FFFFFF") },
+        margin: { left: el.x, right: Math.max(0, tpl.pageWidth - el.x - (el.w ?? tpl.pageWidth - el.x * 2)) },
+        theme: "grid",
+      });
+    }
+  });
+  // Reset text color for safety
+  doc.setTextColor(0, 0, 0);
+}
+
+export function downloadReceipt(data: ReceiptData) {
+  const kind: DocumentKind = data.documentType === "Facture" ? "facture" : "recu";
+  if (data.template === "custom") {
+    const tpl = getCustomTemplate(kind);
+    const doc = new jsPDF({ unit: "mm", format: [tpl.pageWidth, tpl.pageHeight] });
+    renderCustomTemplate(doc, tpl, data);
+    doc.save(`${kind}-${data.code}.pdf`);
     return;
   }
+
+  const doc = new jsPDF({ unit: "mm", format: [80, 220] });
+  const w = 80;
   const isPro = data.template === "pro";
   let y = 8;
 
@@ -256,15 +316,4 @@ export function downloadReceipt(data: ReceiptData) {
   doc.text("Merci de votre confiance.", w / 2, y2, { align: "center" });
 
   doc.save(`recu-${data.code}.pdf`);
-}
-function hexToRgbArray(hex: string) {
-  const sanitized = hex.replace("#", "");
-  const bigint = parseInt(sanitized, 16);
-  if (sanitized.length === 6) {
-    return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
-  }
-  if (sanitized.length === 3) {
-    return [parseInt(sanitized[0] + sanitized[0], 16), parseInt(sanitized[1] + sanitized[1], 16), parseInt(sanitized[2] + sanitized[2], 16)];
-  }
-  return [0, 0, 0];
 }
