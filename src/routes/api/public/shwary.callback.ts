@@ -24,12 +24,14 @@ export const Route = createFileRoute("/api/public/shwary/callback")({
           } else if (body.status === "failed" || body.status === "cancelled") {
             update.paid = false;
           }
-          const { data: order } = await supabaseAdmin
-            .from("online_orders")
+          const { data: order } = await (supabaseAdmin.from("online_orders") as unknown as {
+            update: (u: Record<string, unknown>) => { eq: (c: string, v: string) => { select: (s: string) => { maybeSingle: () => Promise<{ data: { id: string; code: string; customer_name: string } | null }> } } };
+          })
             .update(update)
             .eq("payment_ref", body.id)
             .select("id, code, customer_name")
             .maybeSingle();
+
 
           if (order && body.status === "completed") {
             await supabaseAdmin.from("notifications").insert({
