@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/format";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar,
 } from "recharts";
-import { AlertTriangle, DollarSign, ShoppingCart, Package, Users, Banknote, HandCoins, ArrowRight } from "lucide-react";
+import { AlertTriangle, DollarSign, ShoppingCart, Package, Users, Banknote, HandCoins, ArrowRight, Store } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: DashboardPage,
@@ -99,8 +99,10 @@ function DashboardPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="lg" className="gap-2 bg-white/10 border-white/20 text-primary-foreground hover:bg-white/20"><Link to="/boutique" target="_blank" rel="noreferrer"><ArrowRight className="h-4 w-4" />Voir le site</Link></Button>
-            <Button asChild size="lg" className="gap-2 bg-energy text-energy-foreground hover:bg-energy/90"><Link to="/admin/caisse"><Banknote className="h-4 w-4" />Caisse</Link></Button>
+            <Button asChild size="lg" className="gap-2 bg-white text-primary hover:bg-white/90"><Link to="/admin/pos"><Store className="h-4 w-4" />Vente directe</Link></Button>
+            <Button asChild size="lg" className="gap-2 bg-energy text-energy-foreground hover:bg-energy/90"><Link to="/admin/reports"><Banknote className="h-4 w-4" />Rapport de caisse</Link></Button>
           </div>
+
         </div>
       </div>
 
