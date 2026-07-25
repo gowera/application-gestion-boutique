@@ -91,7 +91,7 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
   const canvasHeight = template.pageHeight * PX_PER_MM;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[auto_320px]">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => addEl("text")}><Type className="h-4 w-4 mr-1" />Texte</Button>
@@ -262,6 +262,10 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
           </div>
           <p>Elles sont remplacées automatiquement lors de la génération du document (POS, caisse, factures…).</p>
         </div>
+      </div>
+
+      <div className="min-h-[600px] xl:block">
+        <TemplatePreview template={template} docLabel={kind === "facture" ? "Facture" : "Reçu"} />
       </div>
     </div>
   );
