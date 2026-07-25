@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt, Users, Wallet, Settings as SettingsIcon,
-  Inbox, UserCog, Zap, Truck, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, HandCoins, Banknote,
+  Inbox, UserCog, Zap, Truck, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, HandCoins, Banknote, Activity,
 } from "lucide-react";
 import logo from "@/assets/brand/logo.png";
 import {
@@ -32,6 +32,7 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
     label: "Stock & achats",
     items: [
       { title: "Produits & stock", url: "/admin/products", icon: Package },
+      { title: "Traçabilité stock", url: "/admin/stock", icon: Activity },
       { title: "Catégories", url: "/admin/categories", icon: FolderTree },
       { title: "Fournisseurs", url: "/admin/suppliers", icon: Truck },
       { title: "Achats", url: "/admin/purchases", icon: Boxes },

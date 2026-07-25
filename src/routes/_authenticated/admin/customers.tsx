@@ -85,8 +85,9 @@ function CustomersTab() {
         ? await supabase.from("customers").update(payload).eq("id", c.id)
         : await supabase.from("customers").insert(payload);
       if (error) throw error;
+      return c;
     },
-    onSuccess: async () => {
+    onSuccess: async (c) => {
       if (c.id) {
         await createNotification({ title: "Client mis à jour", message: `${c.name} a été mis à jour.`, type: "info", entity_type: "customer" });
       } else {

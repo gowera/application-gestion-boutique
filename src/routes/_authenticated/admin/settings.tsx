@@ -55,6 +55,7 @@ function Page() {
     delivery_zones: JSON.stringify((data as any).delivery_zones ?? []),
     terms: (data as any).terms ?? "",
     privacy_policy: (data as any).privacy_policy ?? "",
+    backup_enabled: (data as any).backup_enabled ?? false,
   }); }, [data]);
   const save = useMutation({
     mutationFn: async () => {

@@ -112,6 +112,7 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           image_url: string | null
           name: string
@@ -120,6 +121,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           image_url?: string | null
           name: string
@@ -128,6 +130,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           image_url?: string | null
           name?: string
@@ -188,6 +191,7 @@ export type Database = {
           balance: number
           created_at: string
           credit_limit: number
+          deleted_at: string | null
           email: string | null
           id: string
           is_archived: boolean
@@ -201,6 +205,7 @@ export type Database = {
           balance?: number
           created_at?: string
           credit_limit?: number
+          deleted_at?: string | null
           email?: string | null
           id?: string
           is_archived?: boolean
@@ -214,6 +219,7 @@ export type Database = {
           balance?: number
           created_at?: string
           credit_limit?: number
+          deleted_at?: string | null
           email?: string | null
           id?: string
           is_archived?: boolean
@@ -224,11 +230,48 @@ export type Database = {
         }
         Relationships: []
       }
+      documents_settings: {
+        Row: {
+          accent_color: string | null
+          content: string | null
+          created_at: string
+          document_type: string
+          id: string
+          logo_url: string | null
+          signature_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          content?: string | null
+          created_at?: string
+          document_type: string
+          id?: string
+          logo_url?: string | null
+          signature_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          content?: string | null
+          created_at?: string
+          document_type?: string
+          id?: string
+          logo_url?: string | null
+          signature_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           active: boolean
           address: string | null
           created_at: string
+          deleted_at: string | null
           email: string | null
           full_name: string
           hired_at: string | null
@@ -248,15 +291,19 @@ export type Database = {
           active?: boolean
           address?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           full_name: string
           hired_at?: string | null
           id?: string
+          is_terminated?: boolean
           monthly_salary_usd?: number
           phone?: string | null
           photo_url?: string | null
           position?: string | null
           role?: Database["public"]["Enums"]["app_role"] | null
+          terminated_at?: string | null
+          termination_reason?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -264,6 +311,7 @@ export type Database = {
           active?: boolean
           address?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           full_name?: string
           hired_at?: string | null
@@ -456,6 +504,39 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          created_at: string
+          email: string | null
+          expires_at: string
+          id: string
+          phone: string | null
+          role: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          expires_at: string
+          id?: string
+          phone?: string | null
+          role?: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          phone?: string | null
+          role?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       message_replies: {
         Row: {
           body: string
@@ -490,6 +571,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
       }
       online_orders: {
         Row: {
@@ -672,19 +786,61 @@ export type Database = {
           },
         ]
       }
+      product_suppliers: {
+        Row: {
+          created_at: string
+          id: string
+          preferred: boolean
+          product_id: string
+          supplier_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          preferred?: boolean
+          product_id: string
+          supplier_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          preferred?: boolean
+          product_id?: string
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_suppliers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_suppliers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           brand: string | null
           category_id: string | null
           cost_price: number
           created_at: string
+          deleted_at: string | null
           description: string | null
           id: string
           images: string[]
           low_stock_threshold: number | null
           name: string
           sale_price: number
+          show_stock_public: boolean
           sku: string | null
+          slug: string | null
           status: Database["public"]["Enums"]["product_status"]
           stock: number
           updated_at: string
@@ -694,13 +850,16 @@ export type Database = {
           category_id?: string | null
           cost_price?: number
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           id?: string
           images?: string[]
           low_stock_threshold?: number | null
           name: string
           sale_price?: number
+          show_stock_public?: boolean
           sku?: string | null
+          slug?: string | null
           status?: Database["public"]["Enums"]["product_status"]
           stock?: number
           updated_at?: string
@@ -710,13 +869,16 @@ export type Database = {
           category_id?: string | null
           cost_price?: number
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           id?: string
           images?: string[]
           low_stock_threshold?: number | null
           name?: string
           sale_price?: number
+          show_stock_public?: boolean
           sku?: string | null
+          slug?: string | null
           status?: Database["public"]["Enums"]["product_status"]
           stock?: number
           updated_at?: string
@@ -813,6 +975,8 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          delivered_at: string | null
+          expected_delivery_at: string | null
           id: string
           note: string | null
           received_at: string | null
@@ -827,6 +991,8 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
+          delivered_at?: string | null
+          expected_delivery_at?: string | null
           id?: string
           note?: string | null
           received_at?: string | null
@@ -841,6 +1007,8 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
+          delivered_at?: string | null
+          expected_delivery_at?: string | null
           id?: string
           note?: string | null
           received_at?: string | null
@@ -944,14 +1112,14 @@ export type Database = {
         Row: {
           advance: boolean
           amount_usd: number
-          confirmed_at: string | null
           confirmation_token: string | null
+          confirmed_at: string | null
           created_at: string
           employee_id: string
           id: string
+          method: Database["public"]["Enums"]["payment_method"] | null
           note: string | null
           paid_at: string
-          payment_method: string | null
           period_end: string
           period_month: string | null
           period_start: string
@@ -961,14 +1129,14 @@ export type Database = {
         Insert: {
           advance?: boolean
           amount_usd: number
-          confirmed_at?: string | null
           confirmation_token?: string | null
+          confirmed_at?: string | null
           created_at?: string
           employee_id: string
           id?: string
+          method?: Database["public"]["Enums"]["payment_method"] | null
           note?: string | null
           paid_at?: string
-          payment_method?: string | null
           period_end: string
           period_month?: string | null
           period_start: string
@@ -978,14 +1146,14 @@ export type Database = {
         Update: {
           advance?: boolean
           amount_usd?: number
-          confirmed_at?: string | null
           confirmation_token?: string | null
+          confirmed_at?: string | null
           created_at?: string
           employee_id?: string
           id?: string
+          method?: Database["public"]["Enums"]["payment_method"] | null
           note?: string | null
           paid_at?: string
-          payment_method?: string | null
           period_end?: string
           period_month?: string | null
           period_start?: string
@@ -1122,42 +1290,63 @@ export type Database = {
       settings: {
         Row: {
           address: string | null
+          document_theme_color: string | null
           email: string | null
           id: number
           invoice_prefix: string
+          legal_mentions: string | null
           logo_url: string | null
           low_stock_threshold: number
+          map_lat: number | null
+          map_lng: number | null
+          payment_gateways: Json | null
           phone: string | null
           primary_currency: Database["public"]["Enums"]["currency_code"]
+          services_gallery: Json | null
           shop_name: string
+          trash_retention_days: number
           updated_at: string
           usd_to_cdf_rate: number
           whatsapp: string | null
         }
         Insert: {
           address?: string | null
+          document_theme_color?: string | null
           email?: string | null
           id?: number
           invoice_prefix?: string
+          legal_mentions?: string | null
           logo_url?: string | null
           low_stock_threshold?: number
+          map_lat?: number | null
+          map_lng?: number | null
+          payment_gateways?: Json | null
           phone?: string | null
           primary_currency?: Database["public"]["Enums"]["currency_code"]
+          services_gallery?: Json | null
           shop_name?: string
+          trash_retention_days?: number
           updated_at?: string
           usd_to_cdf_rate?: number
           whatsapp?: string | null
         }
         Update: {
           address?: string | null
+          document_theme_color?: string | null
           email?: string | null
           id?: number
           invoice_prefix?: string
+          legal_mentions?: string | null
           logo_url?: string | null
           low_stock_threshold?: number
+          map_lat?: number | null
+          map_lng?: number | null
+          payment_gateways?: Json | null
           phone?: string | null
           primary_currency?: Database["public"]["Enums"]["currency_code"]
+          services_gallery?: Json | null
           shop_name?: string
+          trash_retention_days?: number
           updated_at?: string
           usd_to_cdf_rate?: number
           whatsapp?: string | null
@@ -1213,6 +1402,7 @@ export type Database = {
           address: string | null
           balance_usd: number
           created_at: string
+          deleted_at: string | null
           email: string | null
           id: string
           name: string
@@ -1224,6 +1414,7 @@ export type Database = {
           address?: string | null
           balance_usd?: number
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           name: string
@@ -1235,6 +1426,7 @@ export type Database = {
           address?: string | null
           balance_usd?: number
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           name?: string
@@ -1318,15 +1510,27 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_trash_items: {
+        Args: never
+        Returns: {
+          deleted_at: string
+          entity_name: string
+          id: string
+          table_name: string
+        }[]
+      }
       next_intervention_code: { Args: never; Returns: string }
       next_order_code: { Args: never; Returns: string }
       next_purchase_code: { Args: never; Returns: string }
       next_sale_code: { Args: never; Returns: string }
+      purge_trash_item: { Args: { _id: string }; Returns: undefined }
       receive_purchase: { Args: { _purchase_id: string }; Returns: undefined }
       record_customer_payment: {
         Args: { _amount: number; _customer_id: string; _note?: string }
         Returns: string
       }
+      restore_trash_item: { Args: { _id: string }; Returns: undefined }
+      slugify: { Args: { "": string }; Returns: string }
     }
     Enums: {
       app_role:

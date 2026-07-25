@@ -12,14 +12,4 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "src/server.ts" },
   },
-  environments: {
-    server: {
-      build: {
-        outDir: "dist/server",
-        rollupOptions: {
-          input: "src/server.ts",
-        },
-      },
-    },
-  },
 });

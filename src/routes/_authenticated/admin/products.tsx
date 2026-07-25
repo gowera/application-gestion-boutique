@@ -29,7 +29,7 @@ type Product = {
 
 type Supplier = { id: string; name: string };
 
-type ProductSupplier = { id: string; supplier_id: string; preferred: boolean };
+type ProductSupplier = { supplier_id: string; preferred: boolean };
 
 function slugify(value: string) {
   return value
@@ -172,6 +172,7 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const isEdit = !!product;
   const qc = useQueryClient();
+  const { data: settings } = useSettings();
 
   useEffect(() => {
     if (open) {
