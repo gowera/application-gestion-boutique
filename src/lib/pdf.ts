@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { getCustomTemplate } from "@/lib/document-template";
 import type { Currency } from "./currency";
 import { formatMoney } from "./currency";
 
@@ -18,6 +19,7 @@ export interface ReceiptData {
   currency: Currency;
   rate: number;
   documentType?: "Facture" | "Reçu";
+  template?: "standard" | "pro";
 }
 
 export interface PurchasePdfData {
@@ -167,13 +169,48 @@ export function downloadReportPdf(data: ReportPdfData) {
 }
 
 export function downloadReceipt(data: ReceiptData) {
-  const doc = new jsPDF({ unit: "mm", format: [80, 200] });
+  const doc = new jsPDF({ unit: "mm", format: [80, 220] });
   const w = 80;
+  const custom = data.template === "custom" ? getCustomTemplate() : null;
+  if (custom && custom.elements && custom.elements.length > 0) {
+    // Render a very simple absolute layout from the saved template.
+    const canvasWidth = custom.width ?? 800;
+    const canvasHeight = custom.height ?? 1120;
+    const scaleX = (w - 8) / canvasWidth; // 4mm margin left/right
+    const scaleY = 1; // rely on y scaling using same px->mm ratio as X
+    function repl(text: string | undefined) {
+      if (!text) return "";
+      return text.replace(/\{\{(\w+)\}\}/g, (_, key) => String((data as any)[key] ?? ""));
+    }
+    custom.elements.forEach((el: any) => {
+      const x = 4 + (el.x ?? 0) * scaleX;
+      const y = 8 + (el.y ?? 0) * ( (custom.height ? ( (220 - 16) / custom.height) : scaleX) );
+      if (el.type === "text") {
+        const fontSize = el.fontSize ?? 9;
+        doc.setFontSize(fontSize);
+        doc.setTextColor(el.color ?? "#000000");
+        doc.text(repl(el.text), x, y);
+      } else if (el.type === "rect") {
+        const rw = (el.w ?? 80) * scaleX;
+        const rh = (el.h ?? 30) * scaleX;
+        doc.setFillColor(el.color ? hexToRgbArray(el.color) : [238, 238, 238]);
+        doc.rect(x, y, rw, rh, "F");
+      }
+    });
+    doc.save(`recu-${data.code}.pdf`);
+    return;
+  }
+  const isPro = data.template === "pro";
   let y = 8;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
-  doc.text(data.shopName, w / 2, y, { align: "center" });
+  if (isPro) {
+    doc.setDrawColor(17, 30, 63);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(3, 4, w - 6, 24, 1.5, 1.5);
+  }
+  doc.text(data.shopName.toUpperCase(), w / 2, y, { align: "center" });
   y += 5;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
@@ -218,4 +255,15 @@ export function downloadReceipt(data: ReceiptData) {
   doc.text("Merci de votre confiance.", w / 2, y2, { align: "center" });
 
   doc.save(`recu-${data.code}.pdf`);
+}
+function hexToRgbArray(hex: string) {
+  const sanitized = hex.replace("#", "");
+  const bigint = parseInt(sanitized, 16);
+  if (sanitized.length === 6) {
+    return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+  }
+  if (sanitized.length === 3) {
+    return [parseInt(sanitized[0] + sanitized[0], 16), parseInt(sanitized[1] + sanitized[1], 16), parseInt(sanitized[2] + sanitized[2], 16)];
+  }
+  return [0, 0, 0];
 }
