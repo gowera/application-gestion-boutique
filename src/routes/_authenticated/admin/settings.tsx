@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSettings, type Currency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
@@ -230,7 +231,10 @@ function Page() {
             <div><Label>TVA par défaut (%)</Label><Input type="number" step="0.01" value={ex("vat_rate", 0)} onChange={(e) => setEx("vat_rate", +e.target.value)} /></div>
             <div><Label>Remise par défaut (%)</Label><Input type="number" step="0.01" value={ex("default_discount", 0)} onChange={(e) => setEx("default_discount", +e.target.value)} /></div>
           </div>
+
+          <ShwarySection />
         </>}
+
 
         {tab === "livraison" && <>
           <div className="flex items-center justify-between rounded border p-3">
