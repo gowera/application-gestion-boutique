@@ -137,6 +137,11 @@ function ProductPage() {
               </Button>
               <Button size="lg" variant="outline" title="Favoris"><Heart className="h-4 w-4" /></Button>
             </div>
+            <Link to="/produit/$productId" params={{ productId: p.id }}>
+              <Button size="lg" className="mt-3 w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                <Zap className="mr-2 h-4 w-4" /> Voir tous les détails
+              </Button>
+            </Link>
             <Link to="/panier">
               <Button size="lg" variant="outline" className="mt-3 w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground">
                 Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
