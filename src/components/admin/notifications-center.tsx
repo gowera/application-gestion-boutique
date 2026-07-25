@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCheck } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
@@ -78,6 +78,22 @@ export function NotificationsCenter() {
   });
 
   const unread = notifications.filter((n) => !n.is_read).length;
+  const prevUnreadRef = useRef<number | null>(null);
+  const [pulse, setPulse] = useState(false);
+
+  useEffect(() => {
+    if (prevUnreadRef.current !== null && unread > prevUnreadRef.current) {
+      const latest = notifications.find((n) => !n.is_read);
+      if (latest) {
+        toast(latest.title, { description: latest.message });
+      }
+      setPulse(true);
+      const t = setTimeout(() => setPulse(false), 4000);
+      return () => clearTimeout(t);
+    }
+    prevUnreadRef.current = unread;
+  }, [unread, notifications]);
+
 
   const handleNotificationClick = (item: NotificationRow) => {
     if (!item.is_read) {
@@ -109,9 +125,17 @@ export function NotificationsCenter() {
   return (
     <>
       <Button variant="ghost" size="icon" className="relative" onClick={() => setOpen(true)}>
-        <Bell className="h-4 w-4" />
-        {unread > 0 && <Badge className="absolute -right-1 -top-1 h-5 min-w-5 rounded-full px-1 text-[10px]">{unread}</Badge>}
+        <Bell className={`h-4 w-4 ${pulse ? "animate-bounce text-primary" : ""}`} />
+        {unread > 0 && (
+          <>
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center">
+              {pulse && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />}
+              <Badge className="relative h-5 min-w-5 rounded-full px-1 text-[10px]">{unread}</Badge>
+            </span>
+          </>
+        )}
       </Button>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl">
