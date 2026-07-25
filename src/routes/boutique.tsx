@@ -106,6 +106,7 @@ function ShopPage() {
               <SelectItem value="price_desc">Prix décroissant</SelectItem>
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={share} className="gap-1"><Share2 className="h-4 w-4" />Partager</Button>
           {hasActive && (
             <Button variant="ghost" size="sm" onClick={reset} className="gap-1"><X className="h-4 w-4" />Réinitialiser</Button>
           )}
