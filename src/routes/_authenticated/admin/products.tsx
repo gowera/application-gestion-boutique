@@ -172,6 +172,7 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const isEdit = !!product;
   const qc = useQueryClient();
+  const { data: settings } = useSettings();
 
   useEffect(() => {
     if (open) {
