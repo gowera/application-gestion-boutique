@@ -37,7 +37,7 @@ function PosPage() {
   const [note, setNote] = useState("");
   const [isCredit, setIsCredit] = useState(false);
   const [dueDate, setDueDate] = useState("");
-  const [documentType, setDocumentType] = useState<"Facture" | "Reçu">("Reçu");
+  const [documentType, setDocumentType] = useState<"Facture" | "Reçu" | "Aucun">("Reçu");
   const qc = useQueryClient();
 
   const { data: products } = useQuery({
