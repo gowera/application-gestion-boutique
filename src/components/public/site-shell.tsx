@@ -6,12 +6,10 @@ import { useCart } from "@/hooks/use-cart";
 import logo from "@/assets/brand/logo.png";
 
 const NAV = [
-  { to: "/boutique", label: "Catalogue" },
-  { to: "/services/$slug", params: { slug: "solaire" }, label: "Énergie Solaire" },
-  { to: "/services/$slug", params: { slug: "cctv" }, label: "CCTV & Sécurité" },
-  { to: "/services/$slug", params: { slug: "reseaux" }, label: "Réseaux" },
-  { to: "/devis", label: "Devis" },
+  { to: "/boutique", label: "Boutique" },
   { to: "/services", label: "Services" },
+  { to: "/devis", label: "Devis" },
+  { to: "/contact", label: "Contact" },
 ];
 
 export function SiteShell({ children }: { children: ReactNode }) {
