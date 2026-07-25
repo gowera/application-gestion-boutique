@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 import { downloadReceipt } from "@/lib/pdf";
 import { getStoredDocumentTemplate } from "@/lib/document-template";
+import { issueDocumentNumber, labelToDocType } from "@/lib/documents";
 import { CustomerQuickAdd } from "@/components/customer-quick-add";
 import { Checkbox } from "@/components/ui/checkbox";
 
