@@ -233,14 +233,11 @@ export type Database = {
           full_name: string
           hired_at: string | null
           id: string
-          is_terminated: boolean
           monthly_salary_usd: number
           phone: string | null
           photo_url: string | null
           position: string | null
           role: Database["public"]["Enums"]["app_role"] | null
-          terminated_at: string | null
-          termination_reason: string | null
           updated_at: string
           user_id: string | null
         }
@@ -268,14 +265,11 @@ export type Database = {
           full_name?: string
           hired_at?: string | null
           id?: string
-          is_terminated?: boolean
           monthly_salary_usd?: number
           phone?: string | null
           photo_url?: string | null
           position?: string | null
           role?: Database["public"]["Enums"]["app_role"] | null
-          terminated_at?: string | null
-          termination_reason?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -944,52 +938,40 @@ export type Database = {
         Row: {
           advance: boolean
           amount_usd: number
-          confirmed_at: string | null
-          confirmation_token: string | null
           created_at: string
           employee_id: string
           id: string
+          method: Database["public"]["Enums"]["payment_method"] | null
           note: string | null
           paid_at: string
-          payment_method: string | null
           period_end: string
-          period_month: string | null
           period_start: string
-          status: string
           user_id: string | null
         }
         Insert: {
           advance?: boolean
           amount_usd: number
-          confirmed_at?: string | null
-          confirmation_token?: string | null
           created_at?: string
           employee_id: string
           id?: string
+          method?: Database["public"]["Enums"]["payment_method"] | null
           note?: string | null
           paid_at?: string
-          payment_method?: string | null
           period_end: string
-          period_month?: string | null
           period_start: string
-          status?: string
           user_id?: string | null
         }
         Update: {
           advance?: boolean
           amount_usd?: number
-          confirmed_at?: string | null
-          confirmation_token?: string | null
           created_at?: string
           employee_id?: string
           id?: string
+          method?: Database["public"]["Enums"]["payment_method"] | null
           note?: string | null
           paid_at?: string
-          payment_method?: string | null
           period_end?: string
-          period_month?: string | null
           period_start?: string
-          status?: string
           user_id?: string | null
         }
         Relationships: [
