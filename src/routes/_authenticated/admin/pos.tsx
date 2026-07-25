@@ -263,6 +263,27 @@ function PosPage() {
             </p>
           </div>
           <Input placeholder="Note (optionnel)" value={note} onChange={(e) => setNote(e.target.value)} />
+          <SalePreviewDialog
+            disabled={cart.length === 0 || documentType === "Aucun"}
+            buildData={(): ReceiptData | null => {
+              if (cart.length === 0) return null;
+              const customerName = customers?.find((c) => c.id === customerId)?.name ?? "Client anonyme";
+              const docLabel: "Facture" | "Reçu" = documentType === "Facture" ? "Facture" : "Reçu";
+              return {
+                shopName: settings?.shop_name ?? "CONETEC",
+                address: settings?.address ?? "",
+                phone: settings?.phone ?? "",
+                code: "APERÇU",
+                customer: customerName,
+                items: cart.map((l) => ({ name: l.name, qty: l.qty, unit: l.unit_price_usd, total: l.qty * l.unit_price_usd - l.discount_usd })),
+                subtotal, discount, total,
+                paid: paidUsd, credit: Math.max(remaining, 0),
+                currency, rate,
+                documentType: docLabel,
+                template: "custom",
+              };
+            }}
+          />
           <Button className="w-full" size="lg" disabled={submit.isPending || cart.length === 0} onClick={() => submit.mutate()}>
             {submit.isPending ? "Enregistrement…" : "Valider la vente"}
           </Button>
