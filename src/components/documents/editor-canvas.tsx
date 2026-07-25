@@ -12,6 +12,7 @@ import {
   getCustomTemplate, setCustomTemplate, resetCustomTemplate, newElement,
   AVAILABLE_VARIABLES, setStoredDocumentTemplate,
 } from "@/lib/document-template";
+import { TemplatePreview } from "@/components/documents/template-preview";
 import { toast } from "sonner";
 
 const PX_PER_MM = 3;

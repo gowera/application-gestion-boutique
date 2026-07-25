@@ -48,6 +48,7 @@ import { Route as AuthenticatedAdminDocumentsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin/categories'
 import { Route as AuthenticatedAdminCaisseRouteImport } from './routes/_authenticated/admin/caisse'
+import { Route as AuthenticatedAdminDocumentsHistoryRouteImport } from './routes/_authenticated/admin/documents/history'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
@@ -260,6 +261,12 @@ const AuthenticatedAdminCaisseRoute =
     path: '/admin/caisse',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminDocumentsHistoryRoute =
+  AuthenticatedAdminDocumentsHistoryRouteImport.update({
+    id: '/history',
+    path: '/history',
+    getParentRoute: () => AuthenticatedAdminDocumentsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -278,7 +285,7 @@ export interface FileRoutesByFullPath {
   '/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
-  '/admin/documents': typeof AuthenticatedAdminDocumentsRoute
+  '/admin/documents': typeof AuthenticatedAdminDocumentsRouteWithChildren
   '/admin/employees': typeof AuthenticatedAdminEmployeesRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/admin/history': typeof AuthenticatedAdminHistoryRoute
@@ -300,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/salaire/confirmer/$token': typeof SalaireConfirmerTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/admin/documents/history': typeof AuthenticatedAdminDocumentsHistoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -318,7 +326,7 @@ export interface FileRoutesByTo {
   '/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
-  '/admin/documents': typeof AuthenticatedAdminDocumentsRoute
+  '/admin/documents': typeof AuthenticatedAdminDocumentsRouteWithChildren
   '/admin/employees': typeof AuthenticatedAdminEmployeesRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/admin/history': typeof AuthenticatedAdminHistoryRoute
@@ -340,6 +348,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/salaire/confirmer/$token': typeof SalaireConfirmerTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/admin/documents/history': typeof AuthenticatedAdminDocumentsHistoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -360,7 +369,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
-  '/_authenticated/admin/documents': typeof AuthenticatedAdminDocumentsRoute
+  '/_authenticated/admin/documents': typeof AuthenticatedAdminDocumentsRouteWithChildren
   '/_authenticated/admin/employees': typeof AuthenticatedAdminEmployeesRoute
   '/_authenticated/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/_authenticated/admin/history': typeof AuthenticatedAdminHistoryRoute
@@ -382,6 +391,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/salaire/confirmer/$token': typeof SalaireConfirmerTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/admin/documents/history': typeof AuthenticatedAdminDocumentsHistoryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -424,6 +434,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/salaire/confirmer/$token'
     | '/admin/'
+    | '/admin/documents/history'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -464,6 +475,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/salaire/confirmer/$token'
     | '/admin'
+    | '/admin/documents/history'
   id:
     | '__root__'
     | '/'
@@ -505,6 +517,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/users'
     | '/salaire/confirmer/$token'
     | '/_authenticated/admin/'
+    | '/_authenticated/admin/documents/history'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -798,14 +811,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCaisseRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/documents/history': {
+      id: '/_authenticated/admin/documents/history'
+      path: '/history'
+      fullPath: '/admin/documents/history'
+      preLoaderRoute: typeof AuthenticatedAdminDocumentsHistoryRouteImport
+      parentRoute: typeof AuthenticatedAdminDocumentsRoute
+    }
   }
 }
+
+interface AuthenticatedAdminDocumentsRouteChildren {
+  AuthenticatedAdminDocumentsHistoryRoute: typeof AuthenticatedAdminDocumentsHistoryRoute
+}
+
+const AuthenticatedAdminDocumentsRouteChildren: AuthenticatedAdminDocumentsRouteChildren =
+  {
+    AuthenticatedAdminDocumentsHistoryRoute:
+      AuthenticatedAdminDocumentsHistoryRoute,
+  }
+
+const AuthenticatedAdminDocumentsRouteWithChildren =
+  AuthenticatedAdminDocumentsRoute._addFileChildren(
+    AuthenticatedAdminDocumentsRouteChildren,
+  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminCaisseRoute: typeof AuthenticatedAdminCaisseRoute
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRoute
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
-  AuthenticatedAdminDocumentsRoute: typeof AuthenticatedAdminDocumentsRoute
+  AuthenticatedAdminDocumentsRoute: typeof AuthenticatedAdminDocumentsRouteWithChildren
   AuthenticatedAdminEmployeesRoute: typeof AuthenticatedAdminEmployeesRoute
   AuthenticatedAdminExpensesRoute: typeof AuthenticatedAdminExpensesRoute
   AuthenticatedAdminHistoryRoute: typeof AuthenticatedAdminHistoryRoute
@@ -832,7 +867,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminCaisseRoute: AuthenticatedAdminCaisseRoute,
   AuthenticatedAdminCategoriesRoute: AuthenticatedAdminCategoriesRoute,
   AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
-  AuthenticatedAdminDocumentsRoute: AuthenticatedAdminDocumentsRoute,
+  AuthenticatedAdminDocumentsRoute:
+    AuthenticatedAdminDocumentsRouteWithChildren,
   AuthenticatedAdminEmployeesRoute: AuthenticatedAdminEmployeesRoute,
   AuthenticatedAdminExpensesRoute: AuthenticatedAdminExpensesRoute,
   AuthenticatedAdminHistoryRoute: AuthenticatedAdminHistoryRoute,
