@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/api/public/shwary/callback")({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: async ({ request }: { request: Request }) => {
         try {
           const body = (await request.json()) as {
             id?: string;
