@@ -1,3 +1,4 @@
+import { StorageImage } from "@/components/storage-image";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { SiteShell } from "@/components/public/site-shell";
