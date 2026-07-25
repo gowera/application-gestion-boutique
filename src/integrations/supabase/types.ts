@@ -1357,6 +1357,7 @@ export type Database = {
           address: string | null
           document_theme_color: string | null
           email: string | null
+          extras: Json
           id: number
           invoice_prefix: string
           legal_mentions: string | null
@@ -1378,6 +1379,7 @@ export type Database = {
           address?: string | null
           document_theme_color?: string | null
           email?: string | null
+          extras?: Json
           id?: number
           invoice_prefix?: string
           legal_mentions?: string | null
@@ -1399,6 +1401,7 @@ export type Database = {
           address?: string | null
           document_theme_color?: string | null
           email?: string | null
+          extras?: Json
           id?: number
           invoice_prefix?: string
           legal_mentions?: string | null
