@@ -247,14 +247,18 @@ function PosPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Type de document</Label>
-            <Select value={documentType} onValueChange={(v) => setDocumentType(v as "Facture" | "Reçu")}>
+            <Label>Document à générer</Label>
+            <Select value={documentType} onValueChange={(v) => setDocumentType(v as "Facture" | "Reçu" | "Aucun")}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Reçu">Reçu</SelectItem>
-                <SelectItem value="Facture">Facture</SelectItem>
+                <SelectItem value="Reçu">Reçu (par défaut)</SelectItem>
+                <SelectItem value="Facture">Facture (à la demande du client)</SelectItem>
+                <SelectItem value="Aucun">Aucun document</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              {documentType === "Aucun" ? "Aucun document ne sera généré." : `Un ${documentType.toLowerCase()} numéroté sera généré automatiquement.`}
+            </p>
           </div>
           <Input placeholder="Note (optionnel)" value={note} onChange={(e) => setNote(e.target.value)} />
           <Button className="w-full" size="lg" disabled={submit.isPending || cart.length === 0} onClick={() => submit.mutate()}>
