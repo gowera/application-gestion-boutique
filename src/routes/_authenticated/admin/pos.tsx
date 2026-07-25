@@ -16,6 +16,8 @@ import { getStoredDocumentTemplate } from "@/lib/document-template";
 import { issueDocumentNumber, labelToDocType } from "@/lib/documents";
 import { CustomerQuickAdd } from "@/components/customer-quick-add";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SalePreviewDialog } from "@/components/pos/sale-preview-dialog";
+import type { ReceiptData } from "@/lib/pdf";
 
 export const Route = createFileRoute("/_authenticated/admin/pos")({
   component: PosPage,
