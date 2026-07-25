@@ -48,7 +48,7 @@ function ShopPage() {
   const cur = settings?.primary_currency ?? "USD";
 
   const patch = (p: Partial<SavedFilters>) =>
-    navigate({ search: (prev) => ({ ...prev, ...p }), replace: true });
+    navigate({ search: (prev: SavedFilters) => ({ ...prev, ...p }), replace: true });
   const reset = () => navigate({ search: DEFAULTS, replace: true });
   const share = async () => {
     if (typeof window === "undefined") return;
