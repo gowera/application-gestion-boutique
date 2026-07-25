@@ -13,7 +13,8 @@ export function useLocalModeEnabled(): boolean {
   return false;
 }
 
-export async function setAdminSettings(_payload: Record<string, unknown>): Promise<void> {
-  // no-op in Supabase mode
-  return;
+export async function setAdminSettings(payload: Record<string, unknown>): Promise<void> {
+  // @ts-expect-error dynamic settings row
+  const { error } = await supabase.from("settings").update(payload).eq("id", 1);
+  if (error) throw error;
 }
