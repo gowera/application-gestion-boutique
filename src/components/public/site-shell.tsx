@@ -89,7 +89,7 @@ function MainNav() {
         <div className="lg:hidden border-t bg-background">
           <div className="flex flex-col px-4 py-3 gap-1">
             {NAV.map((n) => (
-              <Link key={n.label} to={n.to} params={n.params as never} className="py-2 text-sm" onClick={() => setOpen(false)}>{n.label}</Link>
+              <Link key={n.label} to={n.to} className="py-2 text-sm" onClick={() => setOpen(false)}>{n.label}</Link>
             ))}
             <Link to="/auth" className="py-2 text-sm" onClick={() => setOpen(false)}>Connexion</Link>
           </div>
