@@ -16,13 +16,21 @@ export const Route = createFileRoute("/devis")({ component: QuotePage });
 
 function QuotePage() {
   const [loading, setLoading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", email: "", service: SERVICES[0].title, message: "" });
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name || !form.phone) return toast.error("Nom et téléphone requis");
     setLoading(true);
-    const { error } = await supabase.from("quote_requests").insert({ name: form.name, phone: form.phone, email: form.email || null, service: form.service, message: form.message || null });
+    let attachment_url: string | null = null;
+    if (file) {
+      const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      const up = await supabase.storage.from("quote-attachments").upload(path, file, { upsert: false });
+      if (up.error) { setLoading(false); return toast.error("Envoi de la pièce jointe impossible"); }
+      attachment_url = up.data.path;
+    }
+    const { error } = await supabase.from("quote_requests").insert({ name: form.name, phone: form.phone, email: form.email || null, service: form.service, message: form.message || null, attachment_url });
     setLoading(false);
     if (error) return toast.error("Envoi impossible");
     await createNotification({
@@ -30,6 +38,7 @@ function QuotePage() {
     });
     toast.success("Demande envoyée !");
     setForm({ name: "", phone: "", email: "", service: SERVICES[0].title, message: "" });
+    setFile(null);
   }
 
   return (
@@ -53,6 +62,11 @@ function QuotePage() {
               </Select>
             </div>
             <div><Label>Description du besoin</Label><Textarea rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} /></div>
+            <div>
+              <Label>Pièce jointe (optionnel)</Label>
+              <Input type="file" accept="image/*,application/pdf,.doc,.docx" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              {file && <p className="mt-1 text-xs text-muted-foreground">Fichier sélectionné : {file.name} ({Math.round(file.size / 1024)} Ko)</p>}
+            </div>
             <Button type="submit" size="lg" className="w-full" disabled={loading}>{loading ? "Envoi..." : "Envoyer ma demande"}</Button>
           </form>
         </CardContent></Card>

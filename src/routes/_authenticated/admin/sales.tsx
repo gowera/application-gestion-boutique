@@ -12,6 +12,7 @@ import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { XCircle, Eye, FileDown, Printer } from "lucide-react";
 import { exportToXlsx } from "@/lib/xlsx-export";
+import { downloadTablePdf } from "@/lib/pdf-table";
 import { reprintSaleDocument } from "@/lib/reprint";
 
 export const Route = createFileRoute("/_authenticated/admin/sales")({
@@ -60,7 +61,15 @@ function SalesPage() {
           <h1 className="text-display text-2xl md:text-3xl font-bold">Ventes</h1>
           <p className="text-sm text-muted-foreground">Historique de toutes les ventes.</p>
         </div>
-        <Button variant="outline" onClick={exportAll}><FileDown className="mr-2 h-4 w-4" />Exporter Excel</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportAll}><FileDown className="mr-2 h-4 w-4" />Excel</Button>
+          <Button variant="outline" onClick={() => sales && downloadTablePdf({
+            title: "Historique des ventes",
+            columns: ["Code", "Date", "Client", "Total", "Payé", "Crédit", "Statut"],
+            rows: sales.map((s) => [s.code, formatDate(s.created_at, true), (s as { customers?: { name?: string } }).customers?.name ?? "Anonyme", formatMoney(Number(s.total_usd), currency, rate), formatMoney(Number(s.paid_usd), currency, rate), Number(s.credit_usd) > 0 ? formatMoney(Number(s.credit_usd), currency, rate) : "—", s.status]),
+            filename: "ventes.pdf", orientation: "l",
+          })}><FileDown className="mr-2 h-4 w-4" />PDF</Button>
+        </div>
       </div>
       <Card>
         <CardContent className="p-0">
