@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSettings, type Currency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
-import { setAdminSettings, useLocalModeEnabled } from "@/lib/local/adapter";
+import { setAdminSettings } from "@/lib/local/adapter";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import EditorCanvas from "@/components/documents/editor-canvas";
@@ -11,220 +11,444 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({ component: Page });
 
+type TabId =
+  | "boutique" | "compte" | "utilisateurs" | "paiements" | "livraison"
+  | "stocks" | "facturation" | "materiel" | "boutiqueEnLigne" | "notifications"
+  | "fidelite" | "securite" | "integrations" | "preferences" | "donnees" | "apropos";
+
+const TABS: [TabId, string][] = [
+  ["boutique", "Boutique"], ["compte", "Compte"], ["utilisateurs", "Utilisateurs"],
+  ["paiements", "Paiements"], ["livraison", "Livraison"], ["stocks", "Stocks"],
+  ["facturation", "Facturation"], ["materiel", "Matériel"],
+  ["boutiqueEnLigne", "Boutique en ligne"], ["notifications", "Notifications"],
+  ["fidelite", "Fidélité"], ["securite", "Sécurité"], ["integrations", "Intégrations"],
+  ["preferences", "Préférences"], ["donnees", "Données"], ["apropos", "À propos"],
+];
+
+type Extras = Record<string, unknown>;
+
 function Page() {
   const { data } = useSettings();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"boutique" | "compte" | "utilisateurs" | "paiements" | "livraison" | "stocks" | "facturation" | "materiel" | "boutiqueEnLigne" | "notifications" | "fidelite" | "securite" | "integrations" | "preferences" | "donnees" | "apropos">("boutique");
-  const [f, setF] = useState({ shop_name: "", address: "", phone: "", whatsapp: "", email: "", primary_currency: "USD" as Currency, usd_to_cdf_rate: 2800, low_stock_threshold: 5, invoice_prefix: "CNT", legal_mentions: "", document_theme_color: "#0b1e3f", map_lat: "", map_lng: "", services_gallery: "", payment_gateways: "", trash_retention_days: 30,
-    // additional fields
+  const [tab, setTab] = useState<TabId>("boutique");
+
+  const [core, setCore] = useState({
+    shop_name: "",
+    address: "",
+    phone: "",
+    whatsapp: "",
+    email: "",
+    primary_currency: "USD" as Currency,
+    usd_to_cdf_rate: 2800,
+    low_stock_threshold: 5,
+    invoice_prefix: "CNT",
     logo_url: "",
-    favicon_url: "",
-    banner_url: "",
-    primary_color: "#0b1e3f",
-    secondary_color: "#06b6d4",
-    social_links: "{}",
-    taxes: "{}",
-    invoice_numbering: "",
-    invoice_info: "",
-    payment_methods: "[]",
-    delivery_fees: 0,
-    delivery_zones: "[]",
-    terms: "",
-    privacy_policy: "",
-    backup_enabled: false,
+    legal_mentions: "",
+    document_theme_color: "#0b1e3f",
+    map_lat: "",
+    map_lng: "",
+    trash_retention_days: 30,
   });
-  const localMode = useLocalModeEnabled();
-  useEffect(() => { if (data) setF({ shop_name: data.shop_name, address: data.address ?? "", phone: data.phone ?? "", whatsapp: data.whatsapp ?? "", email: data.email ?? "", primary_currency: data.primary_currency, usd_to_cdf_rate: data.usd_to_cdf_rate, low_stock_threshold: data.low_stock_threshold, invoice_prefix: data.invoice_prefix, legal_mentions: (data as { legal_mentions?: string | null }).legal_mentions ?? "", document_theme_color: (data as { document_theme_color?: string | null }).document_theme_color ?? "#0b1e3f", map_lat: ((data as { map_lat?: number | null }).map_lat ?? "").toString(), map_lng: ((data as { map_lng?: number | null }).map_lng ?? "").toString(), services_gallery: JSON.stringify((data as { services_gallery?: unknown }).services_gallery ?? []), payment_gateways: JSON.stringify((data as { payment_gateways?: unknown }).payment_gateways ?? {}), trash_retention_days: (data as { trash_retention_days?: number | null }).trash_retention_days ?? 30,
-    // additional fields mapping
-    logo_url: (data as any).logo_url ?? "",
-    favicon_url: (data as any).favicon_url ?? "",
-    banner_url: (data as any).banner_url ?? "",
-    primary_color: (data as any).primary_color ?? "#0b1e3f",
-    secondary_color: (data as any).secondary_color ?? "#06b6d4",
-    social_links: JSON.stringify((data as any).social_links ?? {}),
-    taxes: JSON.stringify((data as any).taxes ?? {}),
-    invoice_numbering: (data as any).invoice_numbering ?? "",
-    invoice_info: (data as any).invoice_info ?? "",
-    payment_methods: JSON.stringify((data as any).payment_methods ?? []),
-    delivery_fees: (data as any).delivery_fees ?? 0,
-    delivery_zones: JSON.stringify((data as any).delivery_zones ?? []),
-    terms: (data as any).terms ?? "",
-    privacy_policy: (data as any).privacy_policy ?? "",
-    backup_enabled: (data as any).backup_enabled ?? false,
-  }); }, [data]);
+  const [extras, setExtras] = useState<Extras>({});
+
+  useEffect(() => {
+    if (!data) return;
+    const d = data as unknown as Record<string, any>;
+    setCore({
+      shop_name: d.shop_name ?? "",
+      address: d.address ?? "",
+      phone: d.phone ?? "",
+      whatsapp: d.whatsapp ?? "",
+      email: d.email ?? "",
+      primary_currency: (d.primary_currency ?? "USD") as Currency,
+      usd_to_cdf_rate: Number(d.usd_to_cdf_rate ?? 2800),
+      low_stock_threshold: Number(d.low_stock_threshold ?? 5),
+      invoice_prefix: d.invoice_prefix ?? "CNT",
+      logo_url: d.logo_url ?? "",
+      legal_mentions: d.legal_mentions ?? "",
+      document_theme_color: d.document_theme_color ?? "#0b1e3f",
+      map_lat: d.map_lat != null ? String(d.map_lat) : "",
+      map_lng: d.map_lng != null ? String(d.map_lng) : "",
+      trash_retention_days: Number(d.trash_retention_days ?? 30),
+    });
+    setExtras((d.extras && typeof d.extras === "object" ? d.extras : {}) as Extras);
+  }, [data]);
+
+  const ex = <T,>(k: string, def: T): T => (extras[k] === undefined || extras[k] === null ? def : (extras[k] as T));
+  const setEx = (k: string, v: unknown) => setExtras((e) => ({ ...e, [k]: v }));
+
+  async function uploadTo(field: "logo_url" | string, file: File, extrasField = false) {
+    const path = `site-assets/${crypto.randomUUID()}-${file.name}`;
+    const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true, contentType: file.type || "image/png" });
+    if (error) { toast.error(error.message); return; }
+    const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+    if (extrasField) setEx(field, url); else setCore((c) => ({ ...c, [field]: url } as typeof c));
+    toast.success("Fichier téléversé");
+  }
+
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
-        shop_name: f.shop_name,
-        address: f.address,
-        phone: f.phone,
-        whatsapp: f.whatsapp,
-        email: f.email,
-        primary_currency: f.primary_currency,
-        usd_to_cdf_rate: f.usd_to_cdf_rate,
-        low_stock_threshold: f.low_stock_threshold,
-        invoice_prefix: f.invoice_prefix,
-        legal_mentions: f.legal_mentions,
-        document_theme_color: f.document_theme_color,
-        map_lat: f.map_lat ? Number(f.map_lat) : null,
-        map_lng: f.map_lng ? Number(f.map_lng) : null,
-        services_gallery: f.services_gallery ? JSON.parse(f.services_gallery) : [],
-        payment_gateways: f.payment_gateways ? JSON.parse(f.payment_gateways) : {},
-        trash_retention_days: f.trash_retention_days,
-        // additional fields
-        logo_url: f.logo_url,
-        favicon_url: f.favicon_url,
-        banner_url: f.banner_url,
-        primary_color: f.primary_color,
-        secondary_color: f.secondary_color,
-        social_links: f.social_links ? JSON.parse(f.social_links) : {},
-        taxes: f.taxes ? JSON.parse(f.taxes) : {},
-        invoice_numbering: f.invoice_numbering,
-        invoice_info: f.invoice_info,
-        payment_methods: f.payment_methods ? JSON.parse(f.payment_methods) : [],
-        delivery_fees: Number(f.delivery_fees ?? 0),
-        delivery_zones: f.delivery_zones ? JSON.parse(f.delivery_zones) : [],
-        terms: f.terms,
-        privacy_policy: f.privacy_policy,
-        backup_enabled: Boolean((f as any).backup_enabled),
+        shop_name: core.shop_name,
+        address: core.address || null,
+        phone: core.phone || null,
+        whatsapp: core.whatsapp || null,
+        email: core.email || null,
+        primary_currency: core.primary_currency,
+        usd_to_cdf_rate: core.usd_to_cdf_rate,
+        low_stock_threshold: core.low_stock_threshold,
+        invoice_prefix: core.invoice_prefix,
+        logo_url: core.logo_url || null,
+        legal_mentions: core.legal_mentions || null,
+        document_theme_color: core.document_theme_color || null,
+        map_lat: core.map_lat ? Number(core.map_lat) : null,
+        map_lng: core.map_lng ? Number(core.map_lng) : null,
+        trash_retention_days: core.trash_retention_days,
+        extras,
       };
       await setAdminSettings(payload);
     },
     onSuccess: () => { toast.success("Paramètres enregistrés"); qc.invalidateQueries({ queryKey: ["settings"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
-  const [localBusy, setLocalBusy] = useState(false);
+
+  const jsonExport = useMemo(() => JSON.stringify(data ?? {}, null, 2), [data]);
+
   return (
-    <div className="max-w-4xl space-y-6">
-      <h1 className="text-display text-2xl font-bold">Paramètres</h1>
+    <div className="max-w-5xl space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-display text-2xl font-bold">Paramètres</h1>
+          <p className="text-sm text-muted-foreground">Toutes les configurations de l'application, centralisées et sauvegardées.</p>
+        </div>
+        <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? "Enregistrement…" : "Enregistrer"}</Button>
+      </div>
+
       <Card><CardContent className="p-2 flex flex-wrap gap-2">
-        {([
-          ['boutique','Boutique'],
-          ['compte','Compte'],
-          ['utilisateurs','Utilisateurs'],
-          ['paiements','Paiements'],
-          ['livraison','Livraison'],
-          ['stocks','Stocks'],
-          ['facturation','Facturation'],
-          ['materiel','Matériel'],
-          ['boutiqueEnLigne','Boutique en ligne'],
-          ['notifications','Notifications'],
-          ['fidelite','Fidélité'],
-          ['securite','Sécurité'],
-          ['integrations','Intégrations'],
-          ['preferences','Préférences'],
-          ['donnees','Données'],
-          ['apropos','À propos'],
-        ] as const).map(([value,label]) => <Button key={value} variant={tab === value ? 'default' : 'outline'} size="sm" onClick={() => setTab(value)}>{label}</Button>)}
+        {TABS.map(([value, label]) => (
+          <Button key={value} variant={tab === value ? "default" : "outline"} size="sm" onClick={() => setTab(value)}>{label}</Button>
+        ))}
       </CardContent></Card>
+
       <Card><CardContent className="p-6 space-y-4">
-        {tab === 'boutique' && <><div><Label>Nom de la boutique</Label><Input value={f.shop_name} onChange={(e) => setF({ ...f, shop_name: e.target.value })} placeholder="Nom de votre boutique" /></div><div><Label>Description</Label><Textarea rows={3} placeholder="Description courte de la boutique" /></div>
-          <div className="grid gap-4 md:grid-cols-2"><div><Label>Logo</Label><Input type="file" onChange={async (e) => {
-              if (localMode) { toast.error('Upload de fichiers non pris en charge en mode local'); return; }
-              const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return;
-              const path = `site-assets/${crypto.randomUUID()}-${file.name}`;
-              const { error: uploadError } = await supabase.storage.from('site-assets').upload(path, file, { upsert: true, contentType: file.type || 'image/png' });
-              if (uploadError) { toast.error(uploadError.message); return; }
-              const url = supabase.storage.from('site-assets').getPublicUrl(path).data.publicUrl;
-              setF({ ...f, logo_url: url });
-              toast.success('Logo uploadé');
-            }} /></div><div><Label>Favicon</Label><Input type="file" onChange={async (e) => {
-              if (localMode) { toast.error('Upload de fichiers non pris en charge en mode local'); return; }
-              const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return;
-              const path = `site-assets/${crypto.randomUUID()}-${file.name}`;
-              const { error: uploadError } = await supabase.storage.from('site-assets').upload(path, file, { upsert: true, contentType: file.type || 'image/png' });
-              if (uploadError) { toast.error(uploadError.message); return; }
-              const url = supabase.storage.from('site-assets').getPublicUrl(path).data.publicUrl;
-              setF({ ...f, favicon_url: url });
-              toast.success('Favicon uploadé');
-            }} /></div></div>
-          <div className="grid gap-4 md:grid-cols-2"><div><Label>Bannière d'accueil</Label><Input type="file" onChange={async (e) => {
-              if (localMode) { toast.error('Upload de fichiers non pris en charge en mode local'); return; }
-              const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return;
-              const path = `site-assets/${crypto.randomUUID()}-${file.name}`;
-              const { error: uploadError } = await supabase.storage.from('site-assets').upload(path, file, { upsert: true, contentType: file.type || 'image/png' });
-              if (uploadError) { toast.error(uploadError.message); return; }
-              const url = supabase.storage.from('site-assets').getPublicUrl(path).data.publicUrl;
-              setF({ ...f, banner_url: url });
-              toast.success('Bannière uploadée');
-            }} /></div><div><Label>Couleur principale</Label><Input type="color" value={(f as any).primary_color} onChange={(e) => setF({ ...f, primary_color: e.target.value })} /></div></div>
-          <div className="grid gap-4 md:grid-cols-2"><div><Label>Téléphone</Label><Input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div><div><Label>Email</Label><Input value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div></div><div><Label>Adresse physique</Label><Input value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} placeholder="Adresse complète" /></div><div className="grid gap-4 md:grid-cols-2"><div><Label>Latitude</Label><Input value={f.map_lat} onChange={(e) => setF({ ...f, map_lat: e.target.value })} /></div><div><Label>Longitude</Label><Input value={f.map_lng} onChange={(e) => setF({ ...f, map_lng: e.target.value })} /></div></div><div><Label>Galerie services (JSON)</Label><Textarea rows={4} value={f.services_gallery} onChange={(e) => setF({ ...f, services_gallery: e.target.value })} placeholder='[{"title":"Installation","image_url":"..."}]' /></div></>}
-        {tab === 'compte' && <><div><Label>Informations du propriétaire</Label><Input placeholder="Nom du propriétaire" /></div><div><Label>Mot de passe</Label><Input type="password" placeholder="Nouveau mot de passe" /></div><div><Label>Photo de profil</Label><Input placeholder="URL de l’image" /></div><div><Label>Authentification à deux facteurs</Label><Input placeholder="À brancher plus tard" /></div></>}
-        {tab === 'utilisateurs' && <><div><Label>Ajouter un employé</Label><Input placeholder="Nom, email ou téléphone" /></div><div><Label>Rôles</Label><Textarea rows={3} placeholder="Caissier, Gérant, Vendeur, Livreur..." /></div><div><Label>Historique des actions</Label><Textarea rows={3} placeholder="Journal d’audit" /></div></>}
-        {tab === 'paiements' && <><div><Label>Moyens de paiement acceptés</Label><Textarea rows={4} placeholder="Espèces, carte, Orange Money, Airtel Money, PayPal..." /></div><div><Label>Agrégateurs Mobile Money (JSON)</Label><Textarea rows={5} value={f.payment_gateways} onChange={(e) => setF({ ...f, payment_gateways: e.target.value })} placeholder='{"mobile_money":{"enabled":true,"api_key":"..."}}' /></div><div><Label>Taxes / remises</Label><Textarea rows={3} placeholder="TVA, réductions par défaut" /></div></>}
-        {tab === 'livraison' && <><div><Label>Zones desservies</Label><Textarea rows={3} placeholder="Quartiers, villes, pays" /></div><div><Label>Frais de livraison</Label><Input placeholder="0 ou 5" /></div><div><Label>Délai</Label><Input placeholder="24h / 48h" /></div><div><Label>Retrait en magasin</Label><Input placeholder="Oui / Non" /></div></>}
-        {tab === 'stocks' && <><div><Label>Alerte de stock faible</Label><Input type="number" value={f.low_stock_threshold} onChange={(e) => setF({ ...f, low_stock_threshold: +e.target.value })} /></div><div><Label>Stock minimum</Label><Input placeholder="0" /></div><div><Label>Codes-barres</Label><Input placeholder="Activation / format" /></div><div><Label>Inventaire automatique</Label><Input placeholder="Oui / Non" /></div></>}
-        {tab === 'facturation' && <>
-          <div><Label>Logo sur factures</Label><Input placeholder="URL du logo" /></div>
-          <div><Label>Préfixe</Label><Input value={f.invoice_prefix} onChange={(e) => setF({ ...f, invoice_prefix: e.target.value })} /></div>
-          <div><Label>Conditions générales</Label><Textarea rows={4} placeholder="Conditions de vente et facturation" /></div>
-          <div><Label>Format d’impression</Label><Input placeholder="A4 / ticket thermique" /></div>
+
+        {tab === "boutique" && <>
+          <div><Label>Nom de la boutique</Label><Input value={core.shop_name} onChange={(e) => setCore({ ...core, shop_name: e.target.value })} /></div>
+          <div><Label>Description</Label><Textarea rows={3} value={ex("description", "")} onChange={(e) => setEx("description", e.target.value)} /></div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div><Label>Logo</Label>
+              {core.logo_url && <img src={core.logo_url} alt="logo" className="mb-2 h-14 w-14 rounded object-contain bg-muted" />}
+              <Input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo("logo_url", f); }} />
+            </div>
+            <div><Label>Favicon</Label>
+              {ex("favicon_url", "") && <img src={ex("favicon_url", "")} alt="favicon" className="mb-2 h-8 w-8 rounded object-contain bg-muted" />}
+              <Input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo("favicon_url", f, true); }} />
+            </div>
+            <div><Label>Bannière</Label>
+              {ex("banner_url", "") && <img src={ex("banner_url", "")} alt="banner" className="mb-2 h-14 w-24 rounded object-cover bg-muted" />}
+              <Input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo("banner_url", f, true); }} />
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div><Label>Téléphone</Label><Input value={core.phone} onChange={(e) => setCore({ ...core, phone: e.target.value })} /></div>
+            <div><Label>WhatsApp</Label><Input value={core.whatsapp} onChange={(e) => setCore({ ...core, whatsapp: e.target.value })} /></div>
+            <div><Label>Email</Label><Input value={core.email} onChange={(e) => setCore({ ...core, email: e.target.value })} /></div>
+          </div>
+          <div><Label>Adresse physique</Label><Input value={core.address} onChange={(e) => setCore({ ...core, address: e.target.value })} /></div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label>Latitude</Label><Input value={core.map_lat} onChange={(e) => setCore({ ...core, map_lat: e.target.value })} /></div>
+            <div><Label>Longitude</Label><Input value={core.map_lng} onChange={(e) => setCore({ ...core, map_lng: e.target.value })} /></div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label>Facebook</Label><Input value={ex("social_facebook", "")} onChange={(e) => setEx("social_facebook", e.target.value)} placeholder="https://facebook.com/…" /></div>
+            <div><Label>Instagram</Label><Input value={ex("social_instagram", "")} onChange={(e) => setEx("social_instagram", e.target.value)} placeholder="https://instagram.com/…" /></div>
+            <div><Label>TikTok</Label><Input value={ex("social_tiktok", "")} onChange={(e) => setEx("social_tiktok", e.target.value)} placeholder="https://tiktok.com/@…" /></div>
+            <div><Label>YouTube</Label><Input value={ex("social_youtube", "")} onChange={(e) => setEx("social_youtube", e.target.value)} placeholder="https://youtube.com/…" /></div>
+          </div>
+        </>}
+
+        {tab === "compte" && <>
+          <div><Label>Nom du propriétaire</Label><Input value={ex("owner_name", "")} onChange={(e) => setEx("owner_name", e.target.value)} /></div>
+          <div><Label>Email du compte</Label><Input value={ex("owner_email", "")} onChange={(e) => setEx("owner_email", e.target.value)} /></div>
+          <div><Label>Photo de profil (URL)</Label><Input value={ex("owner_avatar", "")} onChange={(e) => setEx("owner_avatar", e.target.value)} /></div>
+          <div className="flex items-center justify-between rounded border p-3">
+            <div><Label>Authentification à deux facteurs</Label><p className="text-xs text-muted-foreground">Sécuriser la connexion admin.</p></div>
+            <Switch checked={ex("two_factor", false)} onCheckedChange={(v) => setEx("two_factor", v)} />
+          </div>
+          <div>
+            <Label>Changer le mot de passe</Label>
+            <div className="flex gap-2">
+              <Input type="password" placeholder="Nouveau mot de passe" value={ex("_new_password", "")} onChange={(e) => setEx("_new_password", e.target.value)} />
+              <Button variant="outline" onClick={async () => {
+                const np = String(ex("_new_password", ""));
+                if (np.length < 6) { toast.error("Mot de passe trop court (6+)"); return; }
+                const { error } = await supabase.auth.updateUser({ password: np });
+                if (error) toast.error(error.message); else { toast.success("Mot de passe mis à jour"); setEx("_new_password", ""); }
+              }}>Mettre à jour</Button>
+            </div>
+          </div>
+        </>}
+
+        {tab === "utilisateurs" && <>
+          <p className="text-sm text-muted-foreground">La gestion complète des rôles et invitations se fait sur la page « Rôles utilisateurs ».</p>
+          <div><Label>Rôles autorisés (info)</Label><Textarea rows={3} value={ex("roles_note", "admin, manager, caissier, vendeur, comptable, technicien, livreur, client")} onChange={(e) => setEx("roles_note", e.target.value)} /></div>
+          <div className="flex items-center justify-between rounded border p-3">
+            <Label>Journal d'audit des actions</Label>
+            <Switch checked={ex("audit_log", true)} onCheckedChange={(v) => setEx("audit_log", v)} />
+          </div>
+        </>}
+
+        {tab === "paiements" && <>
+          <div><Label>Devise principale</Label>
+            <Select value={core.primary_currency} onValueChange={(v) => setCore({ ...core, primary_currency: v as Currency })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="CDF">CDF</SelectItem></SelectContent>
+            </Select>
+          </div>
+          <div><Label>Taux USD → CDF</Label><Input type="number" step="0.01" value={core.usd_to_cdf_rate} onChange={(e) => setCore({ ...core, usd_to_cdf_rate: +e.target.value })} /></div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {[["cash","Espèces"],["mobile_money","Mobile Money"],["card","Carte bancaire"],["bank_transfer","Virement"],["credit","Crédit client"]].map(([k,l]) => (
+              <label key={k} className="flex items-center justify-between rounded border p-3">
+                <span>{l}</span>
+                <Switch checked={ex(`pay_${k}`, k !== "card")} onCheckedChange={(v) => setEx(`pay_${k}`, v)} />
+              </label>
+            ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label>Orange Money — Marchand</Label><Input value={ex("om_merchant", "")} onChange={(e) => setEx("om_merchant", e.target.value)} /></div>
+            <div><Label>Airtel Money — Marchand</Label><Input value={ex("airtel_merchant", "")} onChange={(e) => setEx("airtel_merchant", e.target.value)} /></div>
+            <div><Label>M-Pesa — Marchand</Label><Input value={ex("mpesa_merchant", "")} onChange={(e) => setEx("mpesa_merchant", e.target.value)} /></div>
+            <div><Label>Africell Money — Marchand</Label><Input value={ex("africell_merchant", "")} onChange={(e) => setEx("africell_merchant", e.target.value)} /></div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label>TVA par défaut (%)</Label><Input type="number" step="0.01" value={ex("vat_rate", 0)} onChange={(e) => setEx("vat_rate", +e.target.value)} /></div>
+            <div><Label>Remise par défaut (%)</Label><Input type="number" step="0.01" value={ex("default_discount", 0)} onChange={(e) => setEx("default_discount", +e.target.value)} /></div>
+          </div>
+        </>}
+
+        {tab === "livraison" && <>
+          <div className="flex items-center justify-between rounded border p-3">
+            <Label>Retrait en magasin autorisé</Label>
+            <Switch checked={ex("pickup_enabled", true)} onCheckedChange={(v) => setEx("pickup_enabled", v)} />
+          </div>
+          <div className="flex items-center justify-between rounded border p-3">
+            <Label>Livraison à domicile activée</Label>
+            <Switch checked={ex("delivery_enabled", true)} onCheckedChange={(v) => setEx("delivery_enabled", v)} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label>Frais livraison par défaut (USD)</Label><Input type="number" step="0.01" value={ex("delivery_fee", 0)} onChange={(e) => setEx("delivery_fee", +e.target.value)} /></div>
+            <div><Label>Délai moyen</Label><Input value={ex("delivery_delay", "24-48h")} onChange={(e) => setEx("delivery_delay", e.target.value)} /></div>
+          </div>
+          <div><Label>Zones desservies (une par ligne)</Label>
+            <Textarea rows={4} value={ex("delivery_zones", "")} onChange={(e) => setEx("delivery_zones", e.target.value)} placeholder="Gombe&#10;Limete&#10;Ngaliema" />
+          </div>
+        </>}
+
+        {tab === "stocks" && <>
+          <div><Label>Seuil d'alerte stock faible</Label><Input type="number" value={core.low_stock_threshold} onChange={(e) => setCore({ ...core, low_stock_threshold: +e.target.value })} /></div>
+          <div className="flex items-center justify-between rounded border p-3">
+            <Label>Activer les codes-barres</Label>
+            <Switch checked={ex("barcode_enabled", false)} onCheckedChange={(v) => setEx("barcode_enabled", v)} />
+          </div>
+          <div><Label>Format codes-barres</Label>
+            <Select value={ex("barcode_format", "EAN13")} onValueChange={(v) => setEx("barcode_format", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EAN13">EAN-13</SelectItem>
+                <SelectItem value="CODE128">Code 128</SelectItem>
+                <SelectItem value="QR">QR Code</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center justify-between rounded border p-3">
+            <Label>Inventaire automatique (déduction ventes)</Label>
+            <Switch checked={ex("auto_inventory", true)} onCheckedChange={(v) => setEx("auto_inventory", v)} />
+          </div>
+        </>}
+
+        {tab === "facturation" && <>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label>Préfixe facture</Label><Input value={core.invoice_prefix} onChange={(e) => setCore({ ...core, invoice_prefix: e.target.value })} /></div>
+            <div><Label>Format d'impression</Label>
+              <Select value={ex("print_format", "A4")} onValueChange={(v) => setEx("print_format", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A4">A4</SelectItem>
+                  <SelectItem value="A5">A5</SelectItem>
+                  <SelectItem value="TICKET80">Ticket 80mm</SelectItem>
+                  <SelectItem value="TICKET58">Ticket 58mm</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div><Label>Couleur d'accent des documents</Label><Input type="color" value={core.document_theme_color} onChange={(e) => setCore({ ...core, document_theme_color: e.target.value })} /></div>
+          <div><Label>Mentions légales</Label><Textarea rows={4} value={core.legal_mentions} onChange={(e) => setCore({ ...core, legal_mentions: e.target.value })} /></div>
+          <div><Label>Conditions générales de vente</Label><Textarea rows={4} value={ex("terms", "")} onChange={(e) => setEx("terms", e.target.value)} /></div>
           <div className="pt-2">
             <Dialog>
-              <DialogTrigger asChild>
-                <Button>Éditeur de modèles (facture / reçu)</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogTitle>Éditeur de modèle - facture / reçu</DialogTitle>
-                <div className="mt-4">
-                  <EditorCanvas kind="recu" onSaved={() => { toast.success('Modèle personnalisé enregistré'); qc.invalidateQueries({ queryKey: ['settings'] }); }} />
-                </div>
+              <DialogTrigger asChild><Button>Ouvrir l'éditeur canvas (facture / reçu)</Button></DialogTrigger>
+              <DialogContent className="max-w-6xl">
+                <DialogTitle>Éditeur de modèle</DialogTitle>
+                <div className="mt-4"><EditorCanvas kind="recu" onSaved={() => toast.success("Modèle enregistré")} /></div>
               </DialogContent>
             </Dialog>
           </div>
         </>}
-        {tab === 'materiel' && <><div><Label>Imprimante ticket</Label><Input placeholder="Nom du périphérique" /></div><div><Label>Scanner code-barres</Label><Input placeholder="Nom du périphérique" /></div><div><Label>Tiroir-caisse</Label><Input placeholder="Oui / Non" /></div><div><Label>Terminal de paiement</Label><Input placeholder="Nom du terminal" /></div></>}
-        {tab === 'boutiqueEnLigne' && <><div><Label>Activer la boutique en ligne</Label><Input placeholder="Oui / Non" /></div><div><Label>Domaine personnalisé</Label><Input placeholder="shop.example.com" /></div><div><Label>SEO</Label><Textarea rows={3} placeholder="Titre, meta description, mots-clés" /></div><div><Label>Réseaux sociaux / politiques</Label><Textarea rows={3} placeholder="Facebook, Instagram, confidentialité, cookies" /></div></>}
-        {tab === 'notifications' && <><div><Label>SMS / WhatsApp / E-mail</Label><Textarea rows={3} placeholder="Activation des canaux" /></div><div><Label>Alertes</Label><Textarea rows={3} placeholder="Stock faible, nouveaux clients, nouvelles commandes" /></div></>}
-        {tab === 'fidelite' && <><div><Label>Points de fidélité</Label><Input placeholder="1 point = X" /></div><div><Label>Coupons / promotions</Label><Textarea rows={3} placeholder="Promotions automatiques" /></div></>}
-        {tab === 'securite' && <><div><Label>Sauvegardes automatiques</Label><Input placeholder="Oui / Non" /></div><div><Label>Export / restauration</Label><Textarea rows={3} placeholder="Sauvegardes et restauration" /></div><div><Label>Clés API</Label><Textarea rows={3} placeholder="Clés ou tokens" /></div></>}
-        {tab === 'integrations' && <><div><Label>WhatsApp Business / Facebook / Instagram / TikTok / Google Merchant</Label><Textarea rows={4} placeholder="Intégrations externes" /></div><div><Label>API / Webhooks</Label><Textarea rows={3} placeholder="Endpoints et secrets" /></div></>}
-        {tab === 'preferences' && <><div><Label>Thème</Label><Input placeholder="clair / sombre" /></div><div><Label>Couleur principale</Label><Input type="color" value={f.document_theme_color} onChange={(e) => setF({ ...f, document_theme_color: e.target.value })} /></div><div><Label>Format de date / nombre</Label><Textarea rows={3} placeholder="fr-FR, USD, etc." /></div></>}
-        {tab === 'donnees' && <><div><Label>Importer des produits</Label><Input placeholder="CSV / JSON" /></div><div><Label>Exporter des données</Label><Input placeholder="CSV / Excel / JSON" /></div><div><Label>Réinitialiser les données de démo</Label><Input placeholder="Action à confirmer" /></div></>}
-        {tab === 'donnees' && <>
+
+        {tab === "materiel" && <>
+          <div><Label>Imprimante ticket</Label><Input value={ex("printer_ticket", "")} onChange={(e) => setEx("printer_ticket", e.target.value)} placeholder="Ex: EPSON TM-T20" /></div>
+          <div><Label>Scanner code-barres</Label><Input value={ex("barcode_scanner", "")} onChange={(e) => setEx("barcode_scanner", e.target.value)} /></div>
+          <div className="flex items-center justify-between rounded border p-3">
+            <Label>Tiroir-caisse connecté</Label>
+            <Switch checked={ex("cash_drawer", false)} onCheckedChange={(v) => setEx("cash_drawer", v)} />
+          </div>
+          <div><Label>Terminal de paiement</Label><Input value={ex("payment_terminal", "")} onChange={(e) => setEx("payment_terminal", e.target.value)} /></div>
+        </>}
+
+        {tab === "boutiqueEnLigne" && <>
+          <div className="flex items-center justify-between rounded border p-3">
+            <Label>Activer la boutique en ligne</Label>
+            <Switch checked={ex("shop_enabled", true)} onCheckedChange={(v) => setEx("shop_enabled", v)} />
+          </div>
+          <div><Label>Domaine personnalisé</Label><Input value={ex("custom_domain", "")} onChange={(e) => setEx("custom_domain", e.target.value)} placeholder="shop.conetec.cd" /></div>
+          <div><Label>Titre SEO</Label><Input value={ex("seo_title", "")} onChange={(e) => setEx("seo_title", e.target.value)} /></div>
+          <div><Label>Meta description</Label><Textarea rows={2} value={ex("seo_description", "")} onChange={(e) => setEx("seo_description", e.target.value)} /></div>
+          <div><Label>Mots-clés</Label><Input value={ex("seo_keywords", "")} onChange={(e) => setEx("seo_keywords", e.target.value)} /></div>
+          <div><Label>Politique de confidentialité</Label><Textarea rows={4} value={ex("privacy_policy", "")} onChange={(e) => setEx("privacy_policy", e.target.value)} /></div>
+        </>}
+
+        {tab === "notifications" && <>
+          <div className="grid gap-3 md:grid-cols-3">
+            {[["notify_email","Email"],["notify_sms","SMS"],["notify_whatsapp","WhatsApp"]].map(([k,l]) => (
+              <label key={k} className="flex items-center justify-between rounded border p-3">
+                <span>{l}</span>
+                <Switch checked={ex(k, k === "notify_email")} onCheckedChange={(v) => setEx(k, v)} />
+              </label>
+            ))}
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {[["alert_low_stock","Alerte stock faible"],["alert_new_order","Nouvelle commande"],["alert_new_customer","Nouveau client"],["alert_new_message","Nouveau devis / message"]].map(([k,l]) => (
+              <label key={k} className="flex items-center justify-between rounded border p-3">
+                <span>{l}</span>
+                <Switch checked={ex(k, true)} onCheckedChange={(v) => setEx(k, v)} />
+              </label>
+            ))}
+          </div>
+        </>}
+
+        {tab === "fidelite" && <>
+          <div className="flex items-center justify-between rounded border p-3">
+            <Label>Programme de fidélité activé</Label>
+            <Switch checked={ex("loyalty_enabled", false)} onCheckedChange={(v) => setEx("loyalty_enabled", v)} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label>1 point = X USD dépensé</Label><Input type="number" step="0.01" value={ex("loyalty_ratio", 1)} onChange={(e) => setEx("loyalty_ratio", +e.target.value)} /></div>
+            <div><Label>Valeur d'1 point (USD)</Label><Input type="number" step="0.01" value={ex("loyalty_value", 0.05)} onChange={(e) => setEx("loyalty_value", +e.target.value)} /></div>
+          </div>
+          <div><Label>Coupons / promotions actifs</Label><Textarea rows={3} value={ex("coupons", "")} onChange={(e) => setEx("coupons", e.target.value)} placeholder="CODE10=10%, WELCOME=5USD" /></div>
+        </>}
+
+        {tab === "securite" && <>
+          <div className="flex items-center justify-between rounded border p-3">
+            <Label>Sauvegardes automatiques</Label>
+            <Switch checked={ex("backup_enabled", false)} onCheckedChange={(v) => setEx("backup_enabled", v)} />
+          </div>
+          <div><Label>Fréquence de sauvegarde</Label>
+            <Select value={ex("backup_freq", "daily")} onValueChange={(v) => setEx("backup_freq", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Quotidienne</SelectItem>
+                <SelectItem value="weekly">Hebdomadaire</SelectItem>
+                <SelectItem value="monthly">Mensuelle</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div><Label>Rétention corbeille (jours)</Label><Input type="number" value={core.trash_retention_days} onChange={(e) => setCore({ ...core, trash_retention_days: +e.target.value })} /></div>
+          <div><Label>Clés API externes (JSON)</Label><Textarea rows={4} value={ex("api_keys", "")} onChange={(e) => setEx("api_keys", e.target.value)} placeholder='{"service": "clé"}' /></div>
+        </>}
+
+        {tab === "integrations" && <>
+          <div><Label>WhatsApp Business (numéro)</Label><Input value={ex("whatsapp_business", "")} onChange={(e) => setEx("whatsapp_business", e.target.value)} /></div>
+          <div><Label>Facebook Page ID</Label><Input value={ex("fb_page_id", "")} onChange={(e) => setEx("fb_page_id", e.target.value)} /></div>
+          <div><Label>Instagram Business ID</Label><Input value={ex("ig_business_id", "")} onChange={(e) => setEx("ig_business_id", e.target.value)} /></div>
+          <div><Label>Google Merchant ID</Label><Input value={ex("google_merchant", "")} onChange={(e) => setEx("google_merchant", e.target.value)} /></div>
+          <div><Label>Google Analytics ID</Label><Input value={ex("ga_id", "")} onChange={(e) => setEx("ga_id", e.target.value)} placeholder="G-XXXXXXX" /></div>
+          <div><Label>Webhooks (une URL par ligne)</Label><Textarea rows={3} value={ex("webhooks", "")} onChange={(e) => setEx("webhooks", e.target.value)} /></div>
+        </>}
+
+        {tab === "preferences" && <>
+          <div><Label>Thème</Label>
+            <Select value={ex("theme", "light")} onValueChange={(v) => setEx("theme", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">Clair</SelectItem>
+                <SelectItem value="dark">Sombre</SelectItem>
+                <SelectItem value="system">Système</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div><Label>Langue</Label>
+            <Select value={ex("locale", "fr-FR")} onValueChange={(v) => setEx("locale", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fr-FR">Français (FR)</SelectItem>
+                <SelectItem value="en-US">English (US)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div><Label>Format de date</Label>
+            <Select value={ex("date_format", "dd/MM/yyyy")} onValueChange={(v) => setEx("date_format", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dd/MM/yyyy">31/12/2026</SelectItem>
+                <SelectItem value="yyyy-MM-dd">2026-12-31</SelectItem>
+                <SelectItem value="MM/dd/yyyy">12/31/2026</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </>}
+
+        {tab === "donnees" && <>
           <div>
             <Label>Exporter les paramètres (JSON)</Label>
             <div className="flex gap-2 items-center">
-              <Button onClick={() => { const payload = JSON.stringify(data ?? {}, null, 2); const blob = new Blob([payload], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'settings.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); toast.success('Export téléchargé'); }}>Exporter</Button>
-              <Input type="file" onChange={async (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return; try { const text = await file.text(); const obj = JSON.parse(text); // update settings row
-                  if (localMode) {
-                    await setAdminSettings(obj);
-                    toast.success('Paramètres importés en mode local');
-                    qc.invalidateQueries({ queryKey: ['settings'] });
-                    return;
-                  }
-                  const { error } = await supabase.from('settings').update(obj).eq('id', 1);
-                  if (error) throw error; toast.success('Paramètres importés'); qc.invalidateQueries({ queryKey: ['settings'] });
-                } catch (err: any) { toast.error(err?.message ?? 'Import failed'); }
+              <Button onClick={() => { const blob = new Blob([jsonExport], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "settings.json"; a.click(); URL.revokeObjectURL(url); toast.success("Export téléchargé"); }}>Télécharger</Button>
+              <Input type="file" accept="application/json" onChange={async (e) => {
+                const file = e.target.files?.[0]; if (!file) return;
+                try {
+                  const obj = JSON.parse(await file.text());
+                  const { error } = await supabase.from("settings").update(obj).eq("id", 1);
+                  if (error) throw error;
+                  toast.success("Paramètres importés");
+                  qc.invalidateQueries({ queryKey: ["settings"] });
+                } catch (err) { toast.error((err as Error).message); }
               }} />
             </div>
           </div>
           <div>
-            <Label>Mode local (Electron)</Label>
-            <div className="flex gap-2 items-center">
-              <Button disabled={localBusy} onClick={async () => {
-                if (!(typeof window !== 'undefined' && (window as any).electronAPI)) return toast.error('API Electron non disponible');
-                try { setLocalBusy(true); const res = await (window as any).electronAPI.initLocalDb(); if (res?.ok) toast.success('Base locale initialisée'); else toast.error(res?.error || 'Erreur lors de l\'initialisation'); } catch (e: any) { toast.error(e?.message ?? 'Erreur'); } finally { setLocalBusy(false); }
-              }}>Initialiser la DB locale</Button>
-              <Button disabled={localBusy} onClick={async () => {
-                if (!(typeof window !== 'undefined' && (window as any).electronAPI)) return toast.error('API Electron non disponible');
-                try { setLocalBusy(true); const res = await (window as any).electronAPI.syncPull(); if (res?.ok) { toast.success('Synchronisation pull terminée'); qc.invalidateQueries({ queryKey: ['settings','auth','roles'] }); } else toast.error(res?.error || 'Erreur pull'); } catch (e: any) { toast.error(e?.message ?? 'Erreur'); } finally { setLocalBusy(false); }
-              }}>Synchroniser (pull)</Button>
-              <Button disabled={localBusy} onClick={async () => {
-                if (!(typeof window !== 'undefined' && (window as any).electronAPI)) return toast.error('API Electron non disponible');
-                try { setLocalBusy(true); const res = await (window as any).electronAPI.syncPush(); if (res?.ok) toast.success('Synchronisation push terminée'); else toast.error(res?.error || 'Erreur push'); } catch (e: any) { toast.error(e?.message ?? 'Erreur'); } finally { setLocalBusy(false); }
-              }}>Synchroniser (push)</Button>
-            </div>
+            <Label>Aperçu brut</Label>
+            <Textarea rows={10} readOnly value={jsonExport} className="font-mono text-xs" />
           </div>
         </>}
-        {tab === 'apropos' && <><div><Label>Version</Label><Input placeholder="v1.0.0" /></div><div><Label>Support</Label><Input placeholder="support@entreprise.com" /></div><div><Label>Licence / conditions</Label><Textarea rows={4} placeholder="Informations légales et support" /></div></>}
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>Enregistrer</Button>
+
+        {tab === "apropos" && <>
+          <div><Label>Version de l'application</Label><Input value={ex("app_version", "v1.0.0")} onChange={(e) => setEx("app_version", e.target.value)} /></div>
+          <div><Label>Email de support</Label><Input value={ex("support_email", "support@conetec.cd")} onChange={(e) => setEx("support_email", e.target.value)} /></div>
+          <div><Label>Téléphone support</Label><Input value={ex("support_phone", "")} onChange={(e) => setEx("support_phone", e.target.value)} /></div>
+          <div><Label>Licence / informations légales</Label><Textarea rows={5} value={ex("license", "")} onChange={(e) => setEx("license", e.target.value)} /></div>
+        </>}
+
+        <div className="pt-4 border-t">
+          <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full md:w-auto">
+            {save.isPending ? "Enregistrement…" : "Enregistrer les modifications"}
+          </Button>
+        </div>
       </CardContent></Card>
     </div>
   );
