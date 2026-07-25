@@ -29,7 +29,7 @@ type Product = {
 
 type Supplier = { id: string; name: string };
 
-type ProductSupplier = { id: string; supplier_id: string; preferred: boolean };
+type ProductSupplier = { supplier_id: string; preferred: boolean };
 
 function slugify(value: string) {
   return value
