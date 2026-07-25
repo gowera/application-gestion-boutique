@@ -28,6 +28,7 @@ import { Route as SalaireConfirmerTokenRouteImport } from './routes/salaire.conf
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminTrashRouteImport } from './routes/_authenticated/admin/trash'
 import { Route as AuthenticatedAdminSuppliersRouteImport } from './routes/_authenticated/admin/suppliers'
+import { Route as AuthenticatedAdminStockRouteImport } from './routes/_authenticated/admin/stock'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminSalesRouteImport } from './routes/_authenticated/admin/sales'
 import { Route as AuthenticatedAdminSalariesRouteImport } from './routes/_authenticated/admin/salaries'
@@ -143,6 +144,11 @@ const AuthenticatedAdminSuppliersRoute =
     path: '/admin/suppliers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminStockRoute = AuthenticatedAdminStockRouteImport.update({
+  id: '/admin/stock',
+  path: '/admin/stock',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminSettingsRoute =
   AuthenticatedAdminSettingsRouteImport.update({
     id: '/admin/settings',
@@ -288,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/admin/salaries': typeof AuthenticatedAdminSalariesRoute
   '/admin/sales': typeof AuthenticatedAdminSalesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/stock': typeof AuthenticatedAdminStockRoute
   '/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
   '/admin/trash': typeof AuthenticatedAdminTrashRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -327,6 +334,7 @@ export interface FileRoutesByTo {
   '/admin/salaries': typeof AuthenticatedAdminSalariesRoute
   '/admin/sales': typeof AuthenticatedAdminSalesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/stock': typeof AuthenticatedAdminStockRoute
   '/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
   '/admin/trash': typeof AuthenticatedAdminTrashRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -368,6 +376,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/salaries': typeof AuthenticatedAdminSalariesRoute
   '/_authenticated/admin/sales': typeof AuthenticatedAdminSalesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/stock': typeof AuthenticatedAdminStockRoute
   '/_authenticated/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
   '/_authenticated/admin/trash': typeof AuthenticatedAdminTrashRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -409,6 +418,7 @@ export interface FileRouteTypes {
     | '/admin/salaries'
     | '/admin/sales'
     | '/admin/settings'
+    | '/admin/stock'
     | '/admin/suppliers'
     | '/admin/trash'
     | '/admin/users'
@@ -448,6 +458,7 @@ export interface FileRouteTypes {
     | '/admin/salaries'
     | '/admin/sales'
     | '/admin/settings'
+    | '/admin/stock'
     | '/admin/suppliers'
     | '/admin/trash'
     | '/admin/users'
@@ -488,6 +499,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/salaries'
     | '/_authenticated/admin/sales'
     | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/stock'
     | '/_authenticated/admin/suppliers'
     | '/_authenticated/admin/trash'
     | '/_authenticated/admin/users'
@@ -646,6 +658,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSuppliersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/stock': {
+      id: '/_authenticated/admin/stock'
+      path: '/admin/stock'
+      fullPath: '/admin/stock'
+      preLoaderRoute: typeof AuthenticatedAdminStockRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/settings': {
       id: '/_authenticated/admin/settings'
       path: '/admin/settings'
@@ -802,6 +821,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminSalariesRoute: typeof AuthenticatedAdminSalariesRoute
   AuthenticatedAdminSalesRoute: typeof AuthenticatedAdminSalesRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminStockRoute: typeof AuthenticatedAdminStockRoute
   AuthenticatedAdminSuppliersRoute: typeof AuthenticatedAdminSuppliersRoute
   AuthenticatedAdminTrashRoute: typeof AuthenticatedAdminTrashRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
@@ -828,6 +848,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminSalariesRoute: AuthenticatedAdminSalariesRoute,
   AuthenticatedAdminSalesRoute: AuthenticatedAdminSalesRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+  AuthenticatedAdminStockRoute: AuthenticatedAdminStockRoute,
   AuthenticatedAdminSuppliersRoute: AuthenticatedAdminSuppliersRoute,
   AuthenticatedAdminTrashRoute: AuthenticatedAdminTrashRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
