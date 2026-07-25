@@ -32,6 +32,7 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
     label: "Stock & achats",
     items: [
       { title: "Produits & stock", url: "/admin/products", icon: Package },
+      { title: "Traçabilité stock", url: "/admin/stock", icon: Activity },
       { title: "Catégories", url: "/admin/categories", icon: FolderTree },
       { title: "Fournisseurs", url: "/admin/suppliers", icon: Truck },
       { title: "Achats", url: "/admin/purchases", icon: Boxes },
