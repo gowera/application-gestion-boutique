@@ -135,7 +135,7 @@ function ShopPage() {
   );
 }
 
-function ProductCard({ p, rate, cur }: { p: any; rate: number; cur: string }) {
+function ProductCard({ p, rate, cur }: { p: any; rate: number; cur: any }) {
   const { add } = useCart();
   return (
     <div className="group overflow-hidden rounded-2xl border border-l-4 border-l-energy border-border/60 bg-background shadow-sm transition-all hover:shadow-lg">
