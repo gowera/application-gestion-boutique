@@ -22,9 +22,17 @@ function OrderTracking() {
     queryKey: ["order-track", code],
     queryFn: async () => {
       const { data } = await supabase.from("online_orders").select("*, order_items(*)").eq("code", code).maybeSingle();
-      return data;
+      return data as (Record<string, unknown> & { payment_status?: string | null; paid?: boolean; code: string; status: string; created_at: string; customer_name: string; customer_phone: string; delivery_address: string | null; order_items: { id: string; qty: number; product_name: string; line_total_usd: number }[]; total_usd: number }) | null;
+    },
+    refetchInterval: (q) => {
+      const d = q.state.data as { payment_status?: string | null; paid?: boolean } | null;
+      if (!d) return 3000;
+      if (d.paid) return false;
+      if (d.payment_status === "pending" || d.payment_status === "submitted") return 3000;
+      return false;
     },
   });
+
 
   return (
     <SiteShell>
