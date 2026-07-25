@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/api/public/shwary/callback")({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ...({} as Record<string, never>),
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
@@ -59,4 +59,4 @@ export const Route = createFileRoute("/api/public/shwary/callback")({
       },
     },
   },
-});
+} as never);
