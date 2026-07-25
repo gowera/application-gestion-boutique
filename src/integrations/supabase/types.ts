@@ -684,6 +684,9 @@ export type Database = {
           note: string | null
           paid: boolean
           payment_method: Database["public"]["Enums"]["payment_method"] | null
+          payment_provider: string | null
+          payment_ref: string | null
+          payment_status: string | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal_usd: number
           total_usd: number
@@ -703,6 +706,9 @@ export type Database = {
           note?: string | null
           paid?: boolean
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          payment_provider?: string | null
+          payment_ref?: string | null
+          payment_status?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_usd?: number
           total_usd?: number
@@ -722,6 +728,9 @@ export type Database = {
           note?: string | null
           paid?: boolean
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          payment_provider?: string | null
+          payment_ref?: string | null
+          payment_status?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_usd?: number
           total_usd?: number
@@ -777,6 +786,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_credentials: {
+        Row: {
+          extras: Json
+          merchant_id: string | null
+          merchant_key: string | null
+          provider: string
+          sandbox: boolean
+          updated_at: string
+        }
+        Insert: {
+          extras?: Json
+          merchant_id?: string | null
+          merchant_key?: string | null
+          provider: string
+          sandbox?: boolean
+          updated_at?: string
+        }
+        Update: {
+          extras?: Json
+          merchant_id?: string | null
+          merchant_key?: string | null
+          provider?: string
+          sandbox?: boolean
+          updated_at?: string
+        }
+        Relationships: []
       }
       payments: {
         Row: {
