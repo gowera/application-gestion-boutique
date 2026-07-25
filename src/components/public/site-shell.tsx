@@ -54,7 +54,6 @@ function MainNav() {
             <Link
               key={n.label}
               to={n.to}
-              params={n.params as never}
               className="text-foreground/70 transition-colors hover:text-primary"
               activeProps={{ className: "text-primary font-semibold border-b-2 border-energy pb-1" }}
             >
