@@ -12,6 +12,8 @@ import {
   FileText, ArrowRight, CheckCircle2, Wrench, RotateCcw, CreditCard, BadgeCheck, Clock,
 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
+import { ProductReviews, Stars, reviewStats, useProductReviews } from "@/components/public/product-reviews";
+import { ShareButton } from "@/components/public/share-button";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -42,6 +44,9 @@ function ProductDetailsPage() {
     queryKey: ["product", productId],
     queryFn: async () => (await supabase.from("products").select("*").eq("id", productId).maybeSingle()).data,
   });
+
+  const { data: reviews } = useProductReviews(productId);
+  const stats = reviewStats(reviews);
 
   const { data: related } = useQuery({
     queryKey: ["product-related", p?.category_id, productId],
@@ -94,7 +99,10 @@ function ProductDetailsPage() {
               {p.description || "Matériel sélectionné par nos ingénieurs, testé sur le terrain et couvert par notre garantie constructeur. Nos techniciens assurent l'installation et la mise en service."}
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-4 text-xs text-primary-foreground/80">
-              <span className="flex items-center gap-1.5"><Star className="h-4 w-4 fill-energy text-energy" /> 4.8/5 satisfaction client</span>
+              <a href="#avis" className="flex items-center gap-1.5 hover:text-primary-foreground">
+                <Stars value={stats.count ? stats.average : 0} />
+                {stats.count ? `${stats.average.toFixed(1)}/5 · ${stats.count} avis` : "Aucun avis pour l'instant"}
+              </a>
               <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-energy" /> Garantie incluse</span>
               <span className="flex items-center gap-1.5"><Truck className="h-4 w-4 text-energy" /> Livraison Kinshasa</span>
               <span className="flex items-center gap-1.5"><Wrench className="h-4 w-4 text-energy" /> Pose par nos techniciens</span>
@@ -130,6 +138,13 @@ function ProductDetailsPage() {
                 Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
+            <ShareButton
+              title={p.name}
+              text={`Découvrez ${p.name} chez CONETEC`}
+              size="default"
+              className="mt-3 w-full"
+              label="Partager ce produit"
+            />
             <div className="mt-4 space-y-2 border-t pt-4 text-xs text-muted-foreground">
               <p className="flex items-center gap-2"><CreditCard className="h-3.5 w-3.5 text-primary" /> Paiement Mobile Money, cash ou virement</p>
               <p className="flex items-center gap-2"><RotateCcw className="h-3.5 w-3.5 text-primary" /> Échange sous 7 jours si non conforme</p>
@@ -234,6 +249,12 @@ function ProductDetailsPage() {
               </AccordionItem>
             </Accordion>
           </div>
+        </section>
+
+        {/* Reviews */}
+        <section id="avis" className="mb-14 scroll-mt-24">
+          <SectionTitle icon={Star} title="Avis clients" subtitle="Ce que nos clients disent de ce produit" />
+          <div className="mt-5"><ProductReviews productId={productId} /></div>
         </section>
 
         {/* CTA */}
