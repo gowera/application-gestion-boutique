@@ -18,9 +18,9 @@ type ElementType = {
 
 export function EditorCanvas({ onSaved }: { onSaved?: () => void }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [elements, setElements] = useState<ElementType[]>(() => getCustomTemplate()?.elements ?? []);
+  const [elements, setElements] = useState<ElementType[]>(() => (getCustomTemplate()?.elements ?? []) as ElementType[]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  useEffect(() => { setElements(getCustomTemplate()?.elements ?? []); }, []);
+  useEffect(() => { setElements((getCustomTemplate()?.elements ?? []) as ElementType[]); }, []);
 
   function addText() {
     const el: ElementType = { id: crypto.randomUUID(), type: "text", x: 20, y: 20, text: "Texte", color: "#000000", fontSize: 12 };
