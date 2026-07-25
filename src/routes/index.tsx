@@ -186,9 +186,13 @@ function FeaturedProducts() {
                   <div className="relative aspect-square overflow-hidden bg-secondary">
                     {idx === 0 && <span className="absolute left-3 top-3 z-10 rounded bg-primary px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">Best Seller</span>}
                     {idx === 1 && <span className="absolute left-3 top-3 z-10 rounded bg-destructive px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-destructive-foreground">-15% Promo</span>}
-                    {p.images?.[0]
-                      ? <img src={p.images[0]} alt={p.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                      : <div className="grid h-full w-full place-items-center"><Zap className="h-12 w-12 text-muted-foreground/30" /></div>}
+                    <StorageImage
+                      src={p.images?.[0]}
+                      alt={p.name}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      fallback={<div className="grid h-full w-full place-items-center"><Zap className="h-12 w-12 text-muted-foreground/30" /></div>}
+                    />
+
                   </div>
                   <div className="p-4">
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
