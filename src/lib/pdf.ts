@@ -193,7 +193,8 @@ export function downloadReceipt(data: ReceiptData) {
       } else if (el.type === "rect") {
         const rw = (el.w ?? 80) * scaleX;
         const rh = (el.h ?? 30) * scaleX;
-        doc.setFillColor(el.color ? hexToRgbArray(el.color) : [238, 238, 238]);
+        const [rc, gc, bc] = el.color ? hexToRgbArray(el.color) : [238, 238, 238];
+        doc.setFillColor(rc, gc, bc);
         doc.rect(x, y, rw, rh, "F");
       }
     });
