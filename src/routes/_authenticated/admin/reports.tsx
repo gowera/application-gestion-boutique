@@ -24,7 +24,7 @@ function Page() {
   const [from, setFrom] = useState(monthAgo);
   const [to, setTo] = useState(today);
 
-  const { data: sales } = useQuery({ queryKey: ["report-sales", from, to], queryFn: async () => (await supabase.from("sales").select("code, total_usd, status, created_at, channel").gte("created_at", from).lte("created_at", to + "T23:59:59")).data ?? [] });
+  const { data: sales } = useQuery({ queryKey: ["report-sales", from, to], queryFn: async () => (await supabase.from("sales").select("code, total_usd, credit_usd, status, created_at, channel").gte("created_at", from).lte("created_at", to + "T23:59:59")).data ?? [] });
   const { data: orders } = useQuery({ queryKey: ["report-orders", from, to], queryFn: async () => (await supabase.from("online_orders").select("code, total_usd, status, created_at").gte("created_at", from).lte("created_at", to + "T23:59:59")).data ?? [] });
   const { data: exp } = useQuery({ queryKey: ["report-exp", from, to], queryFn: async () => (await supabase.from("expenses").select("*").gte("created_at", from).lte("created_at", to + "T23:59:59")).data ?? [] });
 
