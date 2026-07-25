@@ -48,6 +48,7 @@ import { Route as AuthenticatedAdminDocumentsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin/categories'
 import { Route as AuthenticatedAdminCaisseRouteImport } from './routes/_authenticated/admin/caisse'
+import { Route as ApiPublicShwaryCallbackRouteImport } from './routes/api/public/shwary.callback'
 import { Route as AuthenticatedAdminDocumentsHistoryRouteImport } from './routes/_authenticated/admin/documents/history'
 
 const ServicesRoute = ServicesRouteImport.update({
@@ -261,6 +262,11 @@ const AuthenticatedAdminCaisseRoute =
     path: '/admin/caisse',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicShwaryCallbackRoute = ApiPublicShwaryCallbackRouteImport.update({
+  id: '/api/public/shwary/callback',
+  path: '/api/public/shwary/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminDocumentsHistoryRoute =
   AuthenticatedAdminDocumentsHistoryRouteImport.update({
     id: '/history',
@@ -308,6 +314,7 @@ export interface FileRoutesByFullPath {
   '/salaire/confirmer/$token': typeof SalaireConfirmerTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/documents/history': typeof AuthenticatedAdminDocumentsHistoryRoute
+  '/api/public/shwary/callback': typeof ApiPublicShwaryCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -349,6 +356,7 @@ export interface FileRoutesByTo {
   '/salaire/confirmer/$token': typeof SalaireConfirmerTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/documents/history': typeof AuthenticatedAdminDocumentsHistoryRoute
+  '/api/public/shwary/callback': typeof ApiPublicShwaryCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -392,6 +400,7 @@ export interface FileRoutesById {
   '/salaire/confirmer/$token': typeof SalaireConfirmerTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/documents/history': typeof AuthenticatedAdminDocumentsHistoryRoute
+  '/api/public/shwary/callback': typeof ApiPublicShwaryCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -435,6 +444,7 @@ export interface FileRouteTypes {
     | '/salaire/confirmer/$token'
     | '/admin/'
     | '/admin/documents/history'
+    | '/api/public/shwary/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -476,6 +486,7 @@ export interface FileRouteTypes {
     | '/salaire/confirmer/$token'
     | '/admin'
     | '/admin/documents/history'
+    | '/api/public/shwary/callback'
   id:
     | '__root__'
     | '/'
@@ -518,6 +529,7 @@ export interface FileRouteTypes {
     | '/salaire/confirmer/$token'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/documents/history'
+    | '/api/public/shwary/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -534,6 +546,7 @@ export interface RootRouteChildren {
   CommandeCodeRoute: typeof CommandeCodeRoute
   MagicLinkTokenRoute: typeof MagicLinkTokenRoute
   SalaireConfirmerTokenRoute: typeof SalaireConfirmerTokenRoute
+  ApiPublicShwaryCallbackRoute: typeof ApiPublicShwaryCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -811,6 +824,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCaisseRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/shwary/callback': {
+      id: '/api/public/shwary/callback'
+      path: '/api/public/shwary/callback'
+      fullPath: '/api/public/shwary/callback'
+      preLoaderRoute: typeof ApiPublicShwaryCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/documents/history': {
       id: '/_authenticated/admin/documents/history'
       path: '/history'
@@ -932,6 +952,7 @@ const rootRouteChildren: RootRouteChildren = {
   CommandeCodeRoute: CommandeCodeRoute,
   MagicLinkTokenRoute: MagicLinkTokenRoute,
   SalaireConfirmerTokenRoute: SalaireConfirmerTokenRoute,
+  ApiPublicShwaryCallbackRoute: ApiPublicShwaryCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

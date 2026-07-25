@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSettings, type Currency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
@@ -230,7 +231,10 @@ function Page() {
             <div><Label>TVA par défaut (%)</Label><Input type="number" step="0.01" value={ex("vat_rate", 0)} onChange={(e) => setEx("vat_rate", +e.target.value)} /></div>
             <div><Label>Remise par défaut (%)</Label><Input type="number" step="0.01" value={ex("default_discount", 0)} onChange={(e) => setEx("default_discount", +e.target.value)} /></div>
           </div>
+
+          <ShwarySection />
         </>}
+
 
         {tab === "livraison" && <>
           <div className="flex items-center justify-between rounded border p-3">
@@ -450,6 +454,67 @@ function Page() {
           </Button>
         </div>
       </CardContent></Card>
+    </div>
+  );
+}
+
+function ShwarySection() {
+  const qc = useQueryClient();
+  const [merchantId, setMerchantId] = useState("");
+  const [merchantKey, setMerchantKey] = useState("");
+  const [sandbox, setSandbox] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const { data } = useQuery({
+    queryKey: ["payment_credentials", "shwary"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("payment_credentials" as never)
+        .select("merchant_id, merchant_key, sandbox")
+        .eq("provider" as never, "shwary" as never)
+        .maybeSingle();
+      return (data ?? null) as { merchant_id: string | null; merchant_key: string | null; sandbox: boolean } | null;
+    },
+  });
+
+  useEffect(() => {
+    if (data) {
+      setMerchantId(data.merchant_id ?? "");
+      setMerchantKey(data.merchant_key ?? "");
+      setSandbox(data.sandbox ?? true);
+    }
+  }, [data]);
+
+  async function save() {
+    setSaving(true);
+    const { error } = await supabase
+      .from("payment_credentials" as never)
+      .upsert(
+        { provider: "shwary", merchant_id: merchantId || null, merchant_key: merchantKey || null, sandbox, updated_at: new Date().toISOString() } as never,
+        { onConflict: "provider" } as never,
+      );
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else { toast.success("Shwary configuré"); qc.invalidateQueries({ queryKey: ["payment_credentials", "shwary"] }); }
+  }
+
+  return (
+    <div className="rounded-2xl border p-5 space-y-4 bg-gradient-to-br from-primary/5 to-transparent">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-display font-semibold">Shwary — Mobile Money (boutique en ligne)</h3>
+          <p className="text-xs text-muted-foreground">Créez votre compte marchand sur app.shwary.com puis collez vos identifiants ici.</p>
+        </div>
+        <label className="flex items-center gap-2 text-sm"><Switch checked={sandbox} onCheckedChange={setSandbox} /> Sandbox (test)</label>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div><Label>Identifiant marchand (x-merchant-id)</Label><Input value={merchantId} onChange={(e) => setMerchantId(e.target.value)} placeholder="uuid marchand" /></div>
+        <div><Label>Clé marchande (x-merchant-key)</Label><Input type="password" value={merchantKey} onChange={(e) => setMerchantKey(e.target.value)} placeholder="shwary_live_..." /></div>
+      </div>
+      <div className="flex items-center justify-between rounded border p-3 bg-background/50">
+        <div className="text-xs text-muted-foreground">URL de callback à renseigner côté Shwary : <br /><code className="text-[11px]">{typeof window !== "undefined" ? `${window.location.origin}/api/public/shwary/callback` : ""}</code></div>
+        <Button size="sm" onClick={save} disabled={saving}>{saving ? "…" : "Enregistrer Shwary"}</Button>
+      </div>
     </div>
   );
 }
