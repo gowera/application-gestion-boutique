@@ -224,6 +224,11 @@ function ProductCard({ p, rate, cur }: { p: any; rate: number; cur: any }) {
             <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> Panier
           </Button>
         </div>
+        <Link to="/produit/$productId" params={{ productId: p.id }} className="mt-3 block">
+          <Button size="sm" variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+            Voir tous les détails
+          </Button>
+        </Link>
       </div>
     </div>
   );

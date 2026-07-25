@@ -20,6 +20,7 @@ import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
+import { Route as ProduitProductIdRouteImport } from './routes/produit.$productId'
 import { Route as MagicLinkTokenRouteImport } from './routes/magic-link.$token'
 import { Route as CommandeCodeRouteImport } from './routes/commande.$code'
 import { Route as BoutiqueProductIdRouteImport } from './routes/boutique.$productId'
@@ -104,6 +105,11 @@ const ServicesSlugRoute = ServicesSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => ServicesRoute,
+} as any)
+const ProduitProductIdRoute = ProduitProductIdRouteImport.update({
+  id: '/produit/$productId',
+  path: '/produit/$productId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const MagicLinkTokenRoute = MagicLinkTokenRouteImport.update({
   id: '/magic-link/$token',
@@ -287,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/boutique/$productId': typeof BoutiqueProductIdRoute
   '/commande/$code': typeof CommandeCodeRoute
   '/magic-link/$token': typeof MagicLinkTokenRoute
+  '/produit/$productId': typeof ProduitProductIdRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
@@ -329,6 +336,7 @@ export interface FileRoutesByTo {
   '/boutique/$productId': typeof BoutiqueProductIdRoute
   '/commande/$code': typeof CommandeCodeRoute
   '/magic-link/$token': typeof MagicLinkTokenRoute
+  '/produit/$productId': typeof ProduitProductIdRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
@@ -373,6 +381,7 @@ export interface FileRoutesById {
   '/boutique/$productId': typeof BoutiqueProductIdRoute
   '/commande/$code': typeof CommandeCodeRoute
   '/magic-link/$token': typeof MagicLinkTokenRoute
+  '/produit/$productId': typeof ProduitProductIdRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/_authenticated/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
@@ -417,6 +426,7 @@ export interface FileRouteTypes {
     | '/boutique/$productId'
     | '/commande/$code'
     | '/magic-link/$token'
+    | '/produit/$productId'
     | '/services/$slug'
     | '/admin/caisse'
     | '/admin/categories'
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/boutique/$productId'
     | '/commande/$code'
     | '/magic-link/$token'
+    | '/produit/$productId'
     | '/services/$slug'
     | '/admin/caisse'
     | '/admin/categories'
@@ -502,6 +513,7 @@ export interface FileRouteTypes {
     | '/boutique/$productId'
     | '/commande/$code'
     | '/magic-link/$token'
+    | '/produit/$productId'
     | '/services/$slug'
     | '/_authenticated/admin/caisse'
     | '/_authenticated/admin/categories'
@@ -545,6 +557,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRouteWithChildren
   CommandeCodeRoute: typeof CommandeCodeRoute
   MagicLinkTokenRoute: typeof MagicLinkTokenRoute
+  ProduitProductIdRoute: typeof ProduitProductIdRoute
   SalaireConfirmerTokenRoute: typeof SalaireConfirmerTokenRoute
   ApiPublicShwaryCallbackRoute: typeof ApiPublicShwaryCallbackRoute
 }
@@ -627,6 +640,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/services/$slug'
       preLoaderRoute: typeof ServicesSlugRouteImport
       parentRoute: typeof ServicesRoute
+    }
+    '/produit/$productId': {
+      id: '/produit/$productId'
+      path: '/produit/$productId'
+      fullPath: '/produit/$productId'
+      preLoaderRoute: typeof ProduitProductIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/magic-link/$token': {
       id: '/magic-link/$token'
@@ -951,6 +971,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRouteWithChildren,
   CommandeCodeRoute: CommandeCodeRoute,
   MagicLinkTokenRoute: MagicLinkTokenRoute,
+  ProduitProductIdRoute: ProduitProductIdRoute,
   SalaireConfirmerTokenRoute: SalaireConfirmerTokenRoute,
   ApiPublicShwaryCallbackRoute: ApiPublicShwaryCallbackRoute,
 }
