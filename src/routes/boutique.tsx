@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatMoney, useSettings } from "@/lib/currency";
 import { Search, ShoppingCart, Package, Star, SlidersHorizontal, X, Share2 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
+import { StorageImage } from "@/components/storage-image";
 import { toast } from "sonner";
 
 const searchSchema = z.object({
@@ -194,9 +195,13 @@ function ProductCard({ p, rate, cur }: { p: any; rate: number; cur: any }) {
   return (
     <div className="group overflow-hidden rounded-2xl border border-l-4 border-l-energy border-border/60 bg-background shadow-sm transition-all hover:shadow-lg">
       <Link to="/boutique/$productId" params={{ productId: p.id }} className="relative block aspect-square overflow-hidden bg-secondary">
-        {p.images?.[0]
-          ? <img src={p.images[0]} alt={p.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-          : <div className="grid h-full w-full place-items-center"><Package className="h-12 w-12 text-muted-foreground/30" /></div>}
+        <StorageImage
+          src={p.images?.[0]}
+          alt={p.name}
+          className="h-full w-full object-cover transition-transform group-hover:scale-105"
+          fallback={<div className="grid h-full w-full place-items-center"><Package className="h-12 w-12 text-muted-foreground/30" /></div>}
+        />
+
         {p.stock <= 0 && <Badge variant="destructive" className="absolute left-3 top-3">Rupture</Badge>}
         {p.stock > 0 && <span className="absolute left-3 top-3 rounded bg-energy px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-energy-foreground">En stock</span>}
       </Link>
