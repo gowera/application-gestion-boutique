@@ -19,7 +19,7 @@ export interface ReceiptData {
   currency: Currency;
   rate: number;
   documentType?: "Facture" | "Reçu";
-  template?: "standard" | "pro";
+  template?: "standard" | "pro" | "custom";
 }
 
 export interface PurchasePdfData {
