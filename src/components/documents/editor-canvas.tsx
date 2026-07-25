@@ -108,7 +108,7 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
         <div className="overflow-auto border rounded bg-muted/30 p-4" style={{ maxHeight: 700 }}>
           <div
             ref={canvasRef}
-            onClick={() => setSelectedId(null)}
+            onPointerDown={(e) => { if (e.target === e.currentTarget) setSelectedId(null); }}
             className="relative mx-auto bg-white shadow"
             style={{ width: canvasWidth, height: canvasHeight }}
           >
