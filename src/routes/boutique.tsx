@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatMoney, useSettings } from "@/lib/currency";
 import { Search, ShoppingCart, Package, Star, SlidersHorizontal, X, Share2 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
+import { StorageImage } from "@/components/storage-image";
 import { toast } from "sonner";
 
 const searchSchema = z.object({
