@@ -1097,6 +1097,7 @@ export type Database = {
       }
       quote_requests: {
         Row: {
+          attachment_url: string | null
           created_at: string
           email: string | null
           id: string
@@ -1107,6 +1108,7 @@ export type Database = {
           status: Database["public"]["Enums"]["quote_status"]
         }
         Insert: {
+          attachment_url?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1117,6 +1119,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["quote_status"]
         }
         Update: {
+          attachment_url?: string | null
           created_at?: string
           email?: string | null
           id?: string

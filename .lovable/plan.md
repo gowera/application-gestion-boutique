@@ -1,123 +1,49 @@
-# Plan CONETEC v1.1 — améliorations complètes
+## Objectifs
 
-Le périmètre demandé est très large. Je propose de le livrer en **5 lots successifs**, chacun testable indépendamment. Chaque lot inclut migration DB + UI + intégration.
+Neuf ajustements couvrant devis, achats, RH, rapports, documents et POS.
 
----
+## Détails
 
-## Lot 1 — Pilotage & Ventes directes (POS)
+### 1. Devis publics — pièce jointe
+- Créer un bucket Storage `quote-attachments` (public).
+- `src/routes/devis.tsx` : ajouter champ fichier (optionnel, ≤10 Mo). Upload puis stocker l'URL dans `quote_requests.message` (ou nouvelle colonne `attachment_url` via migration).
+- `admin/messages.tsx` : afficher lien pièce jointe si présent.
 
-**Tableau de bord**
-- Graphiques Recharts : CA jour/semaine/mois, top produits, ventes par canal, dépenses vs recettes.
-- Carte **« À recouvrer »** : total dettes clients + top débiteurs (lien vers Crédits).
-- Bouton **« Caisse »** ouvrant sous-page : ouvrir/fermer session, fond de caisse, écart, historique sessions (`cash_sessions` existe déjà).
+### 2. Fusion "Achats & Fournisseurs"
+- Nouvelle page `admin/purchasing.tsx` avec deux onglets : **Achats** et **Fournisseurs** (reprise du contenu existant).
+- Sidebar : remplacer les 2 entrées par une seule "Achats & fournisseurs". Anciennes routes conservées comme redirections.
 
-**POS / Vente directe**
-- Toggle **« Vente à crédit »** avec `due_date` (échéance) et note de prise de dette.
-- Bouton **« + Nouveau client »** dans le formulaire (modal inline).
-- Décrément stock déjà en place (`create_pos_sale`) — vérifier + afficher indicateur stock temps réel.
+### 3. Fusion "Employés & Salaires"
+- Nouvelle page `admin/hr.tsx` avec onglets **Employés** et **Salaires**.
+- Sidebar : une seule entrée "RH — Employés & salaires".
 
-**DB** : ajouter `sales.due_date`, `cash_sessions` déjà en place.
+### 4. Ajout export PDF partout où il n'y a que Excel
+- Pages ciblées : `reports.tsx`, `stock.tsx`, `sales.tsx`, `orders.tsx`, `expenses.tsx`, `salaries.tsx`, `purchases.tsx`, `interventions.tsx`, `customers.tsx`.
+- Utilitaire `src/lib/pdf-table.ts` : `downloadTablePdf(title, columns, rows)` basé sur jsPDF + autoTable (déjà dispo via jspdf-autotable ou fallback simple).
 
----
+### 5. Fusion "Rapports" + "Caisse" → **Rapport de caisse**
+- Nouvelle page `admin/reports.tsx` refondue avec onglets **Vue d'ensemble**, **Sessions de caisse**, **Crédits à recouvrer**, **Crédits à payer**.
+- Sidebar : supprimer "Caisse", garder "Rapport de caisse".
+- Renommer "Crédit" → "Crédit à recouvrer".
+- Ajouter KPI **Total estimé** = crédit à recouvrer + solde.
+- Nouveau tableau **Crédits à payer** (dettes fournisseurs : `suppliers.balance_usd > 0` + salaires en attente + loyers impayés).
 
-## Lot 2 — Commercial (Clients, Crédits, Devis/Messages)
+### 6. Documents — restructuration
+- `admin/documents.tsx` déjà avec onglets ; renommer explicitement :
+  - **Modèles de document** (éditeur canvas, sélection modèle actif).
+  - **Créer un document** (formulaire manuel facture/reçu → PDF).
+- Ajouter 3e onglet **Historique** (contenu de `documents/history.tsx`).
+- Le modèle actif (`getStoredDocumentTemplate`) reste utilisé partout (POS, caisse, ventes) — déjà en place.
 
-**Clients & crédits** (2 onglets)
-- Onglet **Clients** : répertoire CRUD complet (édition, archivage, historique achats).
-- Onglet **Crédits & dettes** : liste des dettes ouvertes, formulaire d'octroi manuel, encaissement partiel avec calcul auto du reste, historique paiements par client.
+### 7. POS — génération document au choix
+- `admin/pos.tsx` : après validation vente, sélecteur "Type de document" (Facture / Reçu / Aucun) présent dans la modale de paiement + case "à la demande du client".
+- Génère le PDF avec `downloadReceipt({ documentType })` et `issueDocumentNumber`.
 
-**Devis & messages**
-- Réponse directe depuis l'admin (email via Resend/Lovable AI, ou WhatsApp deep-link `wa.me`).
-- Envoi de messages sortants aux clients existants (WhatsApp + mailto).
-- Historique des échanges par demande.
+## Notes techniques
+- Bucket Storage via `supabase--storage_create_bucket`.
+- Migration mineure : `quote_requests.attachment_url text`.
+- `jspdf-autotable` déjà présent ? Sinon ajout via bun.
+- Aucune suppression de données ; pages fusionnées gardent leurs routes originales comme redirections vers les onglets.
 
-**DB** : `message_threads`, `message_replies`.
-
----
-
-## Lot 3 — Stock, Catégories, Fournisseurs, Achats
-
-**Produits**
-- **Upload images** (Storage bucket `product-images`) + saisie par URL.
-- **Slug auto-généré** depuis le nom.
-- Ajout catégorie inline depuis le formulaire produit.
-- Case **« Afficher le stock sur la boutique en ligne »** (`show_stock_public`).
-- **Notifications rupture** : cloche dans le header + centre notifications.
-- Bouton **« Ravitailler »** → crée un bon d'achat pré-rempli avec le fournisseur associé.
-
-**Catégories**
-- Colonne `product_count` calculée.
-- Suppression → modal de choix de catégorie de migration si produits associés.
-
-**Fournisseurs**
-- Boutons contact direct (tel, mail, WhatsApp).
-- Association produits ↔ fournisseurs (table `product_suppliers`).
-
-**Achats**
-- Formulaire complet : sélection fournisseur, lignes produits (existants ou nouveaux), coûts, dates livraison prévue/réelle, statut, PDF bon d'achat.
-
-**DB** : `product_suppliers`, `products.show_stock_public`, `products.slug`, bucket Storage, table `notifications`.
-
----
-
-## Lot 4 — Finances & RH
-
-**Dépenses (agrégation auto)**
-- Vue unifiée intégrant : dépenses manuelles + loyers (`rent_payments`) + salaires (`salary_payments`) + achats fournisseurs (`purchases`).
-- Filtres par période/catégorie, total dépenses vs CA.
-
-**Employés**
-- Bouton **Licencier** avec motif + date → `is_terminated`, `termination_reason`, `terminated_at` (données conservées).
-- Filtre actifs / licenciés.
-
-**Salaires**
-- Formulaire : sélecteur **mois (période début/fin auto)** au lieu de dates libres → « Salaire de juin 2026 ».
-- **Mode de paiement** (cash, mobile money, virement).
-- **Reçu PDF** avec **lien unique de confirmation** (`confirmation_token`).
-- Notification employé (WhatsApp/email) avec le lien.
-- Après confirmation, token invalidé, statut → `confirmed`.
-
-**DB** : `employees.is_terminated/termination_reason/terminated_at`, `salary_payments.period_month/payment_method/confirmation_token/confirmed_at`, route publique `/salaire/confirmer/$token`.
-
----
-
-## Lot 5 — Configuration, Corbeille, Historique
-
-**Paramètres** (onglets)
-- **Documents** : éditeur canvas (couleur, logo, signature, mentions légales) pour factures/reçus/bons.
-- **Site en ligne** : nom boutique, adresse, contacts, upload images galerie services.
-- **Paiements** : configuration agrégateurs mobile money (clés, activation).
-- **Infos entreprise** : coordonnées + Google Maps (lat/lng), utilisées sur documents + site public.
-- **Nettoyage BDD** : export complet CSV/JSON puis purge sélective (employés licenciés, corbeille vidée, logs anciens).
-
-**Rôles utilisateurs**
-- Invitation par WhatsApp/email/SMS (lien magique Supabase + deep-link `wa.me`).
-- Table `invitations` avec token, rôle pré-assigné, expiration.
-
-**Corbeille**
-- Colonne `deleted_at` (soft-delete) sur produits, clients, employés, fournisseurs, catégories.
-- Page **Corbeille** : restaurer / supprimer définitivement.
-- Paramètre : délai auto-purge (jours), job scheduled.
-
-**Historique**
-- Page dédiée listant `activity_log` (déjà en place) avec filtres user/action/entité/date.
-
-**DB** : `documents_settings`, `payment_gateways`, `invitations`, colonnes `deleted_at` + `terminated_*`, `settings.trash_retention_days` + `map_lat/lng` + `services_gallery`.
-
----
-
-## Détails techniques
-
-- **Storage** : bucket `product-images` (public) + `service-gallery` (public) + `signatures` (privé).
-- **PDFs** : extension de `src/lib/pdf.ts` avec templates paramétrables.
-- **Notifications** : table `notifications` + composant cloche header + realtime.
-- **Confirmations salaire** : route publique `/salaire/confirmer/$token`.
-- **Nettoyage BDD** : server function admin exportant en ZIP puis exécutant les DELETE.
-
----
-
-## Ordre d'exécution proposé
-
-Je livre **Lot 1 en premier**, puis j'attends votre retour avant d'enchaîner. Chaque lot ≈ 1 tour de conversation.
-
-**Souhaitez-vous approuver ce plan et démarrer par le Lot 1 ?** Ou préférez-vous réorganiser les priorités (par exemple commencer par Corbeille + Historique, ou par Configuration) ?
+## Livraison
+Une seule passe d'implémentation, puis vérification build.

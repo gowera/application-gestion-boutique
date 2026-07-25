@@ -21,6 +21,7 @@ export interface ReceiptData {
   documentType?: "Facture" | "Reçu";
   template?: "standard" | "pro" | "custom";
   logoDataUrl?: string;
+  note?: string;
 }
 
 export interface PurchasePdfData {
