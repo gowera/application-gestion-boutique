@@ -37,7 +37,7 @@ function PosPage() {
   const [note, setNote] = useState("");
   const [isCredit, setIsCredit] = useState(false);
   const [dueDate, setDueDate] = useState("");
-  const [documentType, setDocumentType] = useState<"Facture" | "Reçu">("Reçu");
+  const [documentType, setDocumentType] = useState<"Facture" | "Reçu" | "Aucun">("Reçu");
   const qc = useQueryClient();
 
   const { data: products } = useQuery({
@@ -103,28 +103,31 @@ function PosPage() {
       ]);
       if (sale) {
         const customerName = (sale as { customers?: { name?: string } }).customers?.name ?? "Client anonyme";
-        let docCode = sale.code;
-        try {
-          const issued = await issueDocumentNumber({
-            docType: labelToDocType(documentType),
-            saleId,
-            customerName,
-            totalUsd: Number(sale.total_usd),
+        if (documentType !== "Aucun") {
+          const docLabel = documentType;
+          let docCode = sale.code;
+          try {
+            const issued = await issueDocumentNumber({
+              docType: labelToDocType(docLabel),
+              saleId,
+              customerName,
+              totalUsd: Number(sale.total_usd),
+            });
+            docCode = issued.code;
+          } catch (err) {
+            console.warn("Numérotation document indisponible", err);
+          }
+          downloadReceipt({
+            shopName: settings?.shop_name ?? "CONETEC",
+            address: settings?.address ?? "",
+            phone: settings?.phone ?? "",
+            code: docCode, customer: customerName,
+            items: (items ?? []).map((i) => ({ name: i.product_name, qty: i.qty, unit: Number(i.unit_price_usd), total: Number(i.line_total_usd) })),
+            subtotal: Number(sale.subtotal_usd), discount: Number(sale.discount_usd), total: Number(sale.total_usd),
+            paid: Number(sale.paid_usd), credit: Number(sale.credit_usd), currency, rate,
+            documentType: docLabel, template: getStoredDocumentTemplate(),
           });
-          docCode = issued.code;
-        } catch (err) {
-          console.warn("Numérotation document indisponible", err);
         }
-        downloadReceipt({
-          shopName: settings?.shop_name ?? "CONETEC",
-          address: settings?.address ?? "",
-          phone: settings?.phone ?? "",
-          code: docCode, customer: customerName,
-          items: (items ?? []).map((i) => ({ name: i.product_name, qty: i.qty, unit: Number(i.unit_price_usd), total: Number(i.line_total_usd) })),
-          subtotal: Number(sale.subtotal_usd), discount: Number(sale.discount_usd), total: Number(sale.total_usd),
-          paid: Number(sale.paid_usd), credit: Number(sale.credit_usd), currency, rate,
-          documentType, template: getStoredDocumentTemplate(),
-        });
       }
       setCart([]); setDiscount(0); setNote(""); setPayments([{ method: "cash", amount: 0, currency }]); setCustomerId(null); setIsCredit(false); setDueDate(""); setDocumentType("Reçu");
       qc.invalidateQueries();
@@ -244,14 +247,18 @@ function PosPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Type de document</Label>
-            <Select value={documentType} onValueChange={(v) => setDocumentType(v as "Facture" | "Reçu")}>
+            <Label>Document à générer</Label>
+            <Select value={documentType} onValueChange={(v) => setDocumentType(v as "Facture" | "Reçu" | "Aucun")}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Reçu">Reçu</SelectItem>
-                <SelectItem value="Facture">Facture</SelectItem>
+                <SelectItem value="Reçu">Reçu (par défaut)</SelectItem>
+                <SelectItem value="Facture">Facture (à la demande du client)</SelectItem>
+                <SelectItem value="Aucun">Aucun document</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              {documentType === "Aucun" ? "Aucun document ne sera généré." : `Un ${documentType.toLowerCase()} numéroté sera généré automatiquement.`}
+            </p>
           </div>
           <Input placeholder="Note (optionnel)" value={note} onChange={(e) => setNote(e.target.value)} />
           <Button className="w-full" size="lg" disabled={submit.isPending || cart.length === 0} onClick={() => submit.mutate()}>
