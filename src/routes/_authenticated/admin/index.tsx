@@ -215,13 +215,13 @@ function DashboardPage() {
   );
 }
 
-function Kpi({ icon: Icon, label, value, sub }: { icon: typeof DollarSign; label: string; value: string; sub?: string }) {
+function Kpi({ icon: Icon, label, value, sub, tone }: { icon: typeof DollarSign; label: string; value: string; sub?: string; tone?: string }) {
   return (
-    <Card>
+    <Card className={`overflow-hidden rounded-2xl border-border/60 bg-gradient-to-br ${tone ?? "from-muted/40 to-transparent"} transition-all hover:-translate-y-0.5 hover:shadow-lg`}>
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary"><Icon className="h-4 w-4" /></div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm"><Icon className="h-4 w-4" /></div>
         </div>
         <div className="mt-3 text-display text-2xl font-bold">{value}</div>
         {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
