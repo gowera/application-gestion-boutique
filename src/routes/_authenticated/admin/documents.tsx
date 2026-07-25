@@ -16,7 +16,7 @@ import { downloadReceipt } from "@/lib/pdf";
 
 export const Route = createFileRoute("/_authenticated/admin/documents")({ component: Page });
 
-type Customer = { id: string; name: string; phone?: string | null };
+type Customer = { id: string; name: string; phone?: string | null; is_archived?: boolean };
 type DocumentRecord = { id: string; type: string; code: string; created_at: string; customer_name?: string | null };
 
 function Page() {
