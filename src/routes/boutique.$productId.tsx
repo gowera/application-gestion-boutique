@@ -61,9 +61,12 @@ function ProductPage() {
           {/* Gallery */}
           <div>
             <div className="relative overflow-hidden rounded-2xl border bg-secondary aspect-square">
-              {images[activeImg]
-                ? <img src={images[activeImg]} alt={p.name} className="h-full w-full object-cover" />
-                : <div className="grid h-full w-full place-items-center"><Package className="h-24 w-24 text-muted-foreground/30" /></div>}
+              <StorageImage
+                src={images[activeImg]}
+                alt={p.name}
+                className="h-full w-full object-cover"
+                fallback={<div className="grid h-full w-full place-items-center"><Package className="h-24 w-24 text-muted-foreground/30" /></div>}
+              />
               {savings && <span className="absolute left-4 top-4 rounded-md bg-destructive px-3 py-1.5 text-xs font-bold text-destructive-foreground">−{Math.round((savings / oldPrice!) * 100)}%</span>}
             </div>
             {images.length > 1 && (
@@ -74,7 +77,8 @@ function ProductPage() {
                     onClick={() => setActiveImg(i)}
                     className={`aspect-square overflow-hidden rounded-lg border-2 bg-secondary transition-all ${activeImg === i ? "border-energy" : "border-transparent hover:border-border"}`}
                   >
-                    <img src={src} alt="" className="h-full w-full object-cover" />
+                    <StorageImage src={src} alt="" className="h-full w-full object-cover" />
+
                   </button>
                 ))}
               </div>
