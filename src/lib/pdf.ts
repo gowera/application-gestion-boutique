@@ -249,14 +249,13 @@ function renderCustomTemplate(doc: jsPDF, tpl: CanvasTemplate, data: ReceiptData
   doc.setTextColor(0, 0, 0);
 }
 
-export function downloadReceipt(data: ReceiptData) {
+export function buildReceiptDoc(data: ReceiptData): jsPDF {
   const kind: DocumentKind = data.documentType === "Facture" ? "facture" : "recu";
   if (data.template === "custom") {
     const tpl = getCustomTemplate(kind);
     const doc = new jsPDF({ unit: "mm", format: [tpl.pageWidth, tpl.pageHeight] });
     renderCustomTemplate(doc, tpl, data);
-    doc.save(`${kind}-${data.code}.pdf`);
-    return;
+    return doc;
   }
 
   const doc = new jsPDF({ unit: "mm", format: [80, 220] });
@@ -299,10 +298,10 @@ export function downloadReceipt(data: ReceiptData) {
   const yAfter = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4;
   let y2 = yAfter;
 
-  const line = (label: string, val: string, bold = false) => {
+  const line = (lbl: string, val: string, bold = false) => {
     doc.setFont("helvetica", bold ? "bold" : "normal");
     doc.setFontSize(bold ? 10 : 8);
-    doc.text(label, 4, y2);
+    doc.text(lbl, 4, y2);
     doc.text(val, w - 4, y2, { align: "right" });
     y2 += bold ? 5 : 4;
   };
@@ -314,6 +313,19 @@ export function downloadReceipt(data: ReceiptData) {
   y2 += 4;
   doc.setFontSize(8);
   doc.text("Merci de votre confiance.", w / 2, y2, { align: "center" });
+  return doc;
+}
 
-  doc.save(`recu-${data.code}.pdf`);
+export function downloadReceipt(data: ReceiptData) {
+  const kind: DocumentKind = data.documentType === "Facture" ? "facture" : "recu";
+  const doc = buildReceiptDoc(data);
+  const prefix = kind === "facture" ? "facture" : "recu";
+  doc.save(`${prefix}-${data.code}.pdf`);
+}
+
+/** Build a jsPDF for a given custom template — used by the live editor preview. */
+export function buildCustomTemplatePreviewDoc(template: CanvasTemplate, data: ReceiptData): jsPDF {
+  const doc = new jsPDF({ unit: "mm", format: [template.pageWidth, template.pageHeight] });
+  renderCustomTemplate(doc, template, data);
+  return doc;
 }
