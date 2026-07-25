@@ -230,6 +230,71 @@ export type Database = {
         }
         Relationships: []
       }
+      document_counters: {
+        Row: {
+          doc_type: string
+          last_number: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          doc_type: string
+          last_number?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          doc_type?: string
+          last_number?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      document_registry: {
+        Row: {
+          code: string
+          created_at: string
+          customer_name: string | null
+          doc_number: number
+          doc_type: string
+          generated_by: string | null
+          id: string
+          sale_id: string | null
+          total_usd: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          customer_name?: string | null
+          doc_number: number
+          doc_type: string
+          generated_by?: string | null
+          id?: string
+          sale_id?: string | null
+          total_usd?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          customer_name?: string | null
+          doc_number?: number
+          doc_type?: string
+          generated_by?: string | null
+          id?: string
+          sale_id?: string | null
+          total_usd?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_registry_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents_settings: {
         Row: {
           accent_color: string | null
@@ -1509,6 +1574,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      issue_document_number: {
+        Args: {
+          _customer_name?: string
+          _doc_type: string
+          _sale_id?: string
+          _total_usd?: number
+        }
+        Returns: Json
       }
       list_trash_items: {
         Args: never
