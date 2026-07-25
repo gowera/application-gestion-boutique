@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt, Users, Wallet, Settings as SettingsIcon,
-  Inbox, UserCog, Zap, Truck, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, HandCoins, Banknote, Activity,
+  Inbox, UserCog, Zap, Truck, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, HandCoins, Banknote, Activity, FileText,
 } from "lucide-react";
 import logo from "@/assets/brand/logo.png";
 import {
@@ -23,6 +23,7 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
     items: [
       { title: "Commandes en ligne", url: "/admin/orders", icon: ShoppingBag },
       { title: "Ventes", url: "/admin/sales", icon: Receipt },
+      { title: "Documents", url: "/admin/documents/history", icon: FileText },
       { title: "Clients & crédits", url: "/admin/customers", icon: Users },
       { title: "Interventions & SAV", url: "/admin/interventions", icon: Wrench },
       { title: "Devis & messages", url: "/admin/messages", icon: Inbox },

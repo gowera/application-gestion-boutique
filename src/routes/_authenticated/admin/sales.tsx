@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useSettings, formatMoney } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
-import { XCircle, Eye, FileDown } from "lucide-react";
+import { XCircle, Eye, FileDown, Printer } from "lucide-react";
 import { exportToXlsx } from "@/lib/xlsx-export";
+import { reprintSaleDocument } from "@/lib/reprint";
 
 export const Route = createFileRoute("/_authenticated/admin/sales")({
   component: SalesPage,
@@ -82,9 +83,17 @@ function SalesPage() {
                   <TableCell><Badge variant={s.status === "completed" ? "default" : s.status === "cancelled" ? "destructive" : "secondary"}>{s.status}</Badge></TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => setDetailId(s.id)}><Eye className="h-3.5 w-3.5" /></Button>
+                      <Button size="sm" variant="ghost" onClick={() => setDetailId(s.id)} title="Détails"><Eye className="h-3.5 w-3.5" /></Button>
+                      <Button size="sm" variant="ghost" title="Réimprimer reçu" onClick={async () => {
+                        try { await reprintSaleDocument({ saleId: s.id, docType: "recu", settings }); toast.success("Reçu régénéré"); }
+                        catch (e) { toast.error((e as Error).message); }
+                      }}><Printer className="h-3.5 w-3.5" /></Button>
+                      <Button size="sm" variant="ghost" title="Réimprimer facture" onClick={async () => {
+                        try { await reprintSaleDocument({ saleId: s.id, docType: "facture", settings }); toast.success("Facture régénérée"); }
+                        catch (e) { toast.error((e as Error).message); }
+                      }}><FileDown className="h-3.5 w-3.5" /></Button>
                       {s.status === "completed" && (
-                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => confirm("Annuler cette vente ?") && cancel.mutate(s.id)}>
+                        <Button size="sm" variant="ghost" className="text-destructive" title="Annuler la vente" onClick={() => confirm("Annuler cette vente ?") && cancel.mutate(s.id)}>
                           <XCircle className="h-3.5 w-3.5" />
                         </Button>
                       )}
