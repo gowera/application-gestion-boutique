@@ -41,7 +41,7 @@ function ProductPage() {
 
   const images: string[] = p.images?.length ? p.images : [];
   const price = Number(p.sale_price);
-  const oldPrice = p.compare_at_price ? Number(p.compare_at_price) : null;
+  const oldPrice = null as number | null;
   const savings = oldPrice && oldPrice > price ? oldPrice - price : null;
 
   return (
