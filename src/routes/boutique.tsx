@@ -1,6 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo, useEffect } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteShell } from "@/components/public/site-shell";
 import { Input } from "@/components/ui/input";
@@ -9,12 +11,25 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatMoney, useSettings } from "@/lib/currency";
-import { Search, ShoppingCart, Package, Star, SlidersHorizontal, X } from "lucide-react";
+import { Search, ShoppingCart, Package, Star, SlidersHorizontal, X, Share2 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { toast } from "sonner";
 
+const searchSchema = z.object({
+  q: fallback(z.string(), "").default(""),
+  cat: fallback(z.string(), "all").default("all"),
+  inStock: fallback(z.boolean(), false).default(false),
+  sort: fallback(z.string(), "recent").default("recent"),
+  minPrice: fallback(z.string(), "").default(""),
+  maxPrice: fallback(z.string(), "").default(""),
+});
+
+type SavedFilters = z.infer<typeof searchSchema>;
+const DEFAULTS: SavedFilters = { q: "", cat: "all", inStock: false, sort: "recent", minPrice: "", maxPrice: "" };
+
 export const Route = createFileRoute("/boutique")({
   component: ShopPage,
+  validateSearch: zodValidator(searchSchema),
   head: () => ({ meta: [
     { title: "Boutique — CONETEC" },
     { name: "description", content: "Catalogue complet CONETEC : matériels électriques, solaires, CCTV, réseaux, climatisation et outillage professionnel." },
@@ -25,39 +40,24 @@ export const Route = createFileRoute("/boutique")({
   ]}),
 });
 
-const STORAGE_KEY = "conetec:shop-filters:v1";
-
-type SavedFilters = {
-  q: string;
-  cat: string;
-  inStock: boolean;
-  sort: string;
-  minPrice: string;
-  maxPrice: string;
-};
-
-const DEFAULTS: SavedFilters = { q: "", cat: "all", inStock: false, sort: "recent", minPrice: "", maxPrice: "" };
-
-function loadFilters(): SavedFilters {
-  if (typeof window === "undefined") return DEFAULTS;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : DEFAULTS;
-  } catch { return DEFAULTS; }
-}
-
 function ShopPage() {
-  const [f, setF] = useState<SavedFilters>(DEFAULTS);
-  const [ready, setReady] = useState(false);
+  const f = Route.useSearch();
+  const navigate = useNavigate({ from: "/boutique" });
   const { data: settings } = useSettings();
   const rate = settings?.usd_to_cdf_rate ?? 2800;
   const cur = settings?.primary_currency ?? "USD";
 
-  useEffect(() => { setF(loadFilters()); setReady(true); }, []);
-  useEffect(() => { if (ready) localStorage.setItem(STORAGE_KEY, JSON.stringify(f)); }, [f, ready]);
-
-  const patch = (p: Partial<SavedFilters>) => setF((prev) => ({ ...prev, ...p }));
-  const reset = () => setF(DEFAULTS);
+  const patch = (p: Partial<SavedFilters>) =>
+    navigate({ search: (prev: SavedFilters) => ({ ...prev, ...p }), replace: true });
+  const reset = () => navigate({ search: DEFAULTS, replace: true });
+  const share = async () => {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    try {
+      if (navigator.share) await navigator.share({ title: "Boutique CONETEC", url });
+      else { await navigator.clipboard.writeText(url); toast.success("Lien copié"); }
+    } catch { /* cancelled */ }
+  };
 
   const { data: cats } = useQuery({ queryKey: ["cats-public"], queryFn: async () => (await supabase.from("categories").select("id,name").order("name")).data ?? [] });
   const { data: products, isLoading, isFetching } = useQuery({
@@ -106,6 +106,7 @@ function ShopPage() {
               <SelectItem value="price_desc">Prix décroissant</SelectItem>
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={share} className="gap-1"><Share2 className="h-4 w-4" />Partager</Button>
           {hasActive && (
             <Button variant="ghost" size="sm" onClick={reset} className="gap-1"><X className="h-4 w-4" />Réinitialiser</Button>
           )}
