@@ -1,3 +1,4 @@
+import { StorageImage } from "@/components/storage-image";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteShell } from "@/components/public/site-shell";
 import { useCart } from "@/hooks/use-cart";
@@ -30,7 +31,7 @@ function CartPage() {
                 <Card key={it.product_id}>
                   <CardContent className="p-4 flex items-center gap-4">
                     <div className="h-20 w-20 bg-secondary rounded-md overflow-hidden flex-shrink-0">
-                      {it.image ? <img src={it.image} alt={it.name} className="w-full h-full object-cover" /> : null}
+                      <StorageImage src={it.image} alt={it.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium line-clamp-2">{it.name}</div>
