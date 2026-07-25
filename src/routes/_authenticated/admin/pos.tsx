@@ -12,6 +12,7 @@ import { Search, Plus, Minus, Trash2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 import { downloadReceipt } from "@/lib/pdf";
+import { getStoredDocumentTemplate } from "@/lib/document-template";
 import { CustomerQuickAdd } from "@/components/customer-quick-add";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -107,6 +108,7 @@ function PosPage() {
         items: (items ?? []).map((i) => ({ name: i.product_name, qty: i.qty, unit: Number(i.unit_price_usd), total: Number(i.line_total_usd) })),
         subtotal: Number(sale.subtotal_usd), discount: Number(sale.discount_usd), total: Number(sale.total_usd),
         paid: Number(sale.paid_usd), credit: Number(sale.credit_usd), currency, rate,
+        documentType, template: getStoredDocumentTemplate(),
       });
       setCart([]); setDiscount(0); setNote(""); setPayments([{ method: "cash", amount: 0, currency }]); setCustomerId(null); setIsCredit(false); setDueDate(""); setDocumentType("Reçu");
       qc.invalidateQueries();
