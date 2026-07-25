@@ -88,21 +88,26 @@ function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-display text-2xl md:text-3xl font-bold">Tableau de bord</h1>
-          <p className="text-sm text-muted-foreground">Vue synthétique de l'activité de la boutique.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline" size="lg" className="gap-2"><Link to="/boutique" target="_blank" rel="noreferrer"><ArrowRight className="h-4 w-4" />Voir le site</Link></Button>
-          <Button asChild size="lg" className="gap-2"><Link to="/admin/caisse"><Banknote className="h-4 w-4" />Caisse</Link></Button>
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-[#001a4d] p-6 md:p-8 text-primary-foreground shadow-xl">
+        <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-energy/20 blur-3xl animate-pulse" />
+        <div className="absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-energy/10 blur-3xl" />
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-energy">Pilotage</p>
+            <h1 className="mt-2 text-display text-3xl md:text-4xl font-extrabold">Tableau de bord</h1>
+            <p className="mt-2 text-sm text-primary-foreground/80">Vue synthétique et temps réel de l'activité CONETEC.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="lg" className="gap-2 bg-white/10 border-white/20 text-primary-foreground hover:bg-white/20"><Link to="/boutique" target="_blank" rel="noreferrer"><ArrowRight className="h-4 w-4" />Voir le site</Link></Button>
+            <Button asChild size="lg" className="gap-2 bg-energy text-energy-foreground hover:bg-energy/90"><Link to="/admin/caisse"><Banknote className="h-4 w-4" />Caisse</Link></Button>
+          </div>
         </div>
       </div>
 
       {/* À recouvrer — highlight */}
-      <Card className="border-warning/40 bg-gradient-to-br from-warning/5 to-transparent">
+      <Card className="overflow-hidden rounded-2xl border-warning/40 bg-gradient-to-br from-warning/10 via-transparent to-transparent shadow-sm">
         <CardContent className="p-5 flex flex-wrap items-center gap-6">
-          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-warning/15 text-warning-foreground">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-warning/30 to-warning/10 text-warning-foreground shadow-inner">
             <HandCoins className="h-7 w-7" />
           </div>
           <div className="flex-1 min-w-[180px]">
@@ -120,16 +125,17 @@ function DashboardPage() {
               ))}
             </ul>
           )}
-          <Button asChild variant="outline"><Link to="/admin/customers">Gérer les crédits<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+          <Button asChild variant="outline" className="rounded-full"><Link to="/admin/customers">Gérer les crédits<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
         </CardContent>
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Kpi icon={DollarSign} label="CA du jour" value={formatMoney(kpis?.today ?? 0, currency, rate)} sub={`${kpis?.todayCount ?? 0} ventes`} />
-        <Kpi icon={ShoppingCart} label="CA semaine (7j)" value={formatMoney(kpis?.week ?? 0, currency, rate)} />
-        <Kpi icon={DollarSign} label="CA mois en cours" value={formatMoney(kpis?.month ?? 0, currency, rate)} />
-        <Kpi icon={Users} label="Créances clients" value={formatMoney(debtsTotal, currency, rate)} sub={`${kpis?.debts.length ?? 0} clients`} />
+        <Kpi icon={DollarSign} label="CA du jour" value={formatMoney(kpis?.today ?? 0, currency, rate)} sub={`${kpis?.todayCount ?? 0} ventes`} tone="from-primary/10 to-primary/0" />
+        <Kpi icon={ShoppingCart} label="CA semaine (7j)" value={formatMoney(kpis?.week ?? 0, currency, rate)} tone="from-energy/15 to-energy/0" />
+        <Kpi icon={DollarSign} label="CA mois en cours" value={formatMoney(kpis?.month ?? 0, currency, rate)} tone="from-[#006a6a]/15 to-transparent" />
+        <Kpi icon={Users} label="Créances clients" value={formatMoney(debtsTotal, currency, rate)} sub={`${kpis?.debts.length ?? 0} clients`} tone="from-warning/15 to-transparent" />
       </div>
+
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
