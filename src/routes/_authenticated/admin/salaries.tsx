@@ -45,7 +45,7 @@ function Page() {
         period_start: periodStart,
         period_end: periodEnd,
         paid_at: new Date().toISOString(),
-        payment_method: f.payment_method,
+        method: f.payment_method,
         confirmation_token: confirmationToken,
         status: "pending",
       }).select("id").single();
