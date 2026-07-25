@@ -103,28 +103,31 @@ function PosPage() {
       ]);
       if (sale) {
         const customerName = (sale as { customers?: { name?: string } }).customers?.name ?? "Client anonyme";
-        let docCode = sale.code;
-        try {
-          const issued = await issueDocumentNumber({
-            docType: labelToDocType(documentType),
-            saleId,
-            customerName,
-            totalUsd: Number(sale.total_usd),
+        if (documentType !== "Aucun") {
+          const docLabel = documentType;
+          let docCode = sale.code;
+          try {
+            const issued = await issueDocumentNumber({
+              docType: labelToDocType(docLabel),
+              saleId,
+              customerName,
+              totalUsd: Number(sale.total_usd),
+            });
+            docCode = issued.code;
+          } catch (err) {
+            console.warn("Numérotation document indisponible", err);
+          }
+          downloadReceipt({
+            shopName: settings?.shop_name ?? "CONETEC",
+            address: settings?.address ?? "",
+            phone: settings?.phone ?? "",
+            code: docCode, customer: customerName,
+            items: (items ?? []).map((i) => ({ name: i.product_name, qty: i.qty, unit: Number(i.unit_price_usd), total: Number(i.line_total_usd) })),
+            subtotal: Number(sale.subtotal_usd), discount: Number(sale.discount_usd), total: Number(sale.total_usd),
+            paid: Number(sale.paid_usd), credit: Number(sale.credit_usd), currency, rate,
+            documentType: docLabel, template: getStoredDocumentTemplate(),
           });
-          docCode = issued.code;
-        } catch (err) {
-          console.warn("Numérotation document indisponible", err);
         }
-        downloadReceipt({
-          shopName: settings?.shop_name ?? "CONETEC",
-          address: settings?.address ?? "",
-          phone: settings?.phone ?? "",
-          code: docCode, customer: customerName,
-          items: (items ?? []).map((i) => ({ name: i.product_name, qty: i.qty, unit: Number(i.unit_price_usd), total: Number(i.line_total_usd) })),
-          subtotal: Number(sale.subtotal_usd), discount: Number(sale.discount_usd), total: Number(sale.total_usd),
-          paid: Number(sale.paid_usd), credit: Number(sale.credit_usd), currency, rate,
-          documentType, template: getStoredDocumentTemplate(),
-        });
       }
       setCart([]); setDiscount(0); setNote(""); setPayments([{ method: "cash", amount: 0, currency }]); setCustomerId(null); setIsCredit(false); setDueDate(""); setDocumentType("Reçu");
       qc.invalidateQueries();
