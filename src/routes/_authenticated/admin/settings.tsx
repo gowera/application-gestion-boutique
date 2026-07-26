@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSettings, type Currency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
+import { StorageImage } from "@/components/storage-image";
 import { setAdminSettings } from "@/lib/local/adapter";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from "@/components/ui/dialog";
