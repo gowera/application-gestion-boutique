@@ -14,6 +14,7 @@ import {
 import { useCart } from "@/hooks/use-cart";
 import { ProductReviews, Stars, reviewStats, useProductReviews } from "@/components/public/product-reviews";
 import { ShareButton } from "@/components/public/share-button";
+import { getRequestOrigin } from "@/lib/origin.functions";
 import { useState } from "react";
 import { toast } from "sonner";
 
