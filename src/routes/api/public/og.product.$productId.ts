@@ -45,4 +45,4 @@ export const Route = createFileRoute("/api/public/og/product/$productId")({
       },
     },
   },
-});
+} as never);
