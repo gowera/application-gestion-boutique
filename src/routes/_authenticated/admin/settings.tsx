@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSettings, type Currency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
+import { StorageImage } from "@/components/storage-image";
 import { setAdminSettings } from "@/lib/local/adapter";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -144,15 +145,15 @@ function Page() {
           <div><Label>Description</Label><Textarea rows={3} value={ex("description", "")} onChange={(e) => setEx("description", e.target.value)} /></div>
           <div className="grid gap-4 md:grid-cols-3">
             <div><Label>Logo</Label>
-              {core.logo_url && <img src={core.logo_url} alt="logo" className="mb-2 h-14 w-14 rounded object-contain bg-muted" />}
+              {core.logo_url && <StorageImage src={core.logo_url} alt="logo" className="mb-2 h-14 w-14 rounded object-contain bg-muted" />}
               <Input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo("logo_url", f); }} />
             </div>
             <div><Label>Favicon</Label>
-              {ex("favicon_url", "") && <img src={ex("favicon_url", "")} alt="favicon" className="mb-2 h-8 w-8 rounded object-contain bg-muted" />}
+              {ex("favicon_url", "") && <StorageImage src={ex("favicon_url", "")} alt="favicon" className="mb-2 h-8 w-8 rounded object-contain bg-muted" />}
               <Input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo("favicon_url", f, true); }} />
             </div>
             <div><Label>Bannière</Label>
-              {ex("banner_url", "") && <img src={ex("banner_url", "")} alt="banner" className="mb-2 h-14 w-24 rounded object-cover bg-muted" />}
+              {ex("banner_url", "") && <StorageImage src={ex("banner_url", "")} alt="banner" className="mb-2 h-14 w-24 rounded object-cover bg-muted" />}
               <Input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo("banner_url", f, true); }} />
             </div>
           </div>

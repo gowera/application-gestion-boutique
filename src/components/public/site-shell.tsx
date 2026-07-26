@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useSettings } from "@/lib/currency";
+import { StorageImage } from "@/components/storage-image";
 import logo from "@/assets/brand/logo.png";
 
 const NAV = [
@@ -54,7 +55,12 @@ function MainNav() {
     <nav className="sticky top-0 z-40 border-b border-border/70 bg-background/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-3">
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          <img src={logoUrl} alt={brand} className="h-9 w-auto" />
+          <StorageImage
+            src={logoUrl}
+            alt={brand}
+            className="h-9 w-auto"
+            fallback={<img src={logo} alt={brand} className="h-9 w-auto" />}
+          />
           <span className="text-display text-lg font-extrabold tracking-tight text-primary">{brand}</span>
         </Link>
         <div className="hidden lg:flex items-center gap-6 text-sm font-medium">
@@ -119,7 +125,12 @@ function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
-            <img src={logoUrl} alt={brand} className="h-9 w-auto" />
+            <StorageImage
+              src={logoUrl}
+              alt={brand}
+              className="h-9 w-auto"
+              fallback={<img src={logo} alt={brand} className="h-9 w-auto" />}
+            />
             <span className="text-display text-lg font-extrabold text-white">{brand}</span>
           </div>
           <p className="mt-4 text-sm text-neutral-400 leading-relaxed">

@@ -14,21 +14,54 @@ import {
 import { useCart } from "@/hooks/use-cart";
 import { ProductReviews, Stars, reviewStats, useProductReviews } from "@/components/public/product-reviews";
 import { ShareButton } from "@/components/public/share-button";
+import { getRequestOrigin } from "@/lib/origin.functions";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/produit/$productId")({
   component: ProductDetailsPage,
-  head: () => ({
-    meta: [
-      { title: "Détails complets du produit — CONETEC" },
-      { name: "description", content: "Fiche complète : caractéristiques techniques, garantie, livraison, installation et conseils d'achat sur le matériel CONETEC." },
-      { property: "og:title", content: "Détails complets du produit — CONETEC" },
-      { property: "og:description", content: "Toutes les informations techniques, garanties et services CONETEC avant votre achat." },
-      { property: "og:type", content: "product" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  loader: async ({ params }) => {
+    const [origin, res] = await Promise.all([
+      getRequestOrigin().catch(() => ""),
+      supabase
+        .from("products")
+        .select("name,description,brand,sale_price,images")
+        .eq("id", params.productId)
+        .maybeSingle(),
+    ]);
+    return { origin, product: res.data ?? null };
+  },
+  head: ({ params, loaderData }) => {
+    const p = loaderData?.product;
+    const origin = loaderData?.origin ?? "";
+    const path = `/produit/${params.productId}`;
+    const title = p ? `${p.name}${p.brand ? ` — ${p.brand}` : ""} | CONETEC` : "Détails du produit — CONETEC";
+    const description = p
+      ? (p.description?.trim().slice(0, 155) ||
+          `${p.name} disponible chez CONETEC à ${Number(p.sale_price).toFixed(2)} USD. Garantie, livraison à Kinshasa et installation par nos techniciens.`)
+      : "Fiche complète : caractéristiques techniques, garantie, livraison et installation du matériel CONETEC.";
+    const image = p?.images?.length ? `${origin}/api/public/og/product/${params.productId}` : null;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "product" },
+        { property: "og:url", content: origin ? `${origin}${path}` : path },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        ...(image && origin
+          ? [
+              { property: "og:image", content: image },
+              { name: "twitter:image", content: image },
+            ]
+          : []),
+      ],
+      links: [{ rel: "canonical", href: path }],
+    };
+  },
 });
 
 function ProductDetailsPage() {
