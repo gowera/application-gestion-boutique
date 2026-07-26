@@ -17,10 +17,48 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/boutique/$productId")({
   component: ProductPage,
-  head: () => ({ meta: [
-    { title: "Fiche produit — CONETEC" },
-    { name: "description", content: "Consultez les caractéristiques, disponibilité et prix du matériel CONETEC." },
-  ]}),
+  loader: async ({ params }) => {
+    const [origin, res] = await Promise.all([
+      getRequestOrigin().catch(() => ""),
+      supabase
+        .from("products")
+        .select("name,description,brand,sale_price,images")
+        .eq("id", params.productId)
+        .maybeSingle(),
+    ]);
+    return { origin, product: res.data ?? null };
+  },
+  head: ({ params, loaderData }) => {
+    const p = loaderData?.product;
+    const origin = loaderData?.origin ?? "";
+    const path = `/boutique/${params.productId}`;
+    const title = p ? `${p.name}${p.brand ? ` — ${p.brand}` : ""} | CONETEC` : "Fiche produit — CONETEC";
+    const description = p
+      ? (p.description?.trim().slice(0, 155) ||
+          `${p.name} disponible chez CONETEC à ${Number(p.sale_price).toFixed(2)} USD.`)
+      : "Consultez les caractéristiques, disponibilité et prix du matériel CONETEC.";
+    const image = p?.images?.length ? `${origin}/api/public/og/product/${params.productId}` : null;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "product" },
+        { property: "og:url", content: origin ? `${origin}${path}` : path },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        ...(image && origin
+          ? [
+              { property: "og:image", content: image },
+              { name: "twitter:image", content: image },
+            ]
+          : []),
+      ],
+      links: [{ rel: "canonical", href: path }],
+    };
+  },
 });
 
 function ProductPage() {
