@@ -125,7 +125,12 @@ function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
-            <img src={logoUrl} alt={brand} className="h-9 w-auto" />
+            <StorageImage
+              src={logoUrl}
+              alt={brand}
+              className="h-9 w-auto"
+              fallback={<img src={logo} alt={brand} className="h-9 w-auto" />}
+            />
             <span className="text-display text-lg font-extrabold text-white">{brand}</span>
           </div>
           <p className="mt-4 text-sm text-neutral-400 leading-relaxed">
