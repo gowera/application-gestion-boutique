@@ -523,3 +523,61 @@ function ShwarySection() {
     </div>
   );
 }
+
+const RDC_CITIES = [
+  "Kinshasa", "Lubumbashi", "Goma", "Bukavu", "Kisangani", "Matadi",
+  "Mbuji-Mayi", "Kananga", "Kolwezi", "Likasi", "Bunia", "Uvira",
+  "Boma", "Kikwit", "Tshikapa", "Mbandaka",
+];
+
+function DeliveryCities({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const [custom, setCustom] = useState("");
+  const selected = Array.isArray(value) ? value : [];
+  const toggle = (city: string) =>
+    onChange(selected.includes(city) ? selected.filter((c) => c !== city) : [...selected, city]);
+  const addCustom = () => {
+    const c = custom.trim();
+    if (!c) return;
+    if (!selected.includes(c)) onChange([...selected, c]);
+    setCustom("");
+  };
+  const extras = selected.filter((c) => !RDC_CITIES.includes(c));
+
+  return (
+    <div className="rounded border p-3">
+      <Label>Villes où la livraison est active</Label>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Sélectionnez une ou plusieurs villes. Seules ces villes seront proposées à la commande.
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        {[...RDC_CITIES, ...extras].map((city) => {
+          const on = selected.includes(city);
+          return (
+            <button
+              key={city}
+              type="button"
+              onClick={() => toggle(city)}
+              className={`truncate rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors ${
+                on ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"
+              }`}
+            >
+              {city}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+        <Input
+          value={custom}
+          onChange={(e) => setCustom(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
+          placeholder="Autre ville…"
+        />
+        <Button type="button" variant="outline" onClick={addCustom}>Ajouter</Button>
+      </div>
+      <div className="mt-2 text-xs text-muted-foreground">
+        {selected.length ? `${selected.length} ville(s) active(s) : ${selected.join(", ")}` : "Aucune ville sélectionnée"}
+      </div>
+    </div>
+  );
+}
