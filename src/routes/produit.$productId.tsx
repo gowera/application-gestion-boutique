@@ -55,7 +55,10 @@ export const Route = createFileRoute("/produit/$productId")({
         ...(image && origin
           ? [
               { property: "og:image", content: image },
+              { property: "og:image:secure_url", content: image },
+              { property: "og:image:alt", content: p?.name ?? "Produit CONETEC" },
               { name: "twitter:image", content: image },
+              { name: "twitter:image:alt", content: p?.name ?? "Produit CONETEC" },
             ]
           : []),
       ],
