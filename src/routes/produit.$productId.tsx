@@ -188,10 +188,10 @@ function ProductDetailsPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
         {/* Gallery */}
         {images.length > 0 && (
-          <section className="mb-14">
+          <section className="mb-10 sm:mb-14">
             <SectionTitle icon={Package} title="Galerie du produit" subtitle="Photos réelles du matériel en stock" />
             <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
               <div className="relative overflow-hidden rounded-2xl border bg-secondary aspect-[4/3]">
@@ -218,7 +218,7 @@ function ProductDetailsPage() {
         )}
 
         {/* Why buy */}
-        <section className="mb-14">
+        <section className="mb-10 sm:mb-14">
           <SectionTitle icon={Zap} title="Pourquoi choisir ce produit" subtitle="Les avantages concrets pour votre installation" />
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Perk icon={ShieldCheck} title="Qualité certifiée" text="Matériel conforme aux normes, sourcé auprès de fournisseurs agréés." />
@@ -229,7 +229,7 @@ function ProductDetailsPage() {
         </section>
 
         {/* Specs + included */}
-        <section className="mb-14 grid gap-8 lg:grid-cols-2">
+        <section className="mb-10 grid gap-8 sm:mb-14 lg:grid-cols-2">
           <div>
             <SectionTitle icon={FileText} title="Caractéristiques techniques" />
             <div className="mt-5 overflow-hidden rounded-2xl border bg-background">
@@ -261,7 +261,7 @@ function ProductDetailsPage() {
         </section>
 
         {/* FAQ */}
-        <section className="mb-14">
+        <section className="mb-10 sm:mb-14">
           <SectionTitle icon={HeadphonesIcon} title="Questions fréquentes" subtitle="Tout ce qu'il faut savoir avant de commander" />
           <div className="mt-5 rounded-2xl border bg-background px-6">
             <Accordion type="single" collapsible>
@@ -286,13 +286,13 @@ function ProductDetailsPage() {
         </section>
 
         {/* Reviews */}
-        <section id="avis" className="mb-14 scroll-mt-24">
+        <section id="avis" className="mb-10 scroll-mt-24 sm:mb-14">
           <SectionTitle icon={Star} title="Avis clients" subtitle="Ce que nos clients disent de ce produit" />
           <div className="mt-5"><ProductReviews productId={productId} /></div>
         </section>
 
         {/* CTA */}
-        <section className="mb-14 grid gap-4 rounded-2xl border-l-4 border-l-energy bg-primary p-8 text-primary-foreground md:grid-cols-[1fr_auto] md:items-center">
+        <section className="mb-10 grid gap-4 rounded-2xl border-l-4 border-l-energy bg-primary p-5 text-primary-foreground sm:mb-14 sm:p-8 md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <h2 className="text-display text-xl font-extrabold">Prêt à commander « {p.name} » ?</h2>
             <p className="mt-1 text-sm text-primary-foreground/80">Ajoutez-le au panier ou demandez un devis avec installation incluse.</p>
