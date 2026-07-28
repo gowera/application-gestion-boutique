@@ -367,9 +367,9 @@ function Perk({ icon: Icon, title, text }: { icon: any; title: string; text: str
 
 function SpecRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
   return (
-    <div className={`flex items-center justify-between gap-4 px-5 py-3 text-sm ${last ? "" : "border-b"}`}>
+    <div className={`grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] items-start gap-3 px-4 py-3 text-sm sm:px-5 ${last ? "" : "border-b"}`}>
       <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium">{value}</span>
+      <span className="break-words text-right font-medium">{value}</span>
     </div>
   );
 }
