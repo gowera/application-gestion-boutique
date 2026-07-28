@@ -250,6 +250,10 @@ function Page() {
             <div><Label>Frais livraison par défaut (USD)</Label><Input type="number" step="0.01" value={ex("delivery_fee", 0)} onChange={(e) => setEx("delivery_fee", +e.target.value)} /></div>
             <div><Label>Délai moyen</Label><Input value={ex("delivery_delay", "24-48h")} onChange={(e) => setEx("delivery_delay", e.target.value)} /></div>
           </div>
+          <DeliveryCities
+            value={(ex("delivery_cities", []) as string[]) ?? []}
+            onChange={(v) => setEx("delivery_cities", v)}
+          />
           <div><Label>Zones desservies (une par ligne)</Label>
             <Textarea rows={4} value={ex("delivery_zones", "")} onChange={(e) => setEx("delivery_zones", e.target.value)} placeholder="Gombe&#10;Limete&#10;Ngaliema" />
           </div>
