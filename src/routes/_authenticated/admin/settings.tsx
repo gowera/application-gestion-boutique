@@ -253,6 +253,9 @@ function Page() {
           <DeliveryCities
             value={(ex("delivery_cities", []) as string[]) ?? []}
             onChange={(v) => setEx("delivery_cities", v)}
+            fees={(ex("delivery_city_fees", {}) as Record<string, number>) ?? {}}
+            onFeesChange={(v) => setEx("delivery_city_fees", v)}
+            defaultFee={Number(ex("delivery_fee", 0)) || 0}
           />
           <div><Label>Zones desservies (une par ligne)</Label>
             <Textarea rows={4} value={ex("delivery_zones", "")} onChange={(e) => setEx("delivery_zones", e.target.value)} placeholder="Gombe&#10;Limete&#10;Ngaliema" />
