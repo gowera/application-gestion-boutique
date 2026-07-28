@@ -108,58 +108,59 @@ function ProductDetailsPage() {
 
   return (
     <SiteShell>
-      <div className="mx-auto max-w-7xl px-4 py-6">
-        <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:py-6">
+        <nav className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
           <Link to="/" className="hover:text-primary">Accueil</Link>
-          <ChevronRight className="h-3 w-3" />
+          <ChevronRight className="h-3 w-3 shrink-0" />
           <Link to="/boutique" className="hover:text-primary">Boutique</Link>
-          <ChevronRight className="h-3 w-3" />
-          <Link to="/boutique/$productId" params={{ productId }} className="hover:text-primary truncate">{p.name}</Link>
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-foreground">Détails complets</span>
+          <ChevronRight className="hidden h-3 w-3 shrink-0 sm:block" />
+          <Link to="/boutique/$productId" params={{ productId }} className="hidden max-w-[40vw] truncate hover:text-primary sm:block">{p.name}</Link>
+          <ChevronRight className="h-3 w-3 shrink-0" />
+          <span className="text-foreground">Détails</span>
         </nav>
       </div>
 
+
       {/* Hero */}
-      <section className="border-y bg-gradient-to-br from-primary via-primary to-primary/85 py-10 text-primary-foreground">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div>
+      <section className="border-y bg-gradient-to-br from-primary via-primary to-primary/85 py-8 text-primary-foreground sm:py-10">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="min-w-0">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-energy px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-energy-foreground">
               <BadgeCheck className="h-3.5 w-3.5" /> Fiche détaillée
             </span>
-            <h1 className="mt-4 text-display text-3xl font-extrabold leading-tight md:text-4xl">{p.name}</h1>
+            <h1 className="mt-4 text-display text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{p.name}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">
               {p.description || "Matériel sélectionné par nos ingénieurs, testé sur le terrain et couvert par notre garantie constructeur. Nos techniciens assurent l'installation et la mise en service."}
             </p>
-            <div className="mt-5 flex flex-wrap items-center gap-4 text-xs text-primary-foreground/80">
+            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-primary-foreground/80">
               <a href="#avis" className="flex items-center gap-1.5 hover:text-primary-foreground">
                 <Stars value={stats.count ? stats.average : 0} />
                 {stats.count ? `${stats.average.toFixed(1)}/5 · ${stats.count} avis` : "Aucun avis pour l'instant"}
               </a>
-              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-energy" /> Garantie incluse</span>
-              <span className="flex items-center gap-1.5"><Truck className="h-4 w-4 text-energy" /> Livraison Kinshasa</span>
-              <span className="flex items-center gap-1.5"><Wrench className="h-4 w-4 text-energy" /> Pose par nos techniciens</span>
+              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 shrink-0 text-energy" /> Garantie incluse</span>
+              <span className="flex items-center gap-1.5"><Truck className="h-4 w-4 shrink-0 text-energy" /> Livraison Kinshasa</span>
+              <span className="flex items-center gap-1.5"><Wrench className="h-4 w-4 shrink-0 text-energy" /> Pose par nos techniciens</span>
             </div>
           </div>
 
           {/* Buy box */}
-          <div className="rounded-2xl border border-primary-foreground/15 bg-background p-5 text-foreground shadow-xl">
-            <div className="flex items-center justify-between">
+          <div className="rounded-2xl border border-primary-foreground/15 bg-background p-4 text-foreground shadow-xl sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               {p.stock > 0
                 ? <span className="inline-flex items-center gap-1.5 rounded-full bg-energy/10 px-3 py-1 text-xs font-bold text-energy"><span className="h-1.5 w-1.5 rounded-full bg-energy" /> Disponible</span>
                 : <Badge variant="destructive">Rupture de stock</Badge>}
-              <Badge variant="outline" className="border-primary/20 text-primary">{p.brand ?? "CONETEC"}</Badge>
+              <Badge variant="outline" className="max-w-[50%] truncate border-primary/20 text-primary">{p.brand ?? "CONETEC"}</Badge>
             </div>
-            <div className="mt-4 text-display text-4xl font-extrabold text-primary">{formatMoney(price, cur, rate)}</div>
+            <div className="mt-4 text-display text-3xl font-extrabold text-primary sm:text-4xl">{formatMoney(price, cur, rate)}</div>
             <p className="mt-1 text-xs text-muted-foreground">Prix HT · TVA applicable selon règlementation</p>
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <div className="flex items-center rounded-md border bg-background">
                 <button className="px-3 py-2 text-lg" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
                 <span className="w-10 text-center font-semibold">{qty}</span>
                 <button className="px-3 py-2 text-lg" onClick={() => setQty(qty + 1)}>+</button>
               </div>
               <Button
-                className="flex-1 bg-energy text-energy-foreground hover:bg-energy/90"
+                className="min-w-[180px] flex-1 bg-energy text-energy-foreground hover:bg-energy/90"
                 disabled={p.stock <= 0}
                 onClick={() => { add({ product_id: p.id, name: p.name, price_usd: price, image: images[0] ?? null, qty }); toast.success("Ajouté au panier"); }}
               >
@@ -187,10 +188,10 @@ function ProductDetailsPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
         {/* Gallery */}
         {images.length > 0 && (
-          <section className="mb-14">
+          <section className="mb-10 sm:mb-14">
             <SectionTitle icon={Package} title="Galerie du produit" subtitle="Photos réelles du matériel en stock" />
             <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
               <div className="relative overflow-hidden rounded-2xl border bg-secondary aspect-[4/3]">
@@ -217,7 +218,7 @@ function ProductDetailsPage() {
         )}
 
         {/* Why buy */}
-        <section className="mb-14">
+        <section className="mb-10 sm:mb-14">
           <SectionTitle icon={Zap} title="Pourquoi choisir ce produit" subtitle="Les avantages concrets pour votre installation" />
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Perk icon={ShieldCheck} title="Qualité certifiée" text="Matériel conforme aux normes, sourcé auprès de fournisseurs agréés." />
@@ -228,7 +229,7 @@ function ProductDetailsPage() {
         </section>
 
         {/* Specs + included */}
-        <section className="mb-14 grid gap-8 lg:grid-cols-2">
+        <section className="mb-10 grid gap-8 sm:mb-14 lg:grid-cols-2">
           <div>
             <SectionTitle icon={FileText} title="Caractéristiques techniques" />
             <div className="mt-5 overflow-hidden rounded-2xl border bg-background">
@@ -260,9 +261,9 @@ function ProductDetailsPage() {
         </section>
 
         {/* FAQ */}
-        <section className="mb-14">
+        <section className="mb-10 sm:mb-14">
           <SectionTitle icon={HeadphonesIcon} title="Questions fréquentes" subtitle="Tout ce qu'il faut savoir avant de commander" />
-          <div className="mt-5 rounded-2xl border bg-background px-6">
+          <div className="mt-5 rounded-2xl border bg-background px-4 sm:px-6">
             <Accordion type="single" collapsible>
               <AccordionItem value="1">
                 <AccordionTrigger className="text-sm">Quels sont les délais de livraison ?</AccordionTrigger>
@@ -285,15 +286,15 @@ function ProductDetailsPage() {
         </section>
 
         {/* Reviews */}
-        <section id="avis" className="mb-14 scroll-mt-24">
+        <section id="avis" className="mb-10 scroll-mt-24 sm:mb-14">
           <SectionTitle icon={Star} title="Avis clients" subtitle="Ce que nos clients disent de ce produit" />
           <div className="mt-5"><ProductReviews productId={productId} /></div>
         </section>
 
         {/* CTA */}
-        <section className="mb-14 grid gap-4 rounded-2xl border-l-4 border-l-energy bg-primary p-8 text-primary-foreground md:grid-cols-[1fr_auto] md:items-center">
+        <section className="mb-10 grid gap-4 rounded-2xl border-l-4 border-l-energy bg-primary p-5 text-primary-foreground sm:mb-14 sm:p-8 md:grid-cols-[1fr_auto] md:items-center">
           <div>
-            <h2 className="text-display text-xl font-extrabold">Prêt à commander « {p.name} » ?</h2>
+            <h2 className="text-display text-lg font-extrabold sm:text-xl">Prêt à commander « {p.name} » ?</h2>
             <p className="mt-1 text-sm text-primary-foreground/80">Ajoutez-le au panier ou demandez un devis avec installation incluse.</p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -345,10 +346,10 @@ function ProductDetailsPage() {
 function SectionTitle({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle?: string }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground"><Icon className="h-5 w-5" /></div>
-      <div>
-        <h2 className="text-display text-xl font-extrabold">{title}</h2>
-        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground sm:h-10 sm:w-10"><Icon className="h-5 w-5" /></div>
+      <div className="min-w-0">
+        <h2 className="text-display text-lg font-extrabold sm:text-xl">{title}</h2>
+        {subtitle && <p className="text-xs text-muted-foreground sm:text-sm">{subtitle}</p>}
       </div>
     </div>
   );
@@ -366,9 +367,9 @@ function Perk({ icon: Icon, title, text }: { icon: any; title: string; text: str
 
 function SpecRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
   return (
-    <div className={`flex items-center justify-between gap-4 px-5 py-3 text-sm ${last ? "" : "border-b"}`}>
+    <div className={`grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] items-start gap-3 px-4 py-3 text-sm sm:px-5 ${last ? "" : "border-b"}`}>
       <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium">{value}</span>
+      <span className="break-words text-right font-medium">{value}</span>
     </div>
   );
 }

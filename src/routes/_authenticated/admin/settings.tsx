@@ -250,6 +250,10 @@ function Page() {
             <div><Label>Frais livraison par défaut (USD)</Label><Input type="number" step="0.01" value={ex("delivery_fee", 0)} onChange={(e) => setEx("delivery_fee", +e.target.value)} /></div>
             <div><Label>Délai moyen</Label><Input value={ex("delivery_delay", "24-48h")} onChange={(e) => setEx("delivery_delay", e.target.value)} /></div>
           </div>
+          <DeliveryCities
+            value={(ex("delivery_cities", []) as string[]) ?? []}
+            onChange={(v) => setEx("delivery_cities", v)}
+          />
           <div><Label>Zones desservies (une par ligne)</Label>
             <Textarea rows={4} value={ex("delivery_zones", "")} onChange={(e) => setEx("delivery_zones", e.target.value)} placeholder="Gombe&#10;Limete&#10;Ngaliema" />
           </div>
@@ -515,6 +519,64 @@ function ShwarySection() {
       <div className="flex items-center justify-between rounded border p-3 bg-background/50">
         <div className="text-xs text-muted-foreground">URL de callback à renseigner côté Shwary : <br /><code className="text-[11px]">{typeof window !== "undefined" ? `${window.location.origin}/api/public/shwary/callback` : ""}</code></div>
         <Button size="sm" onClick={save} disabled={saving}>{saving ? "…" : "Enregistrer Shwary"}</Button>
+      </div>
+    </div>
+  );
+}
+
+const RDC_CITIES = [
+  "Kinshasa", "Lubumbashi", "Goma", "Bukavu", "Kisangani", "Matadi",
+  "Mbuji-Mayi", "Kananga", "Kolwezi", "Likasi", "Bunia", "Uvira",
+  "Boma", "Kikwit", "Tshikapa", "Mbandaka",
+];
+
+function DeliveryCities({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const [custom, setCustom] = useState("");
+  const selected = Array.isArray(value) ? value : [];
+  const toggle = (city: string) =>
+    onChange(selected.includes(city) ? selected.filter((c) => c !== city) : [...selected, city]);
+  const addCustom = () => {
+    const c = custom.trim();
+    if (!c) return;
+    if (!selected.includes(c)) onChange([...selected, c]);
+    setCustom("");
+  };
+  const extras = selected.filter((c) => !RDC_CITIES.includes(c));
+
+  return (
+    <div className="rounded border p-3">
+      <Label>Villes où la livraison est active</Label>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Sélectionnez une ou plusieurs villes. Seules ces villes seront proposées à la commande.
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        {[...RDC_CITIES, ...extras].map((city) => {
+          const on = selected.includes(city);
+          return (
+            <button
+              key={city}
+              type="button"
+              onClick={() => toggle(city)}
+              className={`truncate rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors ${
+                on ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"
+              }`}
+            >
+              {city}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+        <Input
+          value={custom}
+          onChange={(e) => setCustom(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
+          placeholder="Autre ville…"
+        />
+        <Button type="button" variant="outline" onClick={addCustom}>Ajouter</Button>
+      </div>
+      <div className="mt-2 text-xs text-muted-foreground">
+        {selected.length ? `${selected.length} ville(s) active(s) : ${selected.join(", ")}` : "Aucune ville sélectionnée"}
       </div>
     </div>
   );
