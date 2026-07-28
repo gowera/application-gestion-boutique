@@ -263,7 +263,7 @@ function ProductDetailsPage() {
         {/* FAQ */}
         <section className="mb-10 sm:mb-14">
           <SectionTitle icon={HeadphonesIcon} title="Questions fréquentes" subtitle="Tout ce qu'il faut savoir avant de commander" />
-          <div className="mt-5 rounded-2xl border bg-background px-6">
+          <div className="mt-5 rounded-2xl border bg-background px-4 sm:px-6">
             <Accordion type="single" collapsible>
               <AccordionItem value="1">
                 <AccordionTrigger className="text-sm">Quels sont les délais de livraison ?</AccordionTrigger>
@@ -294,7 +294,7 @@ function ProductDetailsPage() {
         {/* CTA */}
         <section className="mb-10 grid gap-4 rounded-2xl border-l-4 border-l-energy bg-primary p-5 text-primary-foreground sm:mb-14 sm:p-8 md:grid-cols-[1fr_auto] md:items-center">
           <div>
-            <h2 className="text-display text-xl font-extrabold">Prêt à commander « {p.name} » ?</h2>
+            <h2 className="text-display text-lg font-extrabold sm:text-xl">Prêt à commander « {p.name} » ?</h2>
             <p className="mt-1 text-sm text-primary-foreground/80">Ajoutez-le au panier ou demandez un devis avec installation incluse.</p>
           </div>
           <div className="flex flex-wrap gap-3">
