@@ -122,45 +122,45 @@ function ProductDetailsPage() {
 
 
       {/* Hero */}
-      <section className="border-y bg-gradient-to-br from-primary via-primary to-primary/85 py-10 text-primary-foreground">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div>
+      <section className="border-y bg-gradient-to-br from-primary via-primary to-primary/85 py-8 text-primary-foreground sm:py-10">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="min-w-0">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-energy px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-energy-foreground">
               <BadgeCheck className="h-3.5 w-3.5" /> Fiche détaillée
             </span>
-            <h1 className="mt-4 text-display text-3xl font-extrabold leading-tight md:text-4xl">{p.name}</h1>
+            <h1 className="mt-4 text-display text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{p.name}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">
               {p.description || "Matériel sélectionné par nos ingénieurs, testé sur le terrain et couvert par notre garantie constructeur. Nos techniciens assurent l'installation et la mise en service."}
             </p>
-            <div className="mt-5 flex flex-wrap items-center gap-4 text-xs text-primary-foreground/80">
+            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-primary-foreground/80">
               <a href="#avis" className="flex items-center gap-1.5 hover:text-primary-foreground">
                 <Stars value={stats.count ? stats.average : 0} />
                 {stats.count ? `${stats.average.toFixed(1)}/5 · ${stats.count} avis` : "Aucun avis pour l'instant"}
               </a>
-              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-energy" /> Garantie incluse</span>
-              <span className="flex items-center gap-1.5"><Truck className="h-4 w-4 text-energy" /> Livraison Kinshasa</span>
-              <span className="flex items-center gap-1.5"><Wrench className="h-4 w-4 text-energy" /> Pose par nos techniciens</span>
+              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 shrink-0 text-energy" /> Garantie incluse</span>
+              <span className="flex items-center gap-1.5"><Truck className="h-4 w-4 shrink-0 text-energy" /> Livraison Kinshasa</span>
+              <span className="flex items-center gap-1.5"><Wrench className="h-4 w-4 shrink-0 text-energy" /> Pose par nos techniciens</span>
             </div>
           </div>
 
           {/* Buy box */}
-          <div className="rounded-2xl border border-primary-foreground/15 bg-background p-5 text-foreground shadow-xl">
-            <div className="flex items-center justify-between">
+          <div className="rounded-2xl border border-primary-foreground/15 bg-background p-4 text-foreground shadow-xl sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               {p.stock > 0
                 ? <span className="inline-flex items-center gap-1.5 rounded-full bg-energy/10 px-3 py-1 text-xs font-bold text-energy"><span className="h-1.5 w-1.5 rounded-full bg-energy" /> Disponible</span>
                 : <Badge variant="destructive">Rupture de stock</Badge>}
-              <Badge variant="outline" className="border-primary/20 text-primary">{p.brand ?? "CONETEC"}</Badge>
+              <Badge variant="outline" className="max-w-[50%] truncate border-primary/20 text-primary">{p.brand ?? "CONETEC"}</Badge>
             </div>
-            <div className="mt-4 text-display text-4xl font-extrabold text-primary">{formatMoney(price, cur, rate)}</div>
+            <div className="mt-4 text-display text-3xl font-extrabold text-primary sm:text-4xl">{formatMoney(price, cur, rate)}</div>
             <p className="mt-1 text-xs text-muted-foreground">Prix HT · TVA applicable selon règlementation</p>
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <div className="flex items-center rounded-md border bg-background">
                 <button className="px-3 py-2 text-lg" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
                 <span className="w-10 text-center font-semibold">{qty}</span>
                 <button className="px-3 py-2 text-lg" onClick={() => setQty(qty + 1)}>+</button>
               </div>
               <Button
-                className="flex-1 bg-energy text-energy-foreground hover:bg-energy/90"
+                className="min-w-[180px] flex-1 bg-energy text-energy-foreground hover:bg-energy/90"
                 disabled={p.stock <= 0}
                 onClick={() => { add({ product_id: p.id, name: p.name, price_usd: price, image: images[0] ?? null, qty }); toast.success("Ajouté au panier"); }}
               >
