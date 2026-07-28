@@ -346,10 +346,10 @@ function ProductDetailsPage() {
 function SectionTitle({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle?: string }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground"><Icon className="h-5 w-5" /></div>
-      <div>
-        <h2 className="text-display text-xl font-extrabold">{title}</h2>
-        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground sm:h-10 sm:w-10"><Icon className="h-5 w-5" /></div>
+      <div className="min-w-0">
+        <h2 className="text-display text-lg font-extrabold sm:text-xl">{title}</h2>
+        {subtitle && <p className="text-xs text-muted-foreground sm:text-sm">{subtitle}</p>}
       </div>
     </div>
   );
