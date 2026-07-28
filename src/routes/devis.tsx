@@ -112,6 +112,23 @@ function QuotePage() {
                   </SelectContent>
                 </Select>
               </Field>
+              {delivery.cities.length > 0 && (
+                <Field label="Ville d'intervention / livraison">
+                  <Select value={form.city} onValueChange={(v) => setForm({ ...form, city: v })}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner une ville" /></SelectTrigger>
+                    <SelectContent>
+                      {delivery.cities.map((c) => (
+                        <SelectItem key={c.city} value={c.city}>{c.city} — {formatMoney(c.fee, cur, rate)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {cityFee !== null && (
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      Frais de livraison estimés : <span className="font-semibold text-foreground">{formatMoney(cityFee, cur, rate)}</span> · Délai {delivery.delay}
+                    </p>
+                  )}
+                </Field>
+              )}
               <Field label="Description du besoin"><Textarea rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Superficie, contraintes, délais souhaités…" /></Field>
 
               <div>
