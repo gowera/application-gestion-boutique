@@ -108,17 +108,18 @@ function ProductDetailsPage() {
 
   return (
     <SiteShell>
-      <div className="mx-auto max-w-7xl px-4 py-6">
-        <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:py-6">
+        <nav className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
           <Link to="/" className="hover:text-primary">Accueil</Link>
-          <ChevronRight className="h-3 w-3" />
+          <ChevronRight className="h-3 w-3 shrink-0" />
           <Link to="/boutique" className="hover:text-primary">Boutique</Link>
-          <ChevronRight className="h-3 w-3" />
-          <Link to="/boutique/$productId" params={{ productId }} className="hover:text-primary truncate">{p.name}</Link>
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-foreground">Détails complets</span>
+          <ChevronRight className="hidden h-3 w-3 shrink-0 sm:block" />
+          <Link to="/boutique/$productId" params={{ productId }} className="hidden max-w-[40vw] truncate hover:text-primary sm:block">{p.name}</Link>
+          <ChevronRight className="h-3 w-3 shrink-0" />
+          <span className="text-foreground">Détails</span>
         </nav>
       </div>
+
 
       {/* Hero */}
       <section className="border-y bg-gradient-to-br from-primary via-primary to-primary/85 py-10 text-primary-foreground">
