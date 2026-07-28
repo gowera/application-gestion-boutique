@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { formatMoney, useSettings } from "@/lib/currency";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { feeForCity, useDeliveryConfig, useSelectedCity } from "@/lib/delivery";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { initiateShwaryPayment } from "@/lib/shwary.functions";
@@ -34,7 +36,10 @@ function CheckoutPage() {
     pay: "shwary" as PayMethod,
     payPhone: "",
   });
-  const deliveryFee = form.mode === "delivery" ? 5 : 0;
+  const delivery = useDeliveryConfig();
+  const { city, setCity } = useSelectedCity();
+  const activeCity = delivery.cities.some((c) => c.city === city) ? city : null;
+  const deliveryFee = form.mode === "delivery" ? feeForCity(delivery, activeCity) : 0;
   const total = subtotal + deliveryFee;
   const totalCdf = Math.round(total * rate);
 
@@ -42,6 +47,7 @@ function CheckoutPage() {
     e.preventDefault();
     if (!items.length) return toast.error("Panier vide");
     if (!form.name || !form.phone) return toast.error("Nom et téléphone requis");
+    if (form.mode === "delivery" && delivery.cities.length > 0 && !activeCity) return toast.error("Choisissez la ville de livraison");
     if (form.pay === "shwary" && !form.payPhone) return toast.error("Numéro Mobile Money requis");
     setLoading(true);
     const { data, error } = await supabase.rpc("create_online_order", {
@@ -49,7 +55,7 @@ function CheckoutPage() {
       _customer_phone: form.phone,
       _customer_email: form.email || (null as unknown as string),
       _delivery_mode: form.mode,
-      _delivery_address: (form.mode === "delivery" ? form.address : null) as unknown as string,
+      _delivery_address: (form.mode === "delivery" ? [activeCity, form.address].filter(Boolean).join(" — ") || null : null) as unknown as string,
       _delivery_fee_usd: deliveryFee,
       _items: items.map((i) => ({ product_id: i.product_id, qty: i.qty })) as unknown as string,
       _note: (form.note || null) as unknown as string,
@@ -95,10 +101,24 @@ function CheckoutPage() {
             <div>
               <Label>Mode de réception</Label>
               <RadioGroup value={form.mode} onValueChange={(v: "delivery" | "pickup") => setForm({ ...form, mode: v })} className="mt-2 grid gap-2 sm:grid-cols-2">
-                <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer"><RadioGroupItem value="delivery" /> Livraison (+{formatMoney(5, cur, rate)})</label>
+                <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer"><RadioGroupItem value="delivery" /> Livraison{activeCity ? ` (+${formatMoney(deliveryFee, cur, rate)})` : ""}</label>
                 <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer"><RadioGroupItem value="pickup" /> Retrait en boutique</label>
               </RadioGroup>
             </div>
+            {form.mode === "delivery" && delivery.cities.length > 0 && (
+              <div>
+                <Label>Ville de livraison *</Label>
+                <Select value={activeCity ?? ""} onValueChange={(v) => setCity(v)}>
+                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="Sélectionner une ville" /></SelectTrigger>
+                  <SelectContent>
+                    {delivery.cities.map((c) => (
+                      <SelectItem key={c.city} value={c.city}>{c.city} — {formatMoney(c.fee, cur, rate)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1.5 text-xs text-muted-foreground">Délai moyen : {delivery.delay}</p>
+              </div>
+            )}
             {form.mode === "delivery" && <div><Label>Adresse de livraison</Label><Textarea rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>}
             <div><Label>Note à la commande</Label><Textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></div>
 

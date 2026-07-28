@@ -253,6 +253,9 @@ function Page() {
           <DeliveryCities
             value={(ex("delivery_cities", []) as string[]) ?? []}
             onChange={(v) => setEx("delivery_cities", v)}
+            fees={(ex("delivery_city_fees", {}) as Record<string, number>) ?? {}}
+            onFeesChange={(v) => setEx("delivery_city_fees", v)}
+            defaultFee={Number(ex("delivery_fee", 0)) || 0}
           />
           <div><Label>Zones desservies (une par ligne)</Label>
             <Textarea rows={4} value={ex("delivery_zones", "")} onChange={(e) => setEx("delivery_zones", e.target.value)} placeholder="Gombe&#10;Limete&#10;Ngaliema" />
@@ -530,9 +533,18 @@ const RDC_CITIES = [
   "Boma", "Kikwit", "Tshikapa", "Mbandaka",
 ];
 
-function DeliveryCities({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+function DeliveryCities({
+  value, onChange, fees, onFeesChange, defaultFee,
+}: {
+  value: string[];
+  onChange: (v: string[]) => void;
+  fees: Record<string, number>;
+  onFeesChange: (v: Record<string, number>) => void;
+  defaultFee: number;
+}) {
   const [custom, setCustom] = useState("");
   const selected = Array.isArray(value) ? value : [];
+  const feeMap = fees && typeof fees === "object" ? fees : {};
   const toggle = (city: string) =>
     onChange(selected.includes(city) ? selected.filter((c) => c !== city) : [...selected, city]);
   const addCustom = () => {
@@ -547,7 +559,7 @@ function DeliveryCities({ value, onChange }: { value: string[]; onChange: (v: st
     <div className="rounded border p-3">
       <Label>Villes où la livraison est active</Label>
       <p className="mt-1 text-xs text-muted-foreground">
-        Sélectionnez une ou plusieurs villes. Seules ces villes seront proposées à la commande.
+        Sélectionnez une ou plusieurs villes, puis définissez les frais de livraison propres à chaque ville.
       </p>
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
         {[...RDC_CITIES, ...extras].map((city) => {
@@ -575,6 +587,27 @@ function DeliveryCities({ value, onChange }: { value: string[]; onChange: (v: st
         />
         <Button type="button" variant="outline" onClick={addCustom}>Ajouter</Button>
       </div>
+
+      {selected.length > 0 && (
+        <div className="mt-4 space-y-2 border-t pt-3">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Frais de livraison par ville (USD)</Label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {selected.map((city) => (
+              <div key={city} className="grid grid-cols-[minmax(0,1fr)_120px] items-center gap-2 rounded-md border px-3 py-2">
+                <span className="truncate text-sm font-medium">{city}</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={feeMap[city] ?? defaultFee}
+                  onChange={(e) => onFeesChange({ ...feeMap, [city]: +e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mt-2 text-xs text-muted-foreground">
         {selected.length ? `${selected.length} ville(s) active(s) : ${selected.join(", ")}` : "Aucune ville sélectionnée"}
       </div>

@@ -9,6 +9,8 @@ import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
+import { formatMoney, useSettings } from "@/lib/currency";
+import { feeForCity, useDeliveryConfig } from "@/lib/delivery";
 import { SERVICES } from "./index";
 import { Upload, FileCheck, Award, ClipboardCheck, Clock, ShieldCheck, X } from "lucide-react";
 import elecPro from "@/assets/services/electricite-pro.webp";
@@ -30,7 +32,12 @@ function QuotePage() {
   const [file, setFile] = useState<File | null>(null);
   const [drag, setDrag] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", service: SERVICES[0].title, message: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", service: SERVICES[0].title, message: "", city: "" });
+  const { data: settings } = useSettings();
+  const rate = settings?.usd_to_cdf_rate ?? 2800;
+  const cur = settings?.primary_currency ?? "USD";
+  const delivery = useDeliveryConfig();
+  const cityFee = form.city ? feeForCity(delivery, form.city) : null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,12 +50,12 @@ function QuotePage() {
       if (up.error) { setLoading(false); return toast.error("Envoi de la pièce jointe impossible"); }
       attachment_url = up.data.path;
     }
-    const { error } = await supabase.from("quote_requests").insert({ name: form.name, phone: form.phone, email: form.email || null, service: form.service, message: form.message || null, attachment_url });
+    const { error } = await supabase.from("quote_requests").insert({ name: form.name, phone: form.phone, email: form.email || null, service: form.service, message: [form.city ? `Ville : ${form.city} (frais de livraison ${cityFee?.toFixed(2)} USD)` : null, form.message || null].filter(Boolean).join("\n") || null, attachment_url });
     setLoading(false);
     if (error) return toast.error("Envoi impossible");
     await createNotification({ title: "Nouveau devis demandé", message: `${form.name} a demandé un devis pour ${form.service}.`, type: "info", entity_type: "quote_request" });
     toast.success("Demande envoyée !");
-    setForm({ name: "", phone: "", email: "", service: SERVICES[0].title, message: "" });
+    setForm({ name: "", phone: "", email: "", service: SERVICES[0].title, message: "", city: "" });
     setFile(null);
   }
 
@@ -105,6 +112,23 @@ function QuotePage() {
                   </SelectContent>
                 </Select>
               </Field>
+              {delivery.cities.length > 0 && (
+                <Field label="Ville d'intervention / livraison">
+                  <Select value={form.city} onValueChange={(v) => setForm({ ...form, city: v })}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner une ville" /></SelectTrigger>
+                    <SelectContent>
+                      {delivery.cities.map((c) => (
+                        <SelectItem key={c.city} value={c.city}>{c.city} — {formatMoney(c.fee, cur, rate)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {cityFee !== null && (
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      Frais de livraison estimés : <span className="font-semibold text-foreground">{formatMoney(cityFee, cur, rate)}</span> · Délai {delivery.delay}
+                    </p>
+                  )}
+                </Field>
+              )}
               <Field label="Description du besoin"><Textarea rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Superficie, contraintes, délais souhaités…" /></Field>
 
               <div>
