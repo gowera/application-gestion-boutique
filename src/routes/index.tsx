@@ -181,9 +181,9 @@ function FeaturedProducts() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {products.slice(0, 4).map((p, idx) => (
-              <Link key={p.id} to="/boutique/$productId" params={{ productId: p.id }} className="group">
-                <div className="overflow-hidden rounded-2xl border-l-4 border-l-energy border border-border/60 bg-background shadow-sm transition-all group-hover:shadow-lg">
-                  <div className="relative aspect-square overflow-hidden bg-secondary">
+              <div key={p.id} className="group">
+                <div className="flex h-full flex-col overflow-hidden rounded-2xl border-l-4 border-l-energy border border-border/60 bg-background shadow-sm transition-all group-hover:shadow-lg">
+                  <Link to="/boutique/$productId" params={{ productId: p.id }} className="relative block aspect-square overflow-hidden bg-secondary">
                     {idx === 0 && <span className="absolute left-3 top-3 z-10 rounded bg-primary px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">Best Seller</span>}
                     {idx === 1 && <span className="absolute left-3 top-3 z-10 rounded bg-destructive px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-destructive-foreground">-15% Promo</span>}
                     <StorageImage
@@ -192,21 +192,27 @@ function FeaturedProducts() {
                       className="h-full w-full object-cover transition-transform group-hover:scale-105"
                       fallback={<div className="grid h-full w-full place-items-center"><Zap className="h-12 w-12 text-muted-foreground/30" /></div>}
                     />
-
-                  </div>
-                  <div className="p-4">
+                  </Link>
+                  <div className="flex flex-1 flex-col p-4">
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Star className="h-3 w-3 fill-energy text-energy" /> 4.8
                     </div>
                     <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{p.brand ?? "CONETEC"}</div>
-                    <div className="mt-0.5 min-h-[2.5rem] text-sm font-semibold line-clamp-2">{p.name}</div>
-                    <div className="mt-3 flex items-center justify-between">
+                    <Link to="/boutique/$productId" params={{ productId: p.id }} className="mt-0.5 min-h-[2.5rem] text-sm font-semibold line-clamp-2 hover:text-primary">{p.name}</Link>
+                    <div className="mt-3 flex items-center justify-between gap-2">
                       <div className="text-display text-lg font-extrabold text-primary">{formatMoney(Number(p.sale_price), cur, rate)}</div>
                       <span className="rounded-md bg-energy p-2 text-energy-foreground"><ShoppingCart className="h-4 w-4" /></span>
                     </div>
+                    <Link
+                      to="/produit/$productId"
+                      params={{ productId: p.id }}
+                      className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-primary/30 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                    >
+                      Voir tous les détails <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}
