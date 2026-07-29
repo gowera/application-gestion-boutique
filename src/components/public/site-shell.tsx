@@ -140,6 +140,7 @@ function SiteFooter() {
           <p className="mt-4 text-sm text-neutral-400 leading-relaxed">
             Solutions techniques de pointe pour l'énergie solaire, la sécurité, les réseaux et l'infrastructure.
           </p>
+          <SocialLinks place="footer" className="mt-4 text-neutral-300" />
         </div>
         <div>
           <h4 className="text-display text-sm font-bold uppercase tracking-wide text-energy mb-4">Navigation</h4>
