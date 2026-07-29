@@ -38,6 +38,25 @@ export function useDeliveryConfig(): DeliveryConfig {
   return readDeliveryConfig(data);
 }
 
+/** Villes proposées par défaut dans les paramètres de livraison. */
+export const RDC_CITIES = [
+  "Kinshasa", "Lubumbashi", "Goma", "Bukavu", "Kisangani", "Matadi",
+  "Mbuji-Mayi", "Kananga", "Kolwezi", "Likasi", "Bunia", "Uvira",
+  "Boma", "Kikwit", "Tshikapa", "Mbandaka",
+];
+
+/**
+ * Résumé court des zones desservies : « Toute la RDC » quand toutes les villes
+ * de la liste sont actives, sinon la liste des villes activées.
+ */
+export function deliveryAreaLabel(config: DeliveryConfig): string | null {
+  if (!config.enabled || config.cities.length === 0) return null;
+  const names = config.cities.map((c) => c.city);
+  const coversAll = RDC_CITIES.every((c) => names.includes(c));
+  if (coversAll) return "Toute la RDC";
+  return names.join(", ");
+}
+
 export function feeForCity(config: DeliveryConfig, city: string | null): number {
   if (!city) return config.defaultFee;
   return config.cities.find((c) => c.city === city)?.fee ?? config.defaultFee;
