@@ -284,7 +284,7 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
             setForm((prev) => ({ ...prev, name: nextName, slug: slugManuallyEdited ? prev.slug : slugify(nextName) }));
           }} placeholder="Ex : Disjoncteur 20A" /></div>
           <div><Label>Slug</Label><Input value={form.slug ?? ""} onChange={(e) => { setSlugManuallyEdited(true); setForm((prev) => ({ ...prev, slug: e.target.value })); }} placeholder="slug-automatique" /></div>
-          <div><Label>SKU / Référence</Label><Input value={form.sku ?? ""} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="REF-001" /></div>
+          <div><Label>Modèle / Référence</Label><Input value={form.sku ?? ""} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="Ex : XR-2400" /></div>
           <div><Label>Marque</Label><Input value={form.brand ?? ""} onChange={(e) => setForm({ ...form, brand: e.target.value })} placeholder="Ex : Schneider" /></div>
           <div>
             <Label>Catégorie</Label>
