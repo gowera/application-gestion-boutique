@@ -110,7 +110,7 @@ function ProductsPage() {
               <TableRow>
                 <TableHead>Produit</TableHead>
                 <TableHead>Catégorie</TableHead>
-                <TableHead>SKU</TableHead>
+                <TableHead>Modèle</TableHead>
                 <TableHead className="text-right">Prix vente</TableHead>
                 <TableHead className="text-right">Stock</TableHead>
                 <TableHead>Statut</TableHead>
