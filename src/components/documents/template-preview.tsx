@@ -5,14 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { ZoomIn, ZoomOut, Printer, RefreshCw } from "lucide-react";
 import { buildCustomTemplatePreviewDoc } from "@/lib/pdf";
+import { useSettings } from "@/lib/currency";
 import type { CanvasTemplate } from "@/lib/document-template";
 import type { ReceiptData } from "@/lib/pdf";
 
-function makeSampleData(docLabel: "Facture" | "Reçu"): ReceiptData {
+type ShopInfo = { shopName: string; address: string; phone: string; currency: "USD" | "CDF"; rate: number };
+
+function makeSampleData(docLabel: "Facture" | "Reçu", shop: ShopInfo): ReceiptData {
   return {
-    shopName: "CONETEC",
-    address: "Av. Kasa-Vubu, Kinshasa",
-    phone: "+243 000 000 000",
+    shopName: shop.shopName,
+    address: shop.address,
+    phone: shop.phone,
     code: docLabel === "Facture" ? "FACT-2026-00042" : "RECU-2026-00042",
     customer: "Aperçu Client",
     items: [
@@ -26,8 +29,8 @@ function makeSampleData(docLabel: "Facture" | "Reçu"): ReceiptData {
     total: 63,
     paid: 60,
     credit: 3,
-    currency: "USD",
-    rate: 2800,
+    currency: shop.currency,
+    rate: shop.rate,
     documentType: docLabel,
     template: "custom",
   };
@@ -41,7 +44,18 @@ function makeSampleData(docLabel: "Facture" | "Reçu"): ReceiptData {
 export function TemplatePreview({ template, docLabel }: { template: CanvasTemplate; docLabel: "Facture" | "Reçu" }) {
   const [zoom, setZoom] = useState(100);
   const [nonce, setNonce] = useState(0);
-  const sample = useMemo(() => makeSampleData(docLabel), [docLabel]);
+  const { data: settings } = useSettings();
+  const shop: ShopInfo = {
+    shopName: settings?.shop_name || "CONETEC",
+    address: settings?.address || "",
+    phone: settings?.phone || "",
+    currency: (settings?.primary_currency ?? "USD") as "USD" | "CDF",
+    rate: Number(settings?.usd_to_cdf_rate ?? 2800),
+  };
+  const sample = useMemo(
+    () => makeSampleData(docLabel, shop),
+    [docLabel, shop.shopName, shop.address, shop.phone, shop.currency, shop.rate],
+  );
 
   const blobUrl = useMemo(() => {
     try {
