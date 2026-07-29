@@ -334,6 +334,16 @@ function ProductDetailsPage() {
             >
               <ShoppingCart className="mr-2 h-4 w-4" /> Ajouter au panier
             </Button>
+            <Button
+              variant="secondary"
+              disabled={p.stock <= 0}
+              onClick={() => {
+                add({ product_id: p.id, name: p.name, price_usd: price, image: images[0] ?? null, qty });
+                navigate({ to: "/checkout" });
+              }}
+            >
+              Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
             <Link to="/devis"><Button variant="outline" className="border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground hover:text-primary">Demander un devis</Button></Link>
           </div>
         </section>
