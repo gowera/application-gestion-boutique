@@ -222,7 +222,7 @@ function ProductPage() {
             <TabsContent value="specs" className="rounded-2xl border bg-background p-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <SpecRow label="Marque" value={p.brand ?? "—"} />
-                <SpecRow label="Référence" value={p.sku ?? "—"} />
+                <SpecRow label="Modèle" value={p.sku ?? "—"} />
                 <SpecRow label="Stock disponible" value={p.show_stock_public ? String(p.stock) : "Sur demande"} />
                 <SpecRow label="Statut" value={p.status ?? "actif"} />
               </div>
