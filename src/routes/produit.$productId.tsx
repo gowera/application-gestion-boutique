@@ -206,7 +206,7 @@ function ProductDetailsPage() {
                 />
               </div>
               <div className="grid grid-cols-4 gap-3 lg:grid-cols-1">
-                {images.slice(0, 4).map((src, i) => (
+                {images.slice(0, 8).map((src, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveImg(i)}
@@ -220,17 +220,6 @@ function ProductDetailsPage() {
           </section>
         )}
 
-        {/* Why buy */}
-        <section className="mb-10 sm:mb-14">
-          <SectionTitle icon={Zap} title="Pourquoi choisir ce produit" subtitle="Les avantages concrets pour votre installation" />
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Perk icon={ShieldCheck} title="Qualité certifiée" text="Matériel conforme aux normes, sourcé auprès de fournisseurs agréés." />
-            <Perk icon={Wrench} title="Installation clé en main" text="Nos techniciens posent, configurent et testent sur site." />
-            <Perk icon={HeadphonesIcon} title="Support 7j/7" text="Assistance téléphonique et WhatsApp après achat." />
-            <Perk icon={Truck} title="Livraison rapide" text="Kinshasa et environs, retrait boutique possible." />
-          </div>
-        </section>
-
         {/* Specs + included */}
         <section className="mb-10 grid gap-8 sm:mb-14 lg:grid-cols-2">
           <div>
@@ -238,9 +227,10 @@ function ProductDetailsPage() {
             <div className="mt-5 overflow-hidden rounded-2xl border bg-background">
               <SpecRow label="Désignation" value={p.name} />
               <SpecRow label="Marque" value={p.brand ?? "—"} />
-              <SpecRow label="Référence / SKU" value={p.sku ?? p.id.slice(0, 8).toUpperCase()} />
+              <SpecRow label="Modèle" value={p.sku ?? p.id.slice(0, 8).toUpperCase()} />
               <SpecRow label="Disponibilité" value={p.show_stock_public ? `${p.stock} en stock` : (p.stock > 0 ? "En stock" : "Sur commande")} />
               <SpecRow label="Statut" value={p.status === "active" ? "Actif au catalogue" : String(p.status ?? "—")} />
+              {areaLabel && <SpecRow label="Zones de livraison" value={areaLabel} />}
               <SpecRow label="Prix unitaire" value={formatMoney(price, cur, rate)} last />
             </div>
           </div>
@@ -263,6 +253,28 @@ function ProductDetailsPage() {
           </div>
         </section>
 
+        {/* Description */}
+        <section className="mb-10 sm:mb-14">
+          <SectionTitle icon={FileText} title="Description du produit" subtitle="Présentation détaillée fournie par CONETEC" />
+          <div className="mt-5 rounded-2xl border bg-background p-5 sm:p-6">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/85">
+              {p.description?.trim()
+                || "Aucune description détaillée n'a encore été publiée pour ce produit. Contactez notre équipe technique pour obtenir la fiche complète et les conseils d'installation."}
+            </p>
+          </div>
+        </section>
+
+        {/* Why buy */}
+        <section className="mb-10 sm:mb-14">
+          <SectionTitle icon={Zap} title="Pourquoi choisir ce produit" subtitle="Les avantages concrets pour votre installation" />
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Perk icon={ShieldCheck} title="Qualité certifiée" text="Matériel conforme aux normes, sourcé auprès de fournisseurs agréés." />
+            <Perk icon={Wrench} title="Installation clé en main" text="Nos techniciens posent, configurent et testent sur site." />
+            <Perk icon={HeadphonesIcon} title="Support 7j/7" text="Assistance téléphonique et WhatsApp après achat." />
+            <Perk icon={Truck} title="Livraison rapide" text={areaLabel ? `Livraison : ${areaLabel}.` : "Kinshasa et environs, retrait boutique possible."} />
+          </div>
+        </section>
+
         {/* FAQ */}
         <section className="mb-10 sm:mb-14">
           <SectionTitle icon={HeadphonesIcon} title="Questions fréquentes" subtitle="Tout ce qu'il faut savoir avant de commander" />
@@ -270,7 +282,7 @@ function ProductDetailsPage() {
             <Accordion type="single" collapsible>
               <AccordionItem value="1">
                 <AccordionTrigger className="text-sm">Quels sont les délais de livraison ?</AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground">Expédition sous 24 à 48h pour les articles en stock à Kinshasa. Pour les autres provinces, nous convenons du transporteur avec vous lors de la confirmation de commande.</AccordionContent>
+                <AccordionContent className="text-sm text-muted-foreground">Expédition sous 24 à 48h pour les articles en stock à Kinshasa. {areaLabel ? `Zones desservies : ${areaLabel}.` : "Pour les autres provinces, nous convenons du transporteur avec vous lors de la confirmation de commande."}</AccordionContent>
               </AccordionItem>
               <AccordionItem value="2">
                 <AccordionTrigger className="text-sm">Comment puis-je payer ?</AccordionTrigger>
