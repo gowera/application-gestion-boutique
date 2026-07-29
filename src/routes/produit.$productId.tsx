@@ -71,6 +71,9 @@ function ProductDetailsPage() {
   const { productId } = useParams({ from: "/produit/$productId" });
   const { data: settings } = useSettings();
   const { add } = useCart();
+  const navigate = useNavigate();
+  const delivery = useDeliveryConfig();
+  const areaLabel = deliveryAreaLabel(delivery);
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
   const rate = settings?.usd_to_cdf_rate ?? 2800;
