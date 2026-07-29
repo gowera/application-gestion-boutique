@@ -173,6 +173,18 @@ function Page() {
             <div><Label>TikTok</Label><Input value={ex("social_tiktok", "")} onChange={(e) => setEx("social_tiktok", e.target.value)} placeholder="https://tiktok.com/@…" /></div>
             <div><Label>YouTube</Label><Input value={ex("social_youtube", "")} onChange={(e) => setEx("social_youtube", e.target.value)} placeholder="https://youtube.com/…" /></div>
           </div>
+          <div>
+            <Label>Afficher les réseaux sociaux</Label>
+            <Select value={ex("social_position", "footer")} onValueChange={(v) => setEx("social_position", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="footer">Dans le pied de page</SelectItem>
+                <SelectItem value="header">Dans l'en-tête</SelectItem>
+                <SelectItem value="both">En-tête et pied de page</SelectItem>
+                <SelectItem value="none">Ne pas afficher</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </>}
 
         {tab === "compte" && <>
