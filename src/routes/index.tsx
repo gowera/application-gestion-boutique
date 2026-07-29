@@ -1,5 +1,6 @@
 import { StorageImage } from "@/components/storage-image";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { SiteShell } from "@/components/public/site-shell";
 import { useQuery } from "@tanstack/react-query";
