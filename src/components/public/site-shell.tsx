@@ -37,9 +37,12 @@ function TopBar() {
           <span className="flex items-center gap-1.5"><Phone className="h-3 w-3" />{phone}</span>
           <span className="flex items-center gap-1.5"><Mail className="h-3 w-3" />{email}</span>
         </div>
-        <a href={`https://wa.me/${wa}`} className="flex items-center gap-1.5 hover:text-primary-foreground">
-          <MessageCircle className="h-3 w-3" /> WhatsApp Support
-        </a>
+        <div className="flex items-center gap-4">
+          <SocialLinks place="header" />
+          <a href={`https://wa.me/${wa}`} className="flex items-center gap-1.5 hover:text-primary-foreground">
+            <MessageCircle className="h-3 w-3" /> WhatsApp Support
+          </a>
+        </div>
       </div>
     </div>
   );
