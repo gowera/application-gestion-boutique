@@ -185,11 +185,18 @@ function ProductPage() {
                 <Zap className="mr-2 h-4 w-4" /> Voir tous les détails
               </Button>
             </Link>
-            <Link to="/panier">
-              <Button size="lg" variant="outline" className="mt-3 w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-                Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              variant="outline"
+              className="mt-3 w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              disabled={p.stock <= 0}
+              onClick={() => {
+                add({ product_id: p.id, name: p.name, price_usd: price, image: images[0] ?? null, qty });
+                navigate({ to: "/checkout" });
+              }}
+            >
+              Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
 
             <Link to="/devis" className="mt-4 flex items-center justify-between rounded-xl border border-dashed border-primary/30 bg-accent/30 p-4 transition-colors hover:bg-accent/50">
               <div className="flex items-center gap-3">
