@@ -81,7 +81,10 @@ function CartPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="mt-1.5 text-xs text-muted-foreground">Délai moyen : {delivery.delay}</p>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      Délai moyen : {delivery.delay}
+                      {deliveryAreaLabel(delivery) ? ` · Zones desservies : ${deliveryAreaLabel(delivery)}` : ""}
+                    </p>
                   </div>
                 )}
                 <div className="mt-4 border-t pt-4 flex justify-between text-lg font-bold">
