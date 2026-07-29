@@ -144,7 +144,7 @@ function ProductPage() {
               <div className="flex items-center gap-0.5">
                 {[1,2,3,4,5].map((i) => <Star key={i} className="h-4 w-4 fill-energy text-energy" />)}
               </div>
-              <span>4.8 · Réf. {p.sku ?? p.id.slice(0, 8).toUpperCase()}</span>
+              <span>4.8 · Modèle {p.sku ?? p.id.slice(0, 8).toUpperCase()}</span>
             </div>
 
             <div className="mt-6 rounded-2xl border-l-4 border-l-energy bg-secondary/50 p-5">
