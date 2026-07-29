@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatMoney, useSettings } from "@/lib/currency";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { feeForCity, useDeliveryConfig, useSelectedCity } from "@/lib/delivery";
+import { deliveryAreaLabel, feeForCity, useDeliveryConfig, useSelectedCity } from "@/lib/delivery";
 import { Trash2, ShoppingCart, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/panier")({ component: CartPage });
