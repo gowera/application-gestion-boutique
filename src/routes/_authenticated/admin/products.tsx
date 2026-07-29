@@ -317,9 +317,52 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
           <div><Label>Seuil d'alerte</Label><Input type="number" value={form.low_stock_threshold ?? ""} onChange={(e) => setForm({ ...form, low_stock_threshold: e.target.value === "" ? null : +e.target.value })} placeholder="5" /></div>
           <div className="md:col-span-2">
             <Label>Images du produit</Label>
-            <p className="mt-1 text-xs text-muted-foreground">Choisissez un ou plusieurs fichiers image, ou ajoutez une ou plusieurs URL d’image ci-dessous, une par ligne.</p>
-            <input type="file" accept="image/*" multiple className="mt-2 block w-full text-sm" title="Choisir des fichiers" onChange={(e) => setImageFiles(Array.from(e.target.files ?? []))} />
-            <Textarea rows={3} value={imageInput} onChange={(e) => setImageInput(e.target.value)} className="mt-2" placeholder="https://exemple.com/image1.jpg" />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ajoutez autant d’images que vous voulez : sélectionnez plusieurs fichiers (ils s’ajoutent aux précédents) et/ou collez des URL, une par ligne. La première image sert d’image principale.
+            </p>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="mt-2 block w-full text-sm"
+              title="Choisir des fichiers"
+              onChange={(e) => {
+                const picked = Array.from(e.target.files ?? []);
+                if (picked.length) setImageFiles((prev) => [...prev, ...picked]);
+                e.target.value = "";
+              }}
+            />
+            {imageFiles.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {imageFiles.map((f, i) => (
+                  <span key={`${f.name}-${i}`} className="flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1 text-xs">
+                    <img src={URL.createObjectURL(f)} alt="" className="h-8 w-8 rounded object-cover" />
+                    <span className="max-w-[140px] truncate">{f.name}</span>
+                    <button type="button" className="text-muted-foreground hover:text-destructive" onClick={() => setImageFiles((prev) => prev.filter((_, idx) => idx !== i))}>×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <Textarea rows={3} value={imageInput} onChange={(e) => setImageInput(e.target.value)} className="mt-2" placeholder="https://exemple.com/image1.jpg&#10;https://exemple.com/image2.jpg" />
+            {(() => {
+              const urls = imageInput.split(/\n|,/).map((v) => v.trim()).filter(Boolean);
+              if (!urls.length) return null;
+              return (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {urls.map((u, i) => (
+                    <span key={`${u}-${i}`} className="flex items-center gap-2 rounded-md border px-2 py-1 text-xs">
+                      <StorageImage src={u} alt="" className="h-8 w-8 rounded object-cover" />
+                      <span className="max-w-[160px] truncate">{u}</span>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setImageInput(urls.filter((_, idx) => idx !== i).join("\n"))}
+                      >×</button>
+                    </span>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
           <div className="md:col-span-2 rounded-lg border p-3">
             <Label className="mb-2 block">Fournisseurs associés</Label>
