@@ -1,5 +1,6 @@
 import { StorageImage } from "@/components/storage-image";
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
+import { deliveryAreaLabel, useDeliveryConfig } from "@/lib/delivery";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteShell } from "@/components/public/site-shell";
@@ -71,6 +72,9 @@ function ProductDetailsPage() {
   const { productId } = useParams({ from: "/produit/$productId" });
   const { data: settings } = useSettings();
   const { add } = useCart();
+  const navigate = useNavigate();
+  const delivery = useDeliveryConfig();
+  const areaLabel = deliveryAreaLabel(delivery);
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
   const rate = settings?.usd_to_cdf_rate ?? 2800;
@@ -170,11 +174,21 @@ function ProductDetailsPage() {
                 <ShoppingCart className="mr-2 h-4 w-4" /> Ajouter au panier
               </Button>
             </div>
-            <Link to="/panier">
-              <Button variant="outline" className="mt-3 w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-                Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            <Button
+              className="mt-3 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={p.stock <= 0}
+              onClick={() => {
+                add({ product_id: p.id, name: p.name, price_usd: price, image: images[0] ?? null, qty });
+                navigate({ to: "/checkout" });
+              }}
+            >
+              Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            {areaLabel && (
+              <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
+                <Truck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> Livraison : {areaLabel}
+              </p>
+            )}
             <ShareButton
               title={p.name}
               text={`Découvrez ${p.name} chez CONETEC`}
@@ -206,7 +220,7 @@ function ProductDetailsPage() {
                 />
               </div>
               <div className="grid grid-cols-4 gap-3 lg:grid-cols-1">
-                {images.slice(0, 4).map((src, i) => (
+                {images.slice(0, 8).map((src, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveImg(i)}
@@ -220,17 +234,6 @@ function ProductDetailsPage() {
           </section>
         )}
 
-        {/* Why buy */}
-        <section className="mb-10 sm:mb-14">
-          <SectionTitle icon={Zap} title="Pourquoi choisir ce produit" subtitle="Les avantages concrets pour votre installation" />
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Perk icon={ShieldCheck} title="Qualité certifiée" text="Matériel conforme aux normes, sourcé auprès de fournisseurs agréés." />
-            <Perk icon={Wrench} title="Installation clé en main" text="Nos techniciens posent, configurent et testent sur site." />
-            <Perk icon={HeadphonesIcon} title="Support 7j/7" text="Assistance téléphonique et WhatsApp après achat." />
-            <Perk icon={Truck} title="Livraison rapide" text="Kinshasa et environs, retrait boutique possible." />
-          </div>
-        </section>
-
         {/* Specs + included */}
         <section className="mb-10 grid gap-8 sm:mb-14 lg:grid-cols-2">
           <div>
@@ -238,9 +241,10 @@ function ProductDetailsPage() {
             <div className="mt-5 overflow-hidden rounded-2xl border bg-background">
               <SpecRow label="Désignation" value={p.name} />
               <SpecRow label="Marque" value={p.brand ?? "—"} />
-              <SpecRow label="Référence / SKU" value={p.sku ?? p.id.slice(0, 8).toUpperCase()} />
+              <SpecRow label="Modèle" value={p.sku ?? p.id.slice(0, 8).toUpperCase()} />
               <SpecRow label="Disponibilité" value={p.show_stock_public ? `${p.stock} en stock` : (p.stock > 0 ? "En stock" : "Sur commande")} />
               <SpecRow label="Statut" value={p.status === "active" ? "Actif au catalogue" : String(p.status ?? "—")} />
+              {areaLabel && <SpecRow label="Zones de livraison" value={areaLabel} />}
               <SpecRow label="Prix unitaire" value={formatMoney(price, cur, rate)} last />
             </div>
           </div>
@@ -263,6 +267,28 @@ function ProductDetailsPage() {
           </div>
         </section>
 
+        {/* Description */}
+        <section className="mb-10 sm:mb-14">
+          <SectionTitle icon={FileText} title="Description du produit" subtitle="Présentation détaillée fournie par CONETEC" />
+          <div className="mt-5 rounded-2xl border bg-background p-5 sm:p-6">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/85">
+              {p.description?.trim()
+                || "Aucune description détaillée n'a encore été publiée pour ce produit. Contactez notre équipe technique pour obtenir la fiche complète et les conseils d'installation."}
+            </p>
+          </div>
+        </section>
+
+        {/* Why buy */}
+        <section className="mb-10 sm:mb-14">
+          <SectionTitle icon={Zap} title="Pourquoi choisir ce produit" subtitle="Les avantages concrets pour votre installation" />
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Perk icon={ShieldCheck} title="Qualité certifiée" text="Matériel conforme aux normes, sourcé auprès de fournisseurs agréés." />
+            <Perk icon={Wrench} title="Installation clé en main" text="Nos techniciens posent, configurent et testent sur site." />
+            <Perk icon={HeadphonesIcon} title="Support 7j/7" text="Assistance téléphonique et WhatsApp après achat." />
+            <Perk icon={Truck} title="Livraison rapide" text={areaLabel ? `Livraison : ${areaLabel}.` : "Kinshasa et environs, retrait boutique possible."} />
+          </div>
+        </section>
+
         {/* FAQ */}
         <section className="mb-10 sm:mb-14">
           <SectionTitle icon={HeadphonesIcon} title="Questions fréquentes" subtitle="Tout ce qu'il faut savoir avant de commander" />
@@ -270,7 +296,7 @@ function ProductDetailsPage() {
             <Accordion type="single" collapsible>
               <AccordionItem value="1">
                 <AccordionTrigger className="text-sm">Quels sont les délais de livraison ?</AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground">Expédition sous 24 à 48h pour les articles en stock à Kinshasa. Pour les autres provinces, nous convenons du transporteur avec vous lors de la confirmation de commande.</AccordionContent>
+                <AccordionContent className="text-sm text-muted-foreground">Expédition sous 24 à 48h pour les articles en stock à Kinshasa. {areaLabel ? `Zones desservies : ${areaLabel}.` : "Pour les autres provinces, nous convenons du transporteur avec vous lors de la confirmation de commande."}</AccordionContent>
               </AccordionItem>
               <AccordionItem value="2">
                 <AccordionTrigger className="text-sm">Comment puis-je payer ?</AccordionTrigger>
@@ -307,6 +333,16 @@ function ProductDetailsPage() {
               onClick={() => { add({ product_id: p.id, name: p.name, price_usd: price, image: images[0] ?? null, qty }); toast.success("Ajouté au panier"); }}
             >
               <ShoppingCart className="mr-2 h-4 w-4" /> Ajouter au panier
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={p.stock <= 0}
+              onClick={() => {
+                add({ product_id: p.id, name: p.name, price_usd: price, image: images[0] ?? null, qty });
+                navigate({ to: "/checkout" });
+              }}
+            >
+              Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <Link to="/devis"><Button variant="outline" className="border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground hover:text-primary">Demander un devis</Button></Link>
           </div>

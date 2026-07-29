@@ -192,6 +192,7 @@ function ShopPage() {
 
 function ProductCard({ p, rate, cur }: { p: any; rate: number; cur: any }) {
   const { add } = useCart();
+  const navigate = useNavigate();
   return (
     <div className="group overflow-hidden rounded-2xl border border-l-4 border-l-energy border-border/60 bg-background shadow-sm transition-all hover:shadow-lg">
       <Link to="/boutique/$productId" params={{ productId: p.id }} className="relative block aspect-square overflow-hidden bg-secondary">
@@ -224,7 +225,18 @@ function ProductCard({ p, rate, cur }: { p: any; rate: number; cur: any }) {
             <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> Panier
           </Button>
         </div>
-        <Link to="/produit/$productId" params={{ productId: p.id }} className="mt-3 block">
+        <Button
+          size="sm"
+          className="mt-3 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+          disabled={p.stock <= 0}
+          onClick={() => {
+            add({ product_id: p.id, name: p.name, price_usd: Number(p.sale_price), image: p.images?.[0] ?? null });
+            navigate({ to: "/checkout" });
+          }}
+        >
+          Acheter
+        </Button>
+        <Link to="/produit/$productId" params={{ productId: p.id }} className="mt-2 block">
           <Button size="sm" variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground">
             Voir tous les détails
           </Button>

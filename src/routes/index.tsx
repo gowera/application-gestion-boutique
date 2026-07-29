@@ -1,5 +1,6 @@
 import { StorageImage } from "@/components/storage-image";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { SiteShell } from "@/components/public/site-shell";
 import { useQuery } from "@tanstack/react-query";
@@ -163,6 +164,8 @@ function TrustStrip() {
 
 function FeaturedProducts() {
   const { data: settings } = useSettings();
+  const { add } = useCart();
+  const navigate = useNavigate();
   const { data: products } = useQuery({
     queryKey: ["home-products"],
     queryFn: async () => (await supabase.from("products").select("id,name,brand,sale_price,stock,images").eq("status", "active").limit(8).order("created_at", { ascending: false })).data ?? [],
@@ -203,10 +206,21 @@ function FeaturedProducts() {
                       <div className="text-display text-lg font-extrabold text-primary">{formatMoney(Number(p.sale_price), cur, rate)}</div>
                       <span className="rounded-md bg-energy p-2 text-energy-foreground"><ShoppingCart className="h-4 w-4" /></span>
                     </div>
+                    <button
+                      type="button"
+                      disabled={p.stock <= 0}
+                      onClick={() => {
+                        add({ product_id: p.id, name: p.name, price_usd: Number(p.sale_price), image: p.images?.[0] ?? null });
+                        navigate({ to: "/checkout" });
+                      }}
+                      className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      Acheter <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
                     <Link
                       to="/produit/$productId"
                       params={{ productId: p.id }}
-                      className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-primary/30 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                      className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-primary/30 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
                     >
                       Voir tous les détails <ArrowRight className="h-3.5 w-3.5" />
                     </Link>

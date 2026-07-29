@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useSettings } from "@/lib/currency";
 import { StorageImage } from "@/components/storage-image";
+import { SocialLinks } from "@/components/public/social-links";
 import logo from "@/assets/brand/logo.png";
 
 const NAV = [
@@ -37,9 +38,12 @@ function TopBar() {
           <span className="flex items-center gap-1.5"><Phone className="h-3 w-3" />{phone}</span>
           <span className="flex items-center gap-1.5"><Mail className="h-3 w-3" />{email}</span>
         </div>
-        <a href={`https://wa.me/${wa}`} className="flex items-center gap-1.5 hover:text-primary-foreground">
-          <MessageCircle className="h-3 w-3" /> WhatsApp Support
-        </a>
+        <div className="flex items-center gap-4">
+          <SocialLinks place="header" />
+          <a href={`https://wa.me/${wa}`} className="flex items-center gap-1.5 hover:text-primary-foreground">
+            <MessageCircle className="h-3 w-3" /> WhatsApp Support
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -136,6 +140,7 @@ function SiteFooter() {
           <p className="mt-4 text-sm text-neutral-400 leading-relaxed">
             Solutions techniques de pointe pour l'énergie solaire, la sécurité, les réseaux et l'infrastructure.
           </p>
+          <SocialLinks place="footer" className="mt-4 text-neutral-300" />
         </div>
         <div>
           <h4 className="text-display text-sm font-bold uppercase tracking-wide text-energy mb-4">Navigation</h4>

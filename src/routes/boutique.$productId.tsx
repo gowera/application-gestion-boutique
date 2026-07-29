@@ -1,5 +1,5 @@
 import { StorageImage } from "@/components/storage-image";
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteShell } from "@/components/public/site-shell";
@@ -69,6 +69,7 @@ function ProductPage() {
   const { productId } = useParams({ from: "/boutique/$productId" });
   const { data: settings } = useSettings();
   const { add } = useCart();
+  const navigate = useNavigate();
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
   const rate = settings?.usd_to_cdf_rate ?? 2800;
@@ -143,7 +144,7 @@ function ProductPage() {
               <div className="flex items-center gap-0.5">
                 {[1,2,3,4,5].map((i) => <Star key={i} className="h-4 w-4 fill-energy text-energy" />)}
               </div>
-              <span>4.8 · Réf. {p.sku ?? p.id.slice(0, 8).toUpperCase()}</span>
+              <span>4.8 · Modèle {p.sku ?? p.id.slice(0, 8).toUpperCase()}</span>
             </div>
 
             <div className="mt-6 rounded-2xl border-l-4 border-l-energy bg-secondary/50 p-5">
@@ -184,11 +185,18 @@ function ProductPage() {
                 <Zap className="mr-2 h-4 w-4" /> Voir tous les détails
               </Button>
             </Link>
-            <Link to="/panier">
-              <Button size="lg" variant="outline" className="mt-3 w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-                Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              variant="outline"
+              className="mt-3 w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              disabled={p.stock <= 0}
+              onClick={() => {
+                add({ product_id: p.id, name: p.name, price_usd: price, image: images[0] ?? null, qty });
+                navigate({ to: "/checkout" });
+              }}
+            >
+              Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
 
             <Link to="/devis" className="mt-4 flex items-center justify-between rounded-xl border border-dashed border-primary/30 bg-accent/30 p-4 transition-colors hover:bg-accent/50">
               <div className="flex items-center gap-3">
@@ -214,7 +222,7 @@ function ProductPage() {
             <TabsContent value="specs" className="rounded-2xl border bg-background p-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <SpecRow label="Marque" value={p.brand ?? "—"} />
-                <SpecRow label="Référence" value={p.sku ?? "—"} />
+                <SpecRow label="Modèle" value={p.sku ?? "—"} />
                 <SpecRow label="Stock disponible" value={p.show_stock_public ? String(p.stock) : "Sur demande"} />
                 <SpecRow label="Statut" value={p.status ?? "actif"} />
               </div>

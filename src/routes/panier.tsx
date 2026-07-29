@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatMoney, useSettings } from "@/lib/currency";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { feeForCity, useDeliveryConfig, useSelectedCity } from "@/lib/delivery";
+import { deliveryAreaLabel, feeForCity, useDeliveryConfig, useSelectedCity } from "@/lib/delivery";
 import { Trash2, ShoppingCart, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/panier")({ component: CartPage });
@@ -81,7 +81,10 @@ function CartPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="mt-1.5 text-xs text-muted-foreground">Délai moyen : {delivery.delay}</p>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      Délai moyen : {delivery.delay}
+                      {deliveryAreaLabel(delivery) ? ` · Zones desservies : ${deliveryAreaLabel(delivery)}` : ""}
+                    </p>
                   </div>
                 )}
                 <div className="mt-4 border-t pt-4 flex justify-between text-lg font-bold">
