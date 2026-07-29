@@ -15,6 +15,7 @@ import { formatMoney, useSettings } from "@/lib/currency";
 import { Plus, Pencil, Search, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
+import { StorageImage } from "@/components/storage-image";
 
 export const Route = createFileRoute("/_authenticated/admin/products")({
   component: ProductsPage,
