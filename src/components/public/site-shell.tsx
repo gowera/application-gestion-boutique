@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useSettings } from "@/lib/currency";
 import { StorageImage } from "@/components/storage-image";
+import { SocialLinks } from "@/components/public/social-links";
 import logo from "@/assets/brand/logo.png";
 
 const NAV = [
