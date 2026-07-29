@@ -163,6 +163,8 @@ function TrustStrip() {
 
 function FeaturedProducts() {
   const { data: settings } = useSettings();
+  const { add } = useCart();
+  const navigate = useNavigate();
   const { data: products } = useQuery({
     queryKey: ["home-products"],
     queryFn: async () => (await supabase.from("products").select("id,name,brand,sale_price,stock,images").eq("status", "active").limit(8).order("created_at", { ascending: false })).data ?? [],
