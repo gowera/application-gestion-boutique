@@ -174,11 +174,21 @@ function ProductDetailsPage() {
                 <ShoppingCart className="mr-2 h-4 w-4" /> Ajouter au panier
               </Button>
             </div>
-            <Link to="/panier">
-              <Button variant="outline" className="mt-3 w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-                Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            <Button
+              className="mt-3 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={p.stock <= 0}
+              onClick={() => {
+                add({ product_id: p.id, name: p.name, price_usd: price, image: images[0] ?? null, qty });
+                navigate({ to: "/checkout" });
+              }}
+            >
+              Acheter maintenant <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            {areaLabel && (
+              <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
+                <Truck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /> Livraison : {areaLabel}
+              </p>
+            )}
             <ShareButton
               title={p.name}
               text={`Découvrez ${p.name} chez CONETEC`}
