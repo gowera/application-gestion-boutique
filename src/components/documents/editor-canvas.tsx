@@ -219,7 +219,7 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <div className="rounded border p-3 space-y-2">
           <Label className="text-xs uppercase text-muted-foreground">Format de page</Label>
           <Select value={`${template.pageWidth}x${template.pageHeight}`} onValueChange={(v) => { const [w, h] = v.split("x").map(Number); update({ pageWidth: w, pageHeight: h }); }}>
