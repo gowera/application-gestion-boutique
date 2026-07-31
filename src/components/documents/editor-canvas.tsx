@@ -41,6 +41,8 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
   const [template, setTemplate] = useState<CanvasTemplate>(() => getCustomTemplate(kind));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const logoUrl = useLogoUrl();
+
 
   React.useEffect(() => { setTemplate(getCustomTemplate(kind)); setSelectedId(null); }, [kind]);
 
