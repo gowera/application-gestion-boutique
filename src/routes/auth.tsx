@@ -59,11 +59,10 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-hero-gradient px-4">
       <div className="w-full max-w-md">
         <Link to="/" className="mb-6 flex items-center justify-center gap-2 text-primary-foreground">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-energy text-energy-foreground">
-            <Zap className="h-5 w-5" />
-          </div>
+          <img src={logoUrl} alt="Logo CONETEC" className="h-12 w-12 rounded-md bg-background/90 object-contain p-1" />
           <span className="text-display text-xl font-bold">CONETEC</span>
         </Link>
+
         <Card>
           <CardContent className="p-6">
             <h1 className="text-display text-2xl font-bold">
