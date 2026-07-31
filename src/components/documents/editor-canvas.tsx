@@ -17,6 +17,19 @@ import { toast } from "sonner";
 
 const PX_PER_MM = 3;
 
+function ResizeHandle({ onPointerDown }: { onPointerDown: (e: React.PointerEvent) => void }) {
+  return (
+    <span
+      onPointerDown={onPointerDown}
+      style={{
+        position: "absolute", right: -6, bottom: -6, width: 12, height: 12,
+        borderRadius: 3, background: "#3B82F6", border: "2px solid #FFF", cursor: "nwse-resize",
+      }}
+    />
+  );
+}
+
+
 const PAGE_PRESETS: Array<{ label: string; w: number; h: number }> = [
   { label: "A4 (210 × 297)", w: 210, h: 297 },
   { label: "A5 (148 × 210)", w: 148, h: 210 },
