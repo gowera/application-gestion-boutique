@@ -204,8 +204,26 @@ function FeaturedProducts() {
                     <Link to="/boutique/$productId" params={{ productId: p.id }} className="mt-0.5 min-h-[2.5rem] text-sm font-semibold line-clamp-2 hover:text-primary">{p.name}</Link>
                     <div className="mt-3 flex items-center justify-between gap-2">
                       <div className="text-display text-lg font-extrabold text-primary">{formatMoney(Number(p.sale_price), cur, rate)}</div>
-                      <span className="rounded-md bg-energy p-2 text-energy-foreground"><ShoppingCart className="h-4 w-4" /></span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          title="Ajouter au panier"
+                          disabled={p.stock <= 0}
+                          onClick={() => { add({ product_id: p.id, name: p.name, price_usd: Number(p.sale_price), image: p.images?.[0] ?? null }); }}
+                          className="rounded-md bg-energy p-2 text-energy-foreground disabled:opacity-50"
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                        </button>
+                        <ShareButton
+                          size="icon"
+                          variant="outline"
+                          title={p.name}
+                          text={p.brand ?? "CONETEC"}
+                          url={typeof window !== "undefined" ? `${window.location.origin}/produit/${p.id}` : undefined}
+                        />
+                      </div>
                     </div>
+
                     <button
                       type="button"
                       disabled={p.stock <= 0}
