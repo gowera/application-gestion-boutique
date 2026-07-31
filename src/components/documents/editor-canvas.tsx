@@ -97,8 +97,9 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
   }
 
   function save() {
-
+    setCustomTemplate(kind, template);
     setStoredDocumentTemplate("custom");
+
     toast.success("Modèle enregistré. Il sera utilisé pour tous les documents.");
     onSaved?.();
   }
