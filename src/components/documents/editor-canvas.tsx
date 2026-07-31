@@ -73,8 +73,31 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
     window.addEventListener("pointerup", up);
   }
 
+  function onResizePointerDown(e: React.PointerEvent, id: string) {
+    e.stopPropagation();
+    setSelectedId(id);
+    const el = template.elements.find((x) => x.id === id);
+    if (!el) return;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const origW = el.w ?? 30;
+    const origH = el.h ?? 15;
+    (e.target as Element).setPointerCapture(e.pointerId);
+    function move(ev: PointerEvent) {
+      const dx = (ev.clientX - startX) / PX_PER_MM;
+      const dy = (ev.clientY - startY) / PX_PER_MM;
+      updateEl(id, { w: Math.max(5, origW + dx), h: Math.max(3, origH + dy) });
+    }
+    function up() {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    }
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
   function save() {
-    setCustomTemplate(kind, template);
+
     setStoredDocumentTemplate("custom");
     toast.success("Modèle enregistré. Il sera utilisé pour tous les documents.");
     onSaved?.();
