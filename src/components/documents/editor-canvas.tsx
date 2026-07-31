@@ -13,6 +13,8 @@ import {
   AVAILABLE_VARIABLES, setStoredDocumentTemplate,
 } from "@/lib/document-template";
 import { TemplatePreview } from "@/components/documents/template-preview";
+import { useLogoUrl } from "@/lib/logo";
+
 import { toast } from "sonner";
 
 const PX_PER_MM = 3;
