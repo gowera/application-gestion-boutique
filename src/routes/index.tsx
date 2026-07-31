@@ -3,6 +3,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { SiteShell } from "@/components/public/site-shell";
+import { ShareButton } from "@/components/public/share-button";
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney, useSettings } from "@/lib/currency";
