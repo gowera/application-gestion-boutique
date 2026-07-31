@@ -132,8 +132,9 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
   const canvasHeight = template.pageHeight * PX_PER_MM;
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="space-y-3">
+    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px_minmax(0,1fr)]">
+      <div className="min-w-0 space-y-3">
+
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => addEl("text")}><Type className="h-4 w-4 mr-1" />Texte</Button>
           <Button size="sm" variant="outline" onClick={() => addEl("rect")}><Square className="h-4 w-4 mr-1" />Rectangle</Button>
