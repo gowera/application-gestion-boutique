@@ -10,6 +10,7 @@ export function ShareButton({
   variant = "outline",
   size = "lg",
   label = "Partager",
+  url: urlProp,
 }: {
   title: string;
   text?: string;
@@ -17,9 +18,11 @@ export function ShareButton({
   variant?: "outline" | "default" | "ghost" | "secondary";
   size?: "sm" | "lg" | "default" | "icon";
   label?: string;
+  url?: string;
 }) {
-  const url = typeof window !== "undefined" ? window.location.href : "";
+  const url = urlProp ?? (typeof window !== "undefined" ? window.location.href : "");
   const message = `${title}${text ? ` — ${text}` : ""}`;
+
 
   const nativeShare = async () => {
     if (typeof navigator !== "undefined" && (navigator as any).share) {
