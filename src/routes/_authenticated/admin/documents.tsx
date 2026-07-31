@@ -74,7 +74,7 @@ function Page() {
   const selectedTemplate = useMemo(() => DOCUMENT_TEMPLATES.find((item) => item.id === template) ?? DOCUMENT_TEMPLATES[0], [template]);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6 overflow-x-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-display text-2xl font-bold">Documents</h1>
@@ -84,7 +84,7 @@ function Page() {
       </div>
 
       <Tabs defaultValue="models">
-        <TabsList>
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="models">Modèles de document</TabsTrigger>
           <TabsTrigger value="create">Créer un document</TabsTrigger>
         </TabsList>
@@ -109,7 +109,7 @@ function Page() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-w-0 overflow-x-auto p-3 sm:p-6">
               <EditorCanvas kind={designerKind} onSaved={() => { setTemplate("custom"); setStoredDocumentTemplate("custom"); toast.success("Modèle enregistré et appliqué partout"); }} />
             </CardContent>
           </Card>
@@ -164,11 +164,11 @@ function Page() {
               <div className="space-y-2">
                 <Label>Lignes</Label>
                 {lines.map((line, i) => (
-                  <div key={i} className="grid gap-2 md:grid-cols-[2fr_80px_120px_auto]">
-                    <Input placeholder="Désignation" value={line.name} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, name: e.target.value } : l))} />
+                  <div key={i} className="grid grid-cols-2 gap-2 md:grid-cols-[2fr_80px_120px_auto]">
+                    <Input className="col-span-2 md:col-span-1" placeholder="Désignation" value={line.name} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, name: e.target.value } : l))} />
                     <Input type="number" min="1" value={line.qty} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, qty: +e.target.value } : l))} />
                     <Input type="number" step="0.01" placeholder="P.U. USD" value={line.unit} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, unit: +e.target.value } : l))} />
-                    <Button variant="outline" onClick={() => setLines(lines.filter((_, ix) => ix !== i))} disabled={lines.length === 1}>Retirer</Button>
+                    <Button variant="outline" className="col-span-2 md:col-span-1" onClick={() => setLines(lines.filter((_, ix) => ix !== i))} disabled={lines.length === 1}>Retirer</Button>
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={() => setLines([...lines, { name: "", qty: 1, unit: 0 }])}>+ Ajouter une ligne</Button>

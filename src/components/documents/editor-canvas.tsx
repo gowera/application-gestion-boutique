@@ -13,9 +13,24 @@ import {
   AVAILABLE_VARIABLES, setStoredDocumentTemplate,
 } from "@/lib/document-template";
 import { TemplatePreview } from "@/components/documents/template-preview";
+import { useLogoUrl } from "@/lib/logo";
+
 import { toast } from "sonner";
 
 const PX_PER_MM = 3;
+
+function ResizeHandle({ onPointerDown }: { onPointerDown: (e: React.PointerEvent) => void }) {
+  return (
+    <span
+      onPointerDown={onPointerDown}
+      style={{
+        position: "absolute", right: -6, bottom: -6, width: 12, height: 12,
+        borderRadius: 3, background: "#3B82F6", border: "2px solid #FFF", cursor: "nwse-resize",
+      }}
+    />
+  );
+}
+
 
 const PAGE_PRESETS: Array<{ label: string; w: number; h: number }> = [
   { label: "A4 (210 × 297)", w: 210, h: 297 },
@@ -28,6 +43,8 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
   const [template, setTemplate] = useState<CanvasTemplate>(() => getCustomTemplate(kind));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const logoUrl = useLogoUrl();
+
 
   React.useEffect(() => { setTemplate(getCustomTemplate(kind)); setSelectedId(null); }, [kind]);
 
@@ -73,9 +90,33 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
     window.addEventListener("pointerup", up);
   }
 
+  function onResizePointerDown(e: React.PointerEvent, id: string) {
+    e.stopPropagation();
+    setSelectedId(id);
+    const el = template.elements.find((x) => x.id === id);
+    if (!el) return;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const origW = el.w ?? 30;
+    const origH = el.h ?? 15;
+    (e.target as Element).setPointerCapture(e.pointerId);
+    function move(ev: PointerEvent) {
+      const dx = (ev.clientX - startX) / PX_PER_MM;
+      const dy = (ev.clientY - startY) / PX_PER_MM;
+      updateEl(id, { w: Math.max(5, origW + dx), h: Math.max(3, origH + dy) });
+    }
+    function up() {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    }
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
   function save() {
     setCustomTemplate(kind, template);
     setStoredDocumentTemplate("custom");
+
     toast.success("Modèle enregistré. Il sera utilisé pour tous les documents.");
     onSaved?.();
   }
@@ -91,8 +132,9 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
   const canvasHeight = template.pageHeight * PX_PER_MM;
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="space-y-3">
+    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px_minmax(0,1fr)]">
+      <div className="min-w-0 space-y-3">
+
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => addEl("text")}><Type className="h-4 w-4 mr-1" />Texte</Button>
           <Button size="sm" variant="outline" onClick={() => addEl("rect")}><Square className="h-4 w-4 mr-1" />Rectangle</Button>
@@ -105,7 +147,7 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
           </div>
         </div>
 
-        <div className="overflow-auto border rounded bg-muted/30 p-4" style={{ maxHeight: 700 }}>
+        <div className="max-w-full overflow-auto border rounded bg-muted/30 p-2 sm:p-4" style={{ maxHeight: 700 }}>
           <div
             ref={canvasRef}
             onPointerDown={(e) => { if (e.target === e.currentTarget) setSelectedId(null); }}
@@ -136,17 +178,28 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
                 );
               }
               if (el.type === "rect") {
-                return <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
-                  style={{ ...style, width: (el.w ?? 40) * PX_PER_MM, height: (el.h ?? 15) * PX_PER_MM, background: el.fill ?? "#E5EDFF" }} />;
+                return (
+                  <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
+                    style={{ ...style, width: (el.w ?? 40) * PX_PER_MM, height: (el.h ?? 15) * PX_PER_MM, background: el.fill ?? "#E5EDFF" }}>
+                    {isSel && <ResizeHandle onPointerDown={(e) => onResizePointerDown(e, el.id)} />}
+                  </div>
+                );
               }
               if (el.type === "line") {
                 return <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
                   style={{ ...style, width: (el.w ?? 60) * PX_PER_MM, height: Math.max(1, (el.strokeWidth ?? 0.4) * PX_PER_MM), background: el.color ?? "#0B1E3F" }} />;
               }
               if (el.type === "image") {
-                return <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
-                  style={{ ...style, width: (el.w ?? 30) * PX_PER_MM, height: (el.h ?? 15) * PX_PER_MM, background: "#F1F5F9", border: "1px dashed #94A3B8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#64748B" }}>Logo</div>;
+                return (
+                  <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
+                    style={{ ...style, width: (el.w ?? 30) * PX_PER_MM, height: (el.h ?? 15) * PX_PER_MM, background: "#FFF", border: isSel ? undefined : "1px dashed #CBD5E1", overflow: "visible" }}>
+                    <img src={logoUrl} alt="Logo" draggable={false}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none", userSelect: "none" }} />
+                    {isSel && <ResizeHandle onPointerDown={(e) => onResizePointerDown(e, el.id)} />}
+                  </div>
+                );
               }
+
               if (el.type === "items_table") {
                 const cols = el.columns ?? ["name", "qty", "unit", "total"];
                 return (
@@ -166,7 +219,7 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <div className="rounded border p-3 space-y-2">
           <Label className="text-xs uppercase text-muted-foreground">Format de page</Label>
           <Select value={`${template.pageWidth}x${template.pageHeight}`} onValueChange={(v) => { const [w, h] = v.split("x").map(Number); update({ pageWidth: w, pageHeight: h }); }}>
@@ -264,9 +317,10 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
         </div>
       </div>
 
-      <div className="min-h-[600px] xl:block">
+      <div className="min-w-0 min-h-[420px] lg:col-span-2 xl:col-span-1 xl:min-h-[600px]">
         <TemplatePreview template={template} docLabel={kind === "facture" ? "Facture" : "Reçu"} />
       </div>
+
     </div>
   );
 }

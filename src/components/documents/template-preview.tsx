@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { ZoomIn, ZoomOut, Printer, RefreshCw } from "lucide-react";
 import { buildCustomTemplatePreviewDoc } from "@/lib/pdf";
 import { useSettings } from "@/lib/currency";
+import { useLogoDataUrl } from "@/lib/logo";
 import type { CanvasTemplate } from "@/lib/document-template";
 import type { ReceiptData } from "@/lib/pdf";
 
@@ -45,6 +46,7 @@ export function TemplatePreview({ template, docLabel }: { template: CanvasTempla
   const [zoom, setZoom] = useState(100);
   const [nonce, setNonce] = useState(0);
   const { data: settings } = useSettings();
+  const logoDataUrl = useLogoDataUrl();
   const shop: ShopInfo = {
     shopName: settings?.shop_name || "CONETEC",
     address: settings?.address || "",
@@ -53,8 +55,8 @@ export function TemplatePreview({ template, docLabel }: { template: CanvasTempla
     rate: Number(settings?.usd_to_cdf_rate ?? 2800),
   };
   const sample = useMemo(
-    () => makeSampleData(docLabel, shop),
-    [docLabel, shop.shopName, shop.address, shop.phone, shop.currency, shop.rate],
+    () => ({ ...makeSampleData(docLabel, shop), logoDataUrl }),
+    [docLabel, shop.shopName, shop.address, shop.phone, shop.currency, shop.rate, logoDataUrl],
   );
 
   const blobUrl = useMemo(() => {
@@ -93,13 +95,13 @@ export function TemplatePreview({ template, docLabel }: { template: CanvasTempla
           )}
         </div>
       </div>
-      <div className="min-h-[500px] flex-1 overflow-auto p-3">
+      <div className="min-h-[360px] flex-1 overflow-auto p-2 sm:p-3">
         {blobUrl ? (
           <iframe
             key={blobUrl}
             title="Aperçu PDF"
             src={`${blobUrl}#zoom=${zoom}&toolbar=1&navpanes=0`}
-            className="mx-auto block h-[720px] w-full max-w-3xl border bg-white shadow"
+            className="mx-auto block h-[420px] w-full max-w-3xl border bg-white shadow sm:h-[560px] xl:h-[720px]"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Aperçu indisponible.</div>

@@ -139,15 +139,29 @@ function ProductDetailsPage() {
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">
               {p.description || "Matériel sélectionné par nos ingénieurs, testé sur le terrain et couvert par notre garantie constructeur. Nos techniciens assurent l'installation et la mise en service."}
             </p>
-            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-primary-foreground/80">
+            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              {[
+                { k: "Marque", v: p.brand ?? "CONETEC" },
+                { k: "Modèle", v: p.sku ?? p.id.slice(0, 8).toUpperCase() },
+                { k: "Disponibilité", v: p.show_stock_public ? `${p.stock} en stock` : (p.stock > 0 ? "En stock" : "Sur commande") },
+                { k: "Livraison", v: areaLabel || "Kinshasa et environs" },
+              ].map((s) => (
+                <div key={s.k} className="min-w-0 rounded-lg border border-primary-foreground/15 bg-primary-foreground/10 px-3 py-2">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-primary-foreground/60">{s.k}</div>
+                  <div className="truncate text-sm font-semibold">{s.v}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-primary-foreground/80">
               <a href="#avis" className="flex items-center gap-1.5 hover:text-primary-foreground">
                 <Stars value={stats.count ? stats.average : 0} />
                 {stats.count ? `${stats.average.toFixed(1)}/5 · ${stats.count} avis` : "Aucun avis pour l'instant"}
               </a>
               <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 shrink-0 text-energy" /> Garantie incluse</span>
-              <span className="flex items-center gap-1.5"><Truck className="h-4 w-4 shrink-0 text-energy" /> Livraison Kinshasa</span>
+              <span className="flex items-center gap-1.5"><Truck className="h-4 w-4 shrink-0 text-energy" /> Livraison {areaLabel || "Kinshasa et environs"}</span>
               <span className="flex items-center gap-1.5"><Wrench className="h-4 w-4 shrink-0 text-energy" /> Pose par nos techniciens</span>
             </div>
+
           </div>
 
           {/* Buy box */}
