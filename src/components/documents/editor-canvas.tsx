@@ -147,7 +147,7 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
           </div>
         </div>
 
-        <div className="overflow-auto border rounded bg-muted/30 p-4" style={{ maxHeight: 700 }}>
+        <div className="max-w-full overflow-auto border rounded bg-muted/30 p-2 sm:p-4" style={{ maxHeight: 700 }}>
           <div
             ref={canvasRef}
             onPointerDown={(e) => { if (e.target === e.currentTarget) setSelectedId(null); }}
