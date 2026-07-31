@@ -160,17 +160,28 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
                 );
               }
               if (el.type === "rect") {
-                return <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
-                  style={{ ...style, width: (el.w ?? 40) * PX_PER_MM, height: (el.h ?? 15) * PX_PER_MM, background: el.fill ?? "#E5EDFF" }} />;
+                return (
+                  <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
+                    style={{ ...style, width: (el.w ?? 40) * PX_PER_MM, height: (el.h ?? 15) * PX_PER_MM, background: el.fill ?? "#E5EDFF" }}>
+                    {isSel && <ResizeHandle onPointerDown={(e) => onResizePointerDown(e, el.id)} />}
+                  </div>
+                );
               }
               if (el.type === "line") {
                 return <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
                   style={{ ...style, width: (el.w ?? 60) * PX_PER_MM, height: Math.max(1, (el.strokeWidth ?? 0.4) * PX_PER_MM), background: el.color ?? "#0B1E3F" }} />;
               }
               if (el.type === "image") {
-                return <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
-                  style={{ ...style, width: (el.w ?? 30) * PX_PER_MM, height: (el.h ?? 15) * PX_PER_MM, background: "#F1F5F9", border: "1px dashed #94A3B8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#64748B" }}>Logo</div>;
+                return (
+                  <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
+                    style={{ ...style, width: (el.w ?? 30) * PX_PER_MM, height: (el.h ?? 15) * PX_PER_MM, background: "#FFF", border: isSel ? undefined : "1px dashed #CBD5E1", overflow: "visible" }}>
+                    <img src={logoUrl} alt="Logo" draggable={false}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none", userSelect: "none" }} />
+                    {isSel && <ResizeHandle onPointerDown={(e) => onResizePointerDown(e, el.id)} />}
+                  </div>
+                );
               }
+
               if (el.type === "items_table") {
                 const cols = el.columns ?? ["name", "qty", "unit", "total"];
                 return (
