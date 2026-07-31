@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Zap } from "lucide-react";
+import { useLogoUrl } from "@/lib/logo";
+
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
