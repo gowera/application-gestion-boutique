@@ -317,9 +317,10 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
         </div>
       </div>
 
-      <div className="min-h-[600px] xl:block">
+      <div className="min-w-0 min-h-[420px] lg:col-span-2 xl:col-span-1 xl:min-h-[600px]">
         <TemplatePreview template={template} docLabel={kind === "facture" ? "Facture" : "Reçu"} />
       </div>
+
     </div>
   );
 }
