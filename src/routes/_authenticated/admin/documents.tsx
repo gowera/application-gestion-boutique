@@ -26,6 +26,7 @@ type LineItem = { name: string; qty: number; unit: number };
 function Page() {
   const qc = useQueryClient();
   const { data: settings } = useSettings();
+  const logoDataUrl = useLogoDataUrl();
   const [template, setTemplate] = useState<DocumentTemplateId>(getStoredDocumentTemplate());
   const [designerKind, setDesignerKind] = useState<DocumentKind>("recu");
   const [documentType, setDocumentType] = useState<"Facture" | "Reçu">("Facture");

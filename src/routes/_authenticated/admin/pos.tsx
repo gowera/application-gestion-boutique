@@ -30,6 +30,7 @@ type PaymentLine = { method: "cash" | "mobile_money" | "card" | "bank_transfer" 
 
 function PosPage() {
   const { data: settings } = useSettings();
+  const logoDataUrl = useLogoDataUrl();
   const currency = settings?.primary_currency ?? "USD";
   const rate = settings?.usd_to_cdf_rate ?? 2800;
   const [q, setQ] = useState("");
