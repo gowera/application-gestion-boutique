@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as PanierRouteImport } from './routes/panier'
+import { Route as EquipeRouteImport } from './routes/equipe'
 import { Route as DevisRouteImport } from './routes/devis'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CheckoutRouteImport } from './routes/checkout'
@@ -61,6 +62,11 @@ const ServicesRoute = ServicesRouteImport.update({
 const PanierRoute = PanierRouteImport.update({
   id: '/panier',
   path: '/panier',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EquipeRoute = EquipeRouteImport.update({
+  id: '/equipe',
+  path: '/equipe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevisRoute = DevisRouteImport.update({
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/devis': typeof DevisRoute
+  '/equipe': typeof EquipeRoute
   '/panier': typeof PanierRoute
   '/services': typeof ServicesRouteWithChildren
   '/boutique/$productId': typeof BoutiqueProductIdRoute
@@ -339,6 +346,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/devis': typeof DevisRoute
+  '/equipe': typeof EquipeRoute
   '/panier': typeof PanierRoute
   '/services': typeof ServicesRouteWithChildren
   '/boutique/$productId': typeof BoutiqueProductIdRoute
@@ -385,6 +393,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/devis': typeof DevisRoute
+  '/equipe': typeof EquipeRoute
   '/panier': typeof PanierRoute
   '/services': typeof ServicesRouteWithChildren
   '/boutique/$productId': typeof BoutiqueProductIdRoute
@@ -431,6 +440,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/devis'
+    | '/equipe'
     | '/panier'
     | '/services'
     | '/boutique/$productId'
@@ -475,6 +485,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/devis'
+    | '/equipe'
     | '/panier'
     | '/services'
     | '/boutique/$productId'
@@ -520,6 +531,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/devis'
+    | '/equipe'
     | '/panier'
     | '/services'
     | '/boutique/$productId'
@@ -566,6 +578,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ContactRoute: typeof ContactRoute
   DevisRoute: typeof DevisRoute
+  EquipeRoute: typeof EquipeRoute
   PanierRoute: typeof PanierRoute
   ServicesRoute: typeof ServicesRouteWithChildren
   CommandeCodeRoute: typeof CommandeCodeRoute
@@ -590,6 +603,13 @@ declare module '@tanstack/react-router' {
       path: '/panier'
       fullPath: '/panier'
       preLoaderRoute: typeof PanierRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/equipe': {
+      id: '/equipe'
+      path: '/equipe'
+      fullPath: '/equipe'
+      preLoaderRoute: typeof EquipeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/devis': {
@@ -988,6 +1008,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ContactRoute: ContactRoute,
   DevisRoute: DevisRoute,
+  EquipeRoute: EquipeRoute,
   PanierRoute: PanierRoute,
   ServicesRoute: ServicesRouteWithChildren,
   CommandeCodeRoute: CommandeCodeRoute,
