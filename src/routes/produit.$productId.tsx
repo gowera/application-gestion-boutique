@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { ProductReviews, Stars, reviewStats, useProductReviews } from "@/components/public/product-reviews";
+import { ProductIdentity } from "@/components/public/product-identity";
 import { ShareButton } from "@/components/public/share-button";
 import { getRequestOrigin } from "@/lib/origin.functions";
 import { useState } from "react";
@@ -94,7 +95,7 @@ function ProductDetailsPage() {
     queryFn: async () =>
       (await supabase
         .from("products")
-        .select("id,name,sale_price,images,stock,brand")
+        .select("id,name,sku,sale_price,images,stock,brand")
         .eq("status", "active")
         .neq("id", productId)
         .limit(4)).data ?? [],
@@ -384,6 +385,7 @@ function ProductDetailsPage() {
                   </div>
                   <div className="p-4">
                     <div className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold group-hover:text-primary">{r.name}</div>
+                    <ProductIdentity className="mt-2" name={r.name} brand={r.brand} sku={r.sku} id={r.id} />
                     <div className="mt-2 text-display text-lg font-extrabold text-primary">{formatMoney(Number(r.sale_price), cur, rate)}</div>
                   </div>
                 </Link>
