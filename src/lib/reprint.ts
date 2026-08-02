@@ -3,6 +3,7 @@ import { downloadReceipt } from "@/lib/pdf";
 import { getStoredDocumentTemplate } from "@/lib/document-template";
 import { issueDocumentNumber, docTypeLabel, type DocumentType } from "@/lib/documents";
 import type { AppSettings } from "@/lib/currency";
+import { loadLogoDataUrl } from "@/lib/logo";
 
 /**
  * Reprint a Facture/Reçu for an existing sale.
@@ -48,7 +49,10 @@ export async function reprintSaleDocument(opts: {
     code = issued.code;
   }
 
+  const logoDataUrl = await loadLogoDataUrl((settings as { logo_url?: string } | undefined)?.logo_url);
+
   downloadReceipt({
+    logoDataUrl,
     shopName: settings?.shop_name ?? "CONETEC",
     address: settings?.address ?? "",
     phone: settings?.phone ?? "",
