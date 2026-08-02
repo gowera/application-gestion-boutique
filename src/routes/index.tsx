@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { SiteShell } from "@/components/public/site-shell";
+import { ProductIdentity } from "@/components/public/product-identity";
 import { ShareButton } from "@/components/public/share-button";
 
 import { useQuery } from "@tanstack/react-query";
@@ -170,7 +171,7 @@ function FeaturedProducts() {
   const navigate = useNavigate();
   const { data: products } = useQuery({
     queryKey: ["home-products"],
-    queryFn: async () => (await supabase.from("products").select("id,name,brand,sale_price,stock,images").eq("status", "active").limit(8).order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => (await supabase.from("products").select("id,name,brand,sku,sale_price,stock,images").eq("status", "active").limit(8).order("created_at", { ascending: false })).data ?? [],
   });
   const rate = settings?.usd_to_cdf_rate ?? 2800;
   const cur = settings?.primary_currency ?? "USD";
@@ -202,8 +203,8 @@ function FeaturedProducts() {
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Star className="h-3 w-3 fill-energy text-energy" /> 4.8
                     </div>
-                    <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{p.brand ?? "CONETEC"}</div>
-                    <Link to="/boutique/$productId" params={{ productId: p.id }} className="mt-0.5 min-h-[2.5rem] text-sm font-semibold line-clamp-2 hover:text-primary">{p.name}</Link>
+                    <Link to="/boutique/$productId" params={{ productId: p.id }} className="mt-1 min-h-[2.5rem] text-sm font-semibold line-clamp-2 hover:text-primary">{p.name}</Link>
+                    <ProductIdentity className="mt-2" name={p.name} brand={p.brand} sku={(p as { sku?: string | null }).sku} id={p.id} />
                     <div className="mt-3 flex items-center justify-between gap-2">
                       <div className="text-display text-lg font-extrabold text-primary">{formatMoney(Number(p.sale_price), cur, rate)}</div>
                       <div className="flex items-center gap-1.5">

@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt, Users, Wallet, Settings as SettingsIcon,
-  Inbox, UserCog, Zap, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, Activity, FileText,
+  Inbox, UserCog, Zap, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, Activity, FileText, Users2,
 } from "lucide-react";
 import logo from "@/assets/brand/logo.png";
 import {
@@ -49,6 +49,7 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
   {
     label: "Configuration",
     items: [
+      { title: "Espace équipe", url: "/admin/team", icon: Users2 },
       { title: "Rôles utilisateurs", url: "/admin/users", icon: UserCog },
       { title: "Paramètres", url: "/admin/settings", icon: SettingsIcon },
     ],

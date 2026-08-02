@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { ProductReviews, Stars, reviewStats, useProductReviews } from "@/components/public/product-reviews";
+import { ProductIdentity } from "@/components/public/product-identity";
 import { ShareButton } from "@/components/public/share-button";
 import { getRequestOrigin } from "@/lib/origin.functions";
 import { useState } from "react";
@@ -53,12 +54,18 @@ export const Route = createFileRoute("/produit/$productId")({
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
-        ...(image && origin
+        { property: "og:site_name", content: "CONETEC" },
+        ...(image
           ? [
               { property: "og:image", content: image },
+              { property: "og:image:url", content: image },
               { property: "og:image:secure_url", content: image },
+              { property: "og:image:type", content: "image/jpeg" },
+              { property: "og:image:width", content: "1200" },
+              { property: "og:image:height", content: "630" },
               { property: "og:image:alt", content: p?.name ?? "Produit CONETEC" },
               { name: "twitter:image", content: image },
+              { name: "twitter:image:src", content: image },
               { name: "twitter:image:alt", content: p?.name ?? "Produit CONETEC" },
             ]
           : []),
@@ -94,7 +101,7 @@ function ProductDetailsPage() {
     queryFn: async () =>
       (await supabase
         .from("products")
-        .select("id,name,sale_price,images,stock,brand")
+        .select("id,name,sku,sale_price,images,stock,brand")
         .eq("status", "active")
         .neq("id", productId)
         .limit(4)).data ?? [],
@@ -220,34 +227,6 @@ function ProductDetailsPage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
-        {/* Gallery */}
-        {images.length > 0 && (
-          <section className="mb-10 sm:mb-14">
-            <SectionTitle icon={Package} title="Galerie du produit" subtitle="Photos réelles du matériel en stock" />
-            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
-              <div className="relative overflow-hidden rounded-2xl border bg-secondary aspect-[4/3]">
-                <StorageImage
-                  src={images[activeImg]}
-                  alt={p.name}
-                  className="h-full w-full object-cover"
-                  fallback={<div className="grid h-full w-full place-items-center"><Package className="h-24 w-24 text-muted-foreground/30" /></div>}
-                />
-              </div>
-              <div className="grid grid-cols-4 gap-3 lg:grid-cols-1">
-                {images.slice(0, 8).map((src, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveImg(i)}
-                    className={`aspect-square overflow-hidden rounded-lg border-2 bg-secondary transition-all ${activeImg === i ? "border-energy" : "border-transparent hover:border-border"}`}
-                  >
-                    <StorageImage src={src} alt="" className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* Specs + included */}
         <section className="mb-10 grid gap-8 sm:mb-14 lg:grid-cols-2">
           <div>
@@ -281,9 +260,37 @@ function ProductDetailsPage() {
           </div>
         </section>
 
-        {/* Description */}
+        {/* Gallery */}
+        {images.length > 0 && (
+          <section className="mb-10 sm:mb-14">
+            <SectionTitle icon={Package} title="Galerie du produit" subtitle="Photos réelles du matériel en stock" />
+            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
+              <div className="relative overflow-hidden rounded-2xl border bg-secondary aspect-[4/3]">
+                <StorageImage
+                  src={images[activeImg]}
+                  alt={p.name}
+                  className="h-full w-full object-cover"
+                  fallback={<div className="grid h-full w-full place-items-center"><Package className="h-24 w-24 text-muted-foreground/30" /></div>}
+                />
+              </div>
+              <div className="grid grid-cols-4 gap-3 lg:grid-cols-1">
+                {images.slice(0, 8).map((src, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImg(i)}
+                    className={`aspect-square overflow-hidden rounded-lg border-2 bg-secondary transition-all ${activeImg === i ? "border-energy" : "border-transparent hover:border-border"}`}
+                  >
+                    <StorageImage src={src} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Autres descriptions */}
         <section className="mb-10 sm:mb-14">
-          <SectionTitle icon={FileText} title="Description du produit" subtitle="Présentation détaillée fournie par CONETEC" />
+          <SectionTitle icon={FileText} title="Autres descriptions" subtitle="Informations complémentaires fournies par CONETEC" />
           <div className="mt-5 rounded-2xl border bg-background p-5 sm:p-6">
             <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/85">
               {p.description?.trim()
@@ -384,6 +391,7 @@ function ProductDetailsPage() {
                   </div>
                   <div className="p-4">
                     <div className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold group-hover:text-primary">{r.name}</div>
+                    <ProductIdentity className="mt-2" name={r.name} brand={r.brand} sku={r.sku} id={r.id} />
                     <div className="mt-2 text-display text-lg font-extrabold text-primary">{formatMoney(Number(r.sale_price), cur, rate)}</div>
                   </div>
                 </Link>

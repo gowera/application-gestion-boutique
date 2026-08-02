@@ -40,3 +40,24 @@ export function useLogoDataUrl(): string | undefined {
   }, [url]);
   return dataUrl;
 }
+
+/**
+ * Non-hook variant: resolves a logo reference (storage path/URL) into a data URL
+ * usable by jsPDF. Returns undefined when unavailable.
+ */
+export async function loadLogoDataUrl(logoUrl?: string | null): Promise<string | undefined> {
+  try {
+    const src = (await resolveImageUrl(logoUrl)) || fallbackLogo;
+    if (src.startsWith("data:")) return src;
+    const res = await fetch(src);
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return undefined;
+  }
+}

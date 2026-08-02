@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { DOCUMENT_TEMPLATES, getStoredDocumentTemplate, setStoredDocumentTemplate, type DocumentTemplateId, type DocumentKind } from "@/lib/document-template";
 import { FileText, History } from "lucide-react";
 import { downloadReceipt } from "@/lib/pdf";
+import { useLogoDataUrl } from "@/lib/logo";
 import { EditorCanvas } from "@/components/documents/editor-canvas";
 import { useSettings } from "@/lib/currency";
 import { issueDocumentNumber, labelToDocType } from "@/lib/documents";
@@ -25,6 +26,7 @@ type LineItem = { name: string; qty: number; unit: number };
 function Page() {
   const qc = useQueryClient();
   const { data: settings } = useSettings();
+  const logoDataUrl = useLogoDataUrl();
   const [template, setTemplate] = useState<DocumentTemplateId>(getStoredDocumentTemplate());
   const [designerKind, setDesignerKind] = useState<DocumentKind>("recu");
   const [documentType, setDocumentType] = useState<"Facture" | "Reçu">("Facture");
@@ -54,6 +56,7 @@ function Page() {
         docCode = `DOC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
       }
       downloadReceipt({
+        logoDataUrl,
         shopName: settings?.shop_name ?? "CONETEC",
         address: settings?.address ?? "", phone: settings?.phone ?? "",
         code: docCode, customer: customer?.name ?? "Client",

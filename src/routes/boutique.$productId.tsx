@@ -50,12 +50,18 @@ export const Route = createFileRoute("/boutique/$productId")({
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
-        ...(image && origin
+        { property: "og:site_name", content: "CONETEC" },
+        ...(image
           ? [
               { property: "og:image", content: image },
+              { property: "og:image:url", content: image },
               { property: "og:image:secure_url", content: image },
+              { property: "og:image:type", content: "image/jpeg" },
+              { property: "og:image:width", content: "1200" },
+              { property: "og:image:height", content: "630" },
               { property: "og:image:alt", content: p?.name ?? "Produit CONETEC" },
               { name: "twitter:image", content: image },
+              { name: "twitter:image:src", content: image },
               { name: "twitter:image:alt", content: p?.name ?? "Produit CONETEC" },
             ]
           : []),

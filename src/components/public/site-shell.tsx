@@ -11,6 +11,7 @@ import logo from "@/assets/brand/logo.png";
 const NAV = [
   { to: "/boutique", label: "Boutique" },
   { to: "/services", label: "Services" },
+  { to: "/equipe", label: "Notre équipe" },
   { to: "/devis", label: "Devis" },
   { to: "/contact", label: "Contact" },
 ];
@@ -147,6 +148,7 @@ function SiteFooter() {
           <ul className="space-y-2.5 text-sm">
             <li><Link to="/boutique" className="hover:text-white">Boutique</Link></li>
             <li><Link to="/services" className="hover:text-white">Nos services</Link></li>
+            <li><Link to="/equipe" className="hover:text-white">Notre équipe</Link></li>
             <li><Link to="/devis" className="hover:text-white">Demander un devis</Link></li>
             <li><Link to="/contact" className="hover:text-white">Contact</Link></li>
           </ul>

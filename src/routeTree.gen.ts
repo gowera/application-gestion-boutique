@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as PanierRouteImport } from './routes/panier'
+import { Route as EquipeRouteImport } from './routes/equipe'
 import { Route as DevisRouteImport } from './routes/devis'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CheckoutRouteImport } from './routes/checkout'
@@ -28,6 +29,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as SalaireConfirmerTokenRouteImport } from './routes/salaire.confirmer.$token'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminTrashRouteImport } from './routes/_authenticated/admin/trash'
+import { Route as AuthenticatedAdminTeamRouteImport } from './routes/_authenticated/admin/team'
 import { Route as AuthenticatedAdminSuppliersRouteImport } from './routes/_authenticated/admin/suppliers'
 import { Route as AuthenticatedAdminStockRouteImport } from './routes/_authenticated/admin/stock'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
@@ -61,6 +63,11 @@ const ServicesRoute = ServicesRouteImport.update({
 const PanierRoute = PanierRouteImport.update({
   id: '/panier',
   path: '/panier',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EquipeRoute = EquipeRouteImport.update({
+  id: '/equipe',
+  path: '/equipe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevisRoute = DevisRouteImport.update({
@@ -145,6 +152,11 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
 const AuthenticatedAdminTrashRoute = AuthenticatedAdminTrashRouteImport.update({
   id: '/admin/trash',
   path: '/admin/trash',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminTeamRoute = AuthenticatedAdminTeamRouteImport.update({
+  id: '/admin/team',
+  path: '/admin/team',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminSuppliersRoute =
@@ -295,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/devis': typeof DevisRoute
+  '/equipe': typeof EquipeRoute
   '/panier': typeof PanierRoute
   '/services': typeof ServicesRouteWithChildren
   '/boutique/$productId': typeof BoutiqueProductIdRoute
@@ -323,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/stock': typeof AuthenticatedAdminStockRoute
   '/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
+  '/admin/team': typeof AuthenticatedAdminTeamRoute
   '/admin/trash': typeof AuthenticatedAdminTrashRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/salaire/confirmer/$token': typeof SalaireConfirmerTokenRoute
@@ -339,6 +353,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/devis': typeof DevisRoute
+  '/equipe': typeof EquipeRoute
   '/panier': typeof PanierRoute
   '/services': typeof ServicesRouteWithChildren
   '/boutique/$productId': typeof BoutiqueProductIdRoute
@@ -367,6 +382,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/stock': typeof AuthenticatedAdminStockRoute
   '/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
+  '/admin/team': typeof AuthenticatedAdminTeamRoute
   '/admin/trash': typeof AuthenticatedAdminTrashRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/salaire/confirmer/$token': typeof SalaireConfirmerTokenRoute
@@ -385,6 +401,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/devis': typeof DevisRoute
+  '/equipe': typeof EquipeRoute
   '/panier': typeof PanierRoute
   '/services': typeof ServicesRouteWithChildren
   '/boutique/$productId': typeof BoutiqueProductIdRoute
@@ -413,6 +430,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/stock': typeof AuthenticatedAdminStockRoute
   '/_authenticated/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
+  '/_authenticated/admin/team': typeof AuthenticatedAdminTeamRoute
   '/_authenticated/admin/trash': typeof AuthenticatedAdminTrashRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/salaire/confirmer/$token': typeof SalaireConfirmerTokenRoute
@@ -431,6 +449,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/devis'
+    | '/equipe'
     | '/panier'
     | '/services'
     | '/boutique/$productId'
@@ -459,6 +478,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/stock'
     | '/admin/suppliers'
+    | '/admin/team'
     | '/admin/trash'
     | '/admin/users'
     | '/salaire/confirmer/$token'
@@ -475,6 +495,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/devis'
+    | '/equipe'
     | '/panier'
     | '/services'
     | '/boutique/$productId'
@@ -503,6 +524,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/stock'
     | '/admin/suppliers'
+    | '/admin/team'
     | '/admin/trash'
     | '/admin/users'
     | '/salaire/confirmer/$token'
@@ -520,6 +542,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/devis'
+    | '/equipe'
     | '/panier'
     | '/services'
     | '/boutique/$productId'
@@ -548,6 +571,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/stock'
     | '/_authenticated/admin/suppliers'
+    | '/_authenticated/admin/team'
     | '/_authenticated/admin/trash'
     | '/_authenticated/admin/users'
     | '/salaire/confirmer/$token'
@@ -566,6 +590,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ContactRoute: typeof ContactRoute
   DevisRoute: typeof DevisRoute
+  EquipeRoute: typeof EquipeRoute
   PanierRoute: typeof PanierRoute
   ServicesRoute: typeof ServicesRouteWithChildren
   CommandeCodeRoute: typeof CommandeCodeRoute
@@ -590,6 +615,13 @@ declare module '@tanstack/react-router' {
       path: '/panier'
       fullPath: '/panier'
       preLoaderRoute: typeof PanierRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/equipe': {
+      id: '/equipe'
+      path: '/equipe'
+      fullPath: '/equipe'
+      preLoaderRoute: typeof EquipeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/devis': {
@@ -709,6 +741,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/trash'
       fullPath: '/admin/trash'
       preLoaderRoute: typeof AuthenticatedAdminTrashRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/team': {
+      id: '/_authenticated/admin/team'
+      path: '/admin/team'
+      fullPath: '/admin/team'
+      preLoaderRoute: typeof AuthenticatedAdminTeamRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/suppliers': {
@@ -919,6 +958,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminStockRoute: typeof AuthenticatedAdminStockRoute
   AuthenticatedAdminSuppliersRoute: typeof AuthenticatedAdminSuppliersRoute
+  AuthenticatedAdminTeamRoute: typeof AuthenticatedAdminTeamRoute
   AuthenticatedAdminTrashRoute: typeof AuthenticatedAdminTrashRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -947,6 +987,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminStockRoute: AuthenticatedAdminStockRoute,
   AuthenticatedAdminSuppliersRoute: AuthenticatedAdminSuppliersRoute,
+  AuthenticatedAdminTeamRoute: AuthenticatedAdminTeamRoute,
   AuthenticatedAdminTrashRoute: AuthenticatedAdminTrashRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
@@ -988,6 +1029,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ContactRoute: ContactRoute,
   DevisRoute: DevisRoute,
+  EquipeRoute: EquipeRoute,
   PanierRoute: PanierRoute,
   ServicesRoute: ServicesRouteWithChildren,
   CommandeCodeRoute: CommandeCodeRoute,
