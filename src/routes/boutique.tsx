@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatMoney, useSettings } from "@/lib/currency";
 import { Search, ShoppingCart, Package, Star, SlidersHorizontal, X, Share2 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
+import { ProductIdentity } from "@/components/public/product-identity";
 import { StorageImage } from "@/components/storage-image";
 import { toast } from "sonner";
 
@@ -211,6 +212,7 @@ function ProductCard({ p, rate, cur }: { p: any; rate: number; cur: any }) {
           <Star className="h-3 w-3 fill-energy text-energy" /> 4.8 · {p.brand ?? "CONETEC"}
         </div>
         <Link to="/boutique/$productId" params={{ productId: p.id }} className="mt-1 block min-h-[2.5rem] text-sm font-semibold hover:text-primary line-clamp-2">{p.name}</Link>
+        <ProductIdentity className="mt-2" name={p.name} brand={p.brand} sku={p.sku} id={p.id} />
         <div className="mt-3 flex items-center justify-between">
           <div>
             <div className="text-display text-xl font-extrabold text-primary">{formatMoney(Number(p.sale_price), cur, rate)}</div>
