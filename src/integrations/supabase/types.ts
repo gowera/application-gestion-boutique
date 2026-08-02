@@ -1581,6 +1581,51 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          bio: string | null
+          created_at: string
+          cv_url: string | null
+          email: string | null
+          id: string
+          is_published: boolean
+          name: string
+          phone: string | null
+          photo_url: string | null
+          role: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          cv_url?: string | null
+          email?: string | null
+          id?: string
+          is_published?: boolean
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          role?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          cv_url?: string | null
+          email?: string | null
+          id?: string
+          is_published?: boolean
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          role?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
