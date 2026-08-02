@@ -220,34 +220,6 @@ function ProductDetailsPage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
-        {/* Gallery */}
-        {images.length > 0 && (
-          <section className="mb-10 sm:mb-14">
-            <SectionTitle icon={Package} title="Galerie du produit" subtitle="Photos réelles du matériel en stock" />
-            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
-              <div className="relative overflow-hidden rounded-2xl border bg-secondary aspect-[4/3]">
-                <StorageImage
-                  src={images[activeImg]}
-                  alt={p.name}
-                  className="h-full w-full object-cover"
-                  fallback={<div className="grid h-full w-full place-items-center"><Package className="h-24 w-24 text-muted-foreground/30" /></div>}
-                />
-              </div>
-              <div className="grid grid-cols-4 gap-3 lg:grid-cols-1">
-                {images.slice(0, 8).map((src, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveImg(i)}
-                    className={`aspect-square overflow-hidden rounded-lg border-2 bg-secondary transition-all ${activeImg === i ? "border-energy" : "border-transparent hover:border-border"}`}
-                  >
-                    <StorageImage src={src} alt="" className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* Specs + included */}
         <section className="mb-10 grid gap-8 sm:mb-14 lg:grid-cols-2">
           <div>
@@ -281,9 +253,37 @@ function ProductDetailsPage() {
           </div>
         </section>
 
-        {/* Description */}
+        {/* Gallery */}
+        {images.length > 0 && (
+          <section className="mb-10 sm:mb-14">
+            <SectionTitle icon={Package} title="Galerie du produit" subtitle="Photos réelles du matériel en stock" />
+            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
+              <div className="relative overflow-hidden rounded-2xl border bg-secondary aspect-[4/3]">
+                <StorageImage
+                  src={images[activeImg]}
+                  alt={p.name}
+                  className="h-full w-full object-cover"
+                  fallback={<div className="grid h-full w-full place-items-center"><Package className="h-24 w-24 text-muted-foreground/30" /></div>}
+                />
+              </div>
+              <div className="grid grid-cols-4 gap-3 lg:grid-cols-1">
+                {images.slice(0, 8).map((src, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImg(i)}
+                    className={`aspect-square overflow-hidden rounded-lg border-2 bg-secondary transition-all ${activeImg === i ? "border-energy" : "border-transparent hover:border-border"}`}
+                  >
+                    <StorageImage src={src} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Autres descriptions */}
         <section className="mb-10 sm:mb-14">
-          <SectionTitle icon={FileText} title="Description du produit" subtitle="Présentation détaillée fournie par CONETEC" />
+          <SectionTitle icon={FileText} title="Autres descriptions" subtitle="Informations complémentaires fournies par CONETEC" />
           <div className="mt-5 rounded-2xl border bg-background p-5 sm:p-6">
             <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/85">
               {p.description?.trim()
