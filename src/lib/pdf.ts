@@ -264,12 +264,29 @@ export function buildReceiptDoc(data: ReceiptData): jsPDF {
   const isPro = data.template === "pro";
   let y = 8;
 
+  // Logo (centré en tête du document) — visible à l'impression et au téléchargement.
+  let logoH = 0;
+  if (data.logoDataUrl) {
+    try {
+      const fmt = data.logoDataUrl.includes("image/jpeg") || data.logoDataUrl.includes("image/jpg") ? "JPEG" : "PNG";
+      const props = doc.getImageProperties(data.logoDataUrl);
+      const maxW = 30;
+      const maxH = 15;
+      const ratio = Math.min(maxW / props.width, maxH / props.height);
+      const lw = props.width * ratio;
+      const lh = props.height * ratio;
+      doc.addImage(data.logoDataUrl, fmt, (w - lw) / 2, y - 3, lw, lh);
+      logoH = lh + 2;
+      y += logoH;
+    } catch { /* logo indisponible */ }
+  }
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   if (isPro) {
     doc.setDrawColor(17, 30, 63);
     doc.setLineWidth(0.4);
-    doc.roundedRect(3, 4, w - 6, 24, 1.5, 1.5);
+    doc.roundedRect(3, 4, w - 6, 24 + logoH, 1.5, 1.5);
   }
   doc.text(data.shopName.toUpperCase(), w / 2, y, { align: "center" });
   y += 5;
