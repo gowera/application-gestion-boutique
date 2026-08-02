@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Download, Printer } from "lucide-react";
 import { buildReceiptDoc, type ReceiptData } from "@/lib/pdf";
 import { getStoredDocumentTemplate } from "@/lib/document-template";
+import { useLogoDataUrl } from "@/lib/logo";
 
 interface Props {
   disabled?: boolean;
@@ -19,6 +20,7 @@ interface Props {
 export function SalePreviewDialog({ disabled, buildData }: Props) {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<ReceiptData | null>(null);
+  const logoDataUrl = useLogoDataUrl();
 
   useEffect(() => {
     if (open) setData(buildData());
@@ -28,12 +30,12 @@ export function SalePreviewDialog({ disabled, buildData }: Props) {
   const blobUrl = useMemo(() => {
     if (!data) return null;
     try {
-      const doc = buildReceiptDoc({ ...data, template: getStoredDocumentTemplate() });
+      const doc = buildReceiptDoc({ ...data, logoDataUrl, template: getStoredDocumentTemplate() });
       return String(doc.output("bloburl"));
     } catch {
       return null;
     }
-  }, [data]);
+  }, [data, logoDataUrl]);
 
   useEffect(() => {
     return () => {
@@ -45,7 +47,7 @@ export function SalePreviewDialog({ disabled, buildData }: Props) {
 
   function download() {
     if (!data) return;
-    const doc = buildReceiptDoc({ ...data, template: getStoredDocumentTemplate() });
+    const doc = buildReceiptDoc({ ...data, logoDataUrl, template: getStoredDocumentTemplate() });
     const prefix = data.documentType === "Facture" ? "facture" : "recu";
     doc.save(`${prefix}-${data.code}.pdf`);
   }

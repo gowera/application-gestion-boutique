@@ -12,6 +12,7 @@ import { Search, Plus, Minus, Trash2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 import { downloadReceipt } from "@/lib/pdf";
+import { useLogoDataUrl } from "@/lib/logo";
 import { getStoredDocumentTemplate } from "@/lib/document-template";
 import { issueDocumentNumber, labelToDocType } from "@/lib/documents";
 import { CustomerQuickAdd } from "@/components/customer-quick-add";
@@ -120,6 +121,7 @@ function PosPage() {
             console.warn("Numérotation document indisponible", err);
           }
           downloadReceipt({
+            logoDataUrl,
             shopName: settings?.shop_name ?? "CONETEC",
             address: settings?.address ?? "",
             phone: settings?.phone ?? "",
