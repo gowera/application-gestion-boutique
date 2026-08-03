@@ -154,14 +154,37 @@ function Page() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Client</Label>
-                  <Select value={customerId} onValueChange={setCustomerId}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner un client" /></SelectTrigger>
-                    <SelectContent>
-                      {customers.map((customer) => <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Label>Client</Label>
+                    <div className="flex items-center gap-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => { setManualMode((v) => !v); setCustomerId(""); }}>
+                        {manualMode ? "Choisir dans la liste" : "Saisir manuellement"}
+                      </Button>
+                      {!manualMode && <CustomerQuickAdd onCreated={(id) => { qc.invalidateQueries({ queryKey: ["documents-customers"] }); setCustomerId(id); }} />}
+                    </div>
+                  </div>
+                  {manualMode ? (
+                    <div className="space-y-2">
+                      <Input placeholder="Nom du client *" value={manualCustomer.name} onChange={(e) => setManualCustomer({ ...manualCustomer, name: e.target.value })} />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input placeholder="Téléphone" value={manualCustomer.phone} onChange={(e) => setManualCustomer({ ...manualCustomer, phone: e.target.value })} />
+                        <Input placeholder="Adresse" value={manualCustomer.address} onChange={(e) => setManualCustomer({ ...manualCustomer, address: e.target.value })} />
+                      </div>
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <input type="checkbox" checked={saveManual} onChange={(e) => setSaveManual(e.target.checked)} />
+                        Enregistrer ce client dans la base
+                      </label>
+                    </div>
+                  ) : (
+                    <Select value={customerId} onValueChange={setCustomerId}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner un client" /></SelectTrigger>
+                      <SelectContent>
+                        {customers.map((customer) => <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
+
               </div>
 
               <div className="space-y-2">
