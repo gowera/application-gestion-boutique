@@ -140,7 +140,7 @@ function ProductDetailsPage() {
         <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_420px]">
           <div className="min-w-0">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-energy px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-energy-foreground">
-              <BadgeCheck className="h-3.5 w-3.5" /> Fiche détaillée
+              <BadgeCheck className="h-3.5 w-3.5" /> Caractéristiques techniques
             </span>
             <h1 className="mt-4 text-display text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{p.name}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">
