@@ -42,6 +42,8 @@ const PAGE_PRESETS: Array<{ label: string; w: number; h: number }> = [
 export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: () => void }) {
   const [template, setTemplate] = useState<CanvasTemplate>(() => getCustomTemplate(kind));
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const ppm = PX_PER_MM * zoom;
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const logoUrl = useLogoUrl();
 
@@ -75,8 +77,8 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
     const origY = el.y;
     (e.target as Element).setPointerCapture(e.pointerId);
     function move(ev: PointerEvent) {
-      const dx = (ev.clientX - startX) / PX_PER_MM;
-      const dy = (ev.clientY - startY) / PX_PER_MM;
+      const dx = (ev.clientX - startX) / ppm;
+      const dy = (ev.clientY - startY) / ppm;
       updateEl(id, {
         x: Math.max(0, Math.min(template.pageWidth, origX + dx)),
         y: Math.max(0, Math.min(template.pageHeight, origY + dy)),
@@ -101,8 +103,8 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
     const origH = el.h ?? 15;
     (e.target as Element).setPointerCapture(e.pointerId);
     function move(ev: PointerEvent) {
-      const dx = (ev.clientX - startX) / PX_PER_MM;
-      const dy = (ev.clientY - startY) / PX_PER_MM;
+      const dx = (ev.clientX - startX) / ppm;
+      const dy = (ev.clientY - startY) / ppm;
       updateEl(id, { w: Math.max(5, origW + dx), h: Math.max(3, origH + dy) });
     }
     function up() {
@@ -128,8 +130,8 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
     toast.info("Modèle réinitialisé.");
   }
 
-  const canvasWidth = template.pageWidth * PX_PER_MM;
-  const canvasHeight = template.pageHeight * PX_PER_MM;
+  const canvasWidth = template.pageWidth * ppm;
+  const canvasHeight = template.pageHeight * ppm;
 
   return (
     <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px_minmax(0,1fr)]">
@@ -142,6 +144,9 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
           <Button size="sm" variant="outline" onClick={() => addEl("image")}><ImageIcon className="h-4 w-4 mr-1" />Logo</Button>
           <Button size="sm" variant="outline" onClick={() => addEl("items_table")}><TableIcon className="h-4 w-4 mr-1" />Tableau articles</Button>
           <div className="ml-auto flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setZoom((z) => Math.max(0.4, +(z - 0.2).toFixed(2)))} title="Dézoomer">−</Button>
+            <span className="self-center text-xs tabular-nums text-muted-foreground">{Math.round(zoom * 100)}%</span>
+            <Button size="sm" variant="outline" onClick={() => setZoom((z) => Math.min(3, +(z + 0.2).toFixed(2)))} title="Zoomer">+</Button>
             <Button size="sm" variant="ghost" onClick={reset}><RotateCcw className="h-4 w-4 mr-1" />Réinitialiser</Button>
             <Button size="sm" onClick={save}><Save className="h-4 w-4 mr-1" />Enregistrer</Button>
           </div>
@@ -158,8 +163,8 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
               const isSel = el.id === selectedId;
               const style: React.CSSProperties = {
                 position: "absolute",
-                left: el.x * PX_PER_MM,
-                top: el.y * PX_PER_MM,
+                left: el.x * ppm,
+                top: el.y * ppm,
                 outline: isSel ? "2px solid #3B82F6" : "1px dashed transparent",
                 cursor: "grab",
               };
@@ -170,7 +175,7 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
                   <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)} style={{ ...style, transform, whiteSpace: "nowrap" }}>
                     <span style={{
                       color: el.color ?? "#000",
-                      fontSize: (el.fontSize ?? 10) * 1.1,
+                      fontSize: (el.fontSize ?? 10) * 1.1 * zoom,
                       fontWeight: el.bold ? 700 : 400,
                       fontStyle: el.italic ? "italic" : "normal",
                     }}>{el.text}</span>
@@ -180,19 +185,19 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
               if (el.type === "rect") {
                 return (
                   <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
-                    style={{ ...style, width: (el.w ?? 40) * PX_PER_MM, height: (el.h ?? 15) * PX_PER_MM, background: el.fill ?? "#E5EDFF" }}>
+                    style={{ ...style, width: (el.w ?? 40) * ppm, height: (el.h ?? 15) * ppm, background: el.fill ?? "#E5EDFF" }}>
                     {isSel && <ResizeHandle onPointerDown={(e) => onResizePointerDown(e, el.id)} />}
                   </div>
                 );
               }
               if (el.type === "line") {
                 return <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
-                  style={{ ...style, width: (el.w ?? 60) * PX_PER_MM, height: Math.max(1, (el.strokeWidth ?? 0.4) * PX_PER_MM), background: el.color ?? "#0B1E3F" }} />;
+                  style={{ ...style, width: (el.w ?? 60) * ppm, height: Math.max(1, (el.strokeWidth ?? 0.4) * ppm), background: el.color ?? "#0B1E3F" }} />;
               }
               if (el.type === "image") {
                 return (
                   <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
-                    style={{ ...style, width: (el.w ?? 30) * PX_PER_MM, height: (el.h ?? 15) * PX_PER_MM, background: "#FFF", border: isSel ? undefined : "1px dashed #CBD5E1", overflow: "visible" }}>
+                    style={{ ...style, width: (el.w ?? 30) * ppm, height: (el.h ?? 15) * ppm, background: "#FFF", border: isSel ? undefined : "1px dashed #CBD5E1", overflow: "visible" }}>
                     <img src={logoUrl} alt="Logo" draggable={false}
                       style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none", userSelect: "none" }} />
                     {isSel && <ResizeHandle onPointerDown={(e) => onResizePointerDown(e, el.id)} />}
@@ -203,7 +208,7 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
               if (el.type === "items_table") {
                 const cols = el.columns ?? ["name", "qty", "unit", "total"];
                 return (
-                  <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)} style={{ ...style, width: (el.w ?? 100) * PX_PER_MM }}>
+                  <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)} style={{ ...style, width: (el.w ?? 100) * ppm }}>
                     <div style={{ display: "grid", gridTemplateColumns: `2fr ${cols.slice(1).map(() => "1fr").join(" ")}`, background: el.headerFill ?? "#0B1E3F", color: el.headerColor ?? "#FFF", fontSize: 10, padding: "3px 4px" }}>
                       {cols.map((c) => <div key={c}>{c === "name" ? "Article" : c === "qty" ? "Qt" : c === "unit" ? "P.U." : "Total"}</div>)}
                     </div>
