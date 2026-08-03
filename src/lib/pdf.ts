@@ -225,7 +225,11 @@ function renderCustomTemplate(doc: jsPDF, tpl: CanvasTemplate, data: ReceiptData
       doc.setFontSize(el.fontSize ?? 10);
       doc.setFont("helvetica", el.bold ? "bold" : el.italic ? "italic" : "normal");
       const txt = interpolate(el.text ?? "", vars);
-      doc.text(txt, el.x, el.y, { align: (el.align ?? "left") as "left" | "center" | "right" });
+      const align = (el.align ?? "left") as "left" | "center" | "right";
+      // Retour à la ligne automatique : indispensable sur les tickets étroits (58 mm).
+      const avail = align === "left" ? tpl.pageWidth - el.x - 2 : align === "right" ? el.x - 2 : Math.min(el.x, tpl.pageWidth - el.x) * 2 - 2;
+      const lines = doc.splitTextToSize(txt, Math.max(10, avail));
+      doc.text(lines, el.x, el.y, { align });
     } else if (el.type === "items_table") {
       const cols = el.columns ?? ["name", "qty", "unit", "total"];
       const head = cols.map((c) => c === "name" ? "Article" : c === "qty" ? "Qt" : c === "unit" ? "P.U." : "Total");
@@ -235,16 +239,22 @@ function renderCustomTemplate(doc: jsPDF, tpl: CanvasTemplate, data: ReceiptData
         if (c === "unit") return formatMoney(it.unit, data.currency, data.rate);
         return formatMoney(it.total, data.currency, data.rate);
       }));
+      const tableW = el.w ?? tpl.pageWidth - el.x * 2;
+      const narrow = tpl.pageWidth <= 80;
       autoTable(doc, {
         startY: el.y,
         head: [head],
         body,
-        styles: { fontSize: el.fontSize ?? 9, cellPadding: 1 },
-        headStyles: { fillColor: hexToRgbArray(el.headerFill ?? "#0B1E3F"), textColor: hexToRgbArray(el.headerColor ?? "#FFFFFF") },
-        margin: { left: el.x, right: Math.max(0, tpl.pageWidth - el.x - (el.w ?? tpl.pageWidth - el.x * 2)) },
-        theme: "grid",
+        styles: { fontSize: el.fontSize ?? 9, cellPadding: narrow ? { top: 1, bottom: 1, left: 0.6, right: 0.6 } : 1, overflow: "linebreak", textColor: [0, 0, 0] },
+        headStyles: { fillColor: hexToRgbArray(el.headerFill ?? "#0B1E3F"), textColor: hexToRgbArray(el.headerColor ?? "#FFFFFF"), fontStyle: "bold" },
+        columnStyles: cols.length === 4
+          ? { 0: { cellWidth: tableW * 0.42 }, 1: { cellWidth: tableW * 0.12, halign: "center" }, 2: { cellWidth: tableW * 0.23, halign: "right" }, 3: { cellWidth: "auto", halign: "right" } }
+          : {},
+        margin: { left: el.x, right: Math.max(0, tpl.pageWidth - el.x - tableW) },
+        theme: narrow ? "plain" : "grid",
       });
     }
+
   });
   // Reset text color for safety
   doc.setTextColor(0, 0, 0);
