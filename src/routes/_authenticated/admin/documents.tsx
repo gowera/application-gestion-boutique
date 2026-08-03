@@ -31,8 +31,12 @@ function Page() {
   const [designerKind, setDesignerKind] = useState<DocumentKind>("recu");
   const [documentType, setDocumentType] = useState<"Facture" | "Reçu">("Facture");
   const [customerId, setCustomerId] = useState("");
+  const [manualMode, setManualMode] = useState(false);
+  const [manualCustomer, setManualCustomer] = useState({ name: "", phone: "", address: "" });
+  const [saveManual, setSaveManual] = useState(false);
   const [note, setNote] = useState("");
   const [lines, setLines] = useState<LineItem[]>([{ name: "", qty: 1, unit: 0 }]);
+
 
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["documents-customers"],
