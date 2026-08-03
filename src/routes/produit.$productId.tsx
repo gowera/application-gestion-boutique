@@ -428,9 +428,10 @@ function Perk({ icon: Icon, title, text }: { icon: any; title: string; text: str
 
 function SpecRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
   return (
-    <div className={`grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] items-start gap-3 px-4 py-3 text-sm sm:px-5 ${last ? "" : "border-b"}`}>
-      <span className="text-muted-foreground">{label}</span>
-      <span className="break-words text-right font-medium">{value}</span>
+    <div className={`flex flex-col gap-0.5 px-4 py-2.5 text-sm sm:grid sm:grid-cols-[minmax(0,40%)_minmax(0,1fr)] sm:items-start sm:gap-3 sm:px-5 sm:py-3 ${last ? "" : "border-b"}`}>
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-sm sm:font-normal sm:normal-case sm:tracking-normal">{label}</span>
+      <span className="break-words font-medium sm:text-right">{value}</span>
     </div>
   );
 }
+
