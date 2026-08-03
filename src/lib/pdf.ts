@@ -259,9 +259,16 @@ export function buildReceiptDoc(data: ReceiptData): jsPDF {
     return doc;
   }
 
-  const doc = new jsPDF({ unit: "mm", format: [80, 220] });
-  const w = 80;
+  // Reçu = ticket 58 mm (petites imprimantes portables), Facture = ticket 80 mm.
+  const isTicket58 = kind === "recu";
+  const w = isTicket58 ? 58 : 80;
+  const margin = isTicket58 ? 3 : 4;
+  // Hauteur estimée pour éviter toute coupure du contenu.
+  const pageHeight = Math.max(120, 90 + data.items.length * (isTicket58 ? 9 : 7));
+  const doc = new jsPDF({ unit: "mm", format: [w, pageHeight] });
   const isPro = data.template === "pro";
+  // Tailles augmentées : lisibilité à l'impression thermique.
+  const fs = { title: isTicket58 ? 12 : 14, meta: isTicket58 ? 8 : 8, body: isTicket58 ? 9 : 9, table: isTicket58 ? 8.5 : 8, total: isTicket58 ? 11 : 10 };
   let y = 8;
 
   // Logo (centré en tête du document) — visible à l'impression et au téléchargement.
@@ -270,8 +277,8 @@ export function buildReceiptDoc(data: ReceiptData): jsPDF {
     try {
       const fmt = data.logoDataUrl.includes("image/jpeg") || data.logoDataUrl.includes("image/jpg") ? "JPEG" : "PNG";
       const props = doc.getImageProperties(data.logoDataUrl);
-      const maxW = 30;
-      const maxH = 15;
+      const maxW = isTicket58 ? 24 : 30;
+      const maxH = isTicket58 ? 12 : 15;
       const ratio = Math.min(maxW / props.width, maxH / props.height);
       const lw = props.width * ratio;
       const lh = props.height * ratio;
@@ -282,35 +289,49 @@ export function buildReceiptDoc(data: ReceiptData): jsPDF {
   }
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
+  doc.setFontSize(fs.title);
   if (isPro) {
     doc.setDrawColor(17, 30, 63);
     doc.setLineWidth(0.4);
-    doc.roundedRect(3, 4, w - 6, 24 + logoH, 1.5, 1.5);
+    doc.roundedRect(2, 4, w - 4, 24 + logoH, 1.5, 1.5);
   }
-  doc.text(data.shopName.toUpperCase(), w / 2, y, { align: "center" });
+  doc.text(doc.splitTextToSize(data.shopName.toUpperCase(), w - margin * 2), w / 2, y, { align: "center" });
   y += 5;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  if (data.address) { doc.text(data.address, w / 2, y, { align: "center" }); y += 4; }
+  doc.setFontSize(fs.meta);
+  if (data.address) {
+    const lines = doc.splitTextToSize(data.address, w - margin * 2) as string[];
+    doc.text(lines, w / 2, y, { align: "center" });
+    y += 3.6 * lines.length;
+  }
   if (data.phone) { doc.text(`Tél: ${data.phone}`, w / 2, y, { align: "center" }); y += 4; }
   y += 2;
   doc.setLineWidth(0.2);
-  doc.line(4, y, w - 4, y);
-  y += 4;
-  doc.setFontSize(9);
+  doc.line(margin, y, w - margin, y);
+  y += 4.5;
+  doc.setFontSize(fs.body);
+  doc.setFont("helvetica", "bold");
   const label = data.documentType ?? "Reçu";
-  doc.text(`${label}: ${data.code}`, 4, y); y += 4;
-  doc.text(`Date: ${new Date().toLocaleString("fr-FR")}`, 4, y); y += 4;
-  doc.text(`Client: ${data.customer}`, 4, y); y += 4;
+  doc.text(`${label}: ${data.code}`, margin, y); y += 4.5;
+  doc.setFont("helvetica", "normal");
+  doc.text(`Date: ${new Date().toLocaleString("fr-FR")}`, margin, y); y += 4.5;
+  doc.text(doc.splitTextToSize(`Client: ${data.customer}`, w - margin * 2), margin, y);
+  y += 4.5;
 
+  const tableWidth = w - margin * 2;
   autoTable(doc, {
     startY: y + 1,
     head: [["Article", "Qt", "P.U.", "Total"]],
     body: data.items.map((it) => [it.name, String(it.qty), formatMoney(it.unit, data.currency, data.rate), formatMoney(it.total, data.currency, data.rate)]),
-    styles: { fontSize: 7, cellPadding: 1 },
-    headStyles: { fillColor: [11, 30, 63] },
-    margin: { left: 3, right: 3 },
+    styles: { fontSize: fs.table, cellPadding: { top: 1, bottom: 1, left: 0.6, right: 0.6 }, overflow: "linebreak", lineColor: [180, 180, 180], textColor: [0, 0, 0] },
+    headStyles: { fillColor: [11, 30, 63], textColor: [255, 255, 255], fontSize: fs.table, fontStyle: "bold" },
+    columnStyles: {
+      0: { cellWidth: tableWidth * (isTicket58 ? 0.42 : 0.45) },
+      1: { cellWidth: tableWidth * 0.12, halign: "center" },
+      2: { cellWidth: tableWidth * (isTicket58 ? 0.23 : 0.21), halign: "right" },
+      3: { cellWidth: "auto", halign: "right" },
+    },
+    margin: { left: margin, right: margin },
     theme: "plain",
   });
   const yAfter = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4;
@@ -318,21 +339,29 @@ export function buildReceiptDoc(data: ReceiptData): jsPDF {
 
   const line = (lbl: string, val: string, bold = false) => {
     doc.setFont("helvetica", bold ? "bold" : "normal");
-    doc.setFontSize(bold ? 10 : 8);
-    doc.text(lbl, 4, y2);
-    doc.text(val, w - 4, y2, { align: "right" });
-    y2 += bold ? 5 : 4;
+    doc.setFontSize(bold ? fs.total : fs.body);
+    doc.text(lbl, margin, y2);
+    doc.text(val, w - margin, y2, { align: "right" });
+    y2 += bold ? 6 : 4.6;
   };
   line("Sous-total", formatMoney(data.subtotal, data.currency, data.rate));
   if (data.discount > 0) line("Remise", "-" + formatMoney(data.discount, data.currency, data.rate));
   line("TOTAL", formatMoney(data.total, data.currency, data.rate), true);
   line("Payé", formatMoney(data.paid, data.currency, data.rate));
   if (data.credit > 0) line("Crédit", formatMoney(data.credit, data.currency, data.rate));
+  if (data.note) {
+    y2 += 2;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(fs.meta);
+    doc.text(doc.splitTextToSize(data.note, w - margin * 2), margin, y2);
+    y2 += 4;
+  }
   y2 += 4;
-  doc.setFontSize(8);
+  doc.setFontSize(fs.meta);
   doc.text("Merci de votre confiance.", w / 2, y2, { align: "center" });
   return doc;
 }
+
 
 export function downloadReceipt(data: ReceiptData) {
   const kind: DocumentKind = data.documentType === "Facture" ? "facture" : "recu";
