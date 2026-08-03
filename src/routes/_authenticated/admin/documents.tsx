@@ -17,6 +17,7 @@ import { useLogoDataUrl } from "@/lib/logo";
 import { EditorCanvas } from "@/components/documents/editor-canvas";
 import { useSettings } from "@/lib/currency";
 import { issueDocumentNumber, labelToDocType } from "@/lib/documents";
+import { CustomerQuickAdd } from "@/components/customer-quick-add";
 
 export const Route = createFileRoute("/_authenticated/admin/documents")({ component: Page });
 
@@ -47,14 +48,28 @@ function Page() {
 
   const createDocument = useMutation({
     mutationFn: async () => {
-      if (!customerId) throw new Error("Un client est requis");
       if (!lines.some((l) => l.name.trim())) throw new Error("Ajoutez au moins une ligne");
-      const customer = customers.find((c) => c.id === customerId);
+      let customerName: string;
+      if (manualMode) {
+        if (!manualCustomer.name.trim()) throw new Error("Le nom du client est requis");
+        customerName = manualCustomer.name.trim();
+        if (saveManual) {
+          await supabase.from("customers").insert({
+            name: customerName,
+            phone: manualCustomer.phone || null,
+            address: manualCustomer.address || null,
+          });
+          qc.invalidateQueries({ queryKey: ["documents-customers"] });
+        }
+      } else {
+        if (!customerId) throw new Error("Un client est requis");
+        customerName = customers.find((c) => c.id === customerId)?.name ?? "Client";
+      }
       const items = lines.filter((l) => l.name.trim()).map((l) => ({ name: l.name, qty: Number(l.qty || 0), unit: Number(l.unit || 0), total: Number(l.qty || 0) * Number(l.unit || 0) }));
       const total = items.reduce((a, i) => a + i.total, 0);
       let docCode = "";
       try {
-        const issued = await issueDocumentNumber({ docType: labelToDocType(documentType), customerName: customer?.name ?? null, totalUsd: total });
+        const issued = await issueDocumentNumber({ docType: labelToDocType(documentType), customerName, totalUsd: total });
         docCode = issued.code;
       } catch {
         docCode = `DOC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
@@ -63,7 +78,7 @@ function Page() {
         logoDataUrl,
         shopName: settings?.shop_name ?? "CONETEC",
         address: settings?.address ?? "", phone: settings?.phone ?? "",
-        code: docCode, customer: customer?.name ?? "Client",
+        code: docCode, customer: customerName,
         items, subtotal: total, discount: 0, total, paid: total, credit: 0,
         currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
         documentType, template, note: note || undefined,
