@@ -62,36 +62,39 @@ const uid = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? cry
 
 export function defaultTemplate(kind: DocumentKind): CanvasTemplate {
   const isFacture = kind === "facture";
-  const pageWidth = isFacture ? 210 : 80;
-  const pageHeight = isFacture ? 297 : 220;
+  // Le reçu est calibré pour les petites imprimantes thermiques portables 58 mm.
+  const pageWidth = isFacture ? 210 : 58;
+  const pageHeight = isFacture ? 297 : 200;
   const centerX = pageWidth / 2;
+  const m = isFacture ? 8 : 3;
   const els: CanvasElement[] = [
-    { id: uid(), type: "rect", x: 0, y: 0, w: pageWidth, h: isFacture ? 32 : 22, fill: "#0B1E3F" },
-    { id: uid(), type: "text", x: centerX, y: isFacture ? 14 : 10, text: "{{shopName}}", fontSize: isFacture ? 20 : 14, bold: true, color: "#FFFFFF", align: "center" },
-    { id: uid(), type: "text", x: centerX, y: isFacture ? 22 : 16, text: "{{address}} · Tél: {{phone}}", fontSize: isFacture ? 9 : 7, color: "#E5EDFF", align: "center" },
-    { id: uid(), type: "text", x: 8, y: isFacture ? 42 : 30, text: (isFacture ? "FACTURE " : "REÇU ") + "N° {{code}}", fontSize: isFacture ? 14 : 11, bold: true, color: "#0B1E3F" },
-    { id: uid(), type: "text", x: 8, y: isFacture ? 50 : 36, text: "Date: {{date}}", fontSize: 9, color: "#333333" },
-    { id: uid(), type: "text", x: 8, y: isFacture ? 56 : 41, text: "Client: {{customer}}", fontSize: 9, color: "#333333" },
+    { id: uid(), type: "rect", x: 0, y: 0, w: pageWidth, h: isFacture ? 32 : 20, fill: "#0B1E3F" },
+    { id: uid(), type: "text", x: centerX, y: isFacture ? 14 : 9, text: "{{shopName}}", fontSize: isFacture ? 20 : 12, bold: true, color: "#FFFFFF", align: "center" },
+    { id: uid(), type: "text", x: centerX, y: isFacture ? 22 : 15, text: isFacture ? "{{address}} · Tél: {{phone}}" : "Tél: {{phone}}", fontSize: isFacture ? 9 : 8, color: "#E5EDFF", align: "center" },
+    { id: uid(), type: "text", x: m, y: isFacture ? 42 : 27, text: (isFacture ? "FACTURE " : "REÇU ") + "N° {{code}}", fontSize: isFacture ? 14 : 10, bold: true, color: "#0B1E3F" },
+    { id: uid(), type: "text", x: m, y: isFacture ? 50 : 33, text: "Date: {{date}}", fontSize: isFacture ? 9 : 8, color: "#000000" },
+    { id: uid(), type: "text", x: m, y: isFacture ? 56 : 38, text: "Client: {{customer}}", fontSize: isFacture ? 9 : 8, color: "#000000" },
     {
       id: uid(),
       type: "items_table",
-      x: 8,
-      y: isFacture ? 66 : 48,
-      w: pageWidth - 16,
+      x: m,
+      y: isFacture ? 66 : 44,
+      w: pageWidth - m * 2,
       columns: ["name", "qty", "unit", "total"],
       headerFill: "#0B1E3F",
       headerColor: "#FFFFFF",
-      fontSize: isFacture ? 10 : 8,
+      fontSize: isFacture ? 10 : 8.5,
     },
-    { id: uid(), type: "text", x: pageWidth - 8, y: isFacture ? 200 : 170, text: "Sous-total: {{subtotal}}", fontSize: 9, align: "right", color: "#333333" },
-    { id: uid(), type: "text", x: pageWidth - 8, y: isFacture ? 206 : 175, text: "Remise: {{discount}}", fontSize: 9, align: "right", color: "#333333" },
-    { id: uid(), type: "text", x: pageWidth - 8, y: isFacture ? 214 : 181, text: "TOTAL: {{total}}", fontSize: 12, bold: true, align: "right", color: "#0B1E3F" },
-    { id: uid(), type: "text", x: pageWidth - 8, y: isFacture ? 220 : 187, text: "Payé: {{paid}}", fontSize: 9, align: "right", color: "#333333" },
-    { id: uid(), type: "text", x: pageWidth - 8, y: isFacture ? 226 : 192, text: "Crédit: {{credit}}", fontSize: 9, align: "right", color: "#B91C1C" },
-    { id: uid(), type: "text", x: centerX, y: pageHeight - 10, text: "Merci de votre confiance.", fontSize: 9, italic: true, align: "center", color: "#555555" },
+    { id: uid(), type: "text", x: pageWidth - m, y: isFacture ? 200 : 150, text: "Sous-total: {{subtotal}}", fontSize: isFacture ? 9 : 8.5, align: "right", color: "#000000" },
+    { id: uid(), type: "text", x: pageWidth - m, y: isFacture ? 206 : 156, text: "Remise: {{discount}}", fontSize: isFacture ? 9 : 8.5, align: "right", color: "#000000" },
+    { id: uid(), type: "text", x: pageWidth - m, y: isFacture ? 214 : 163, text: "TOTAL: {{total}}", fontSize: isFacture ? 12 : 11, bold: true, align: "right", color: "#0B1E3F" },
+    { id: uid(), type: "text", x: pageWidth - m, y: isFacture ? 220 : 170, text: "Payé: {{paid}}", fontSize: isFacture ? 9 : 8.5, align: "right", color: "#000000" },
+    { id: uid(), type: "text", x: pageWidth - m, y: isFacture ? 226 : 176, text: "Crédit: {{credit}}", fontSize: isFacture ? 9 : 8.5, align: "right", color: "#B91C1C" },
+    { id: uid(), type: "text", x: centerX, y: pageHeight - 10, text: "Merci de votre confiance.", fontSize: isFacture ? 9 : 8, italic: true, align: "center", color: "#333333" },
   ];
   return { pageWidth, pageHeight, elements: els };
 }
+
 
 export function getCustomTemplates(): CustomTemplateStore {
   if (typeof window === "undefined") return { facture: defaultTemplate("facture"), recu: defaultTemplate("recu") };
