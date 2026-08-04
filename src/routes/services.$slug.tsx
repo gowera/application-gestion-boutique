@@ -5,13 +5,48 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SERVICES } from "./index";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 
-export const Route = createFileRoute("/services/$slug")({ component: ServiceDetail });
+export const Route = createFileRoute("/services/$slug")({
+  component: ServiceDetail,
+  notFoundComponent: ServiceNotFound,
+  head: ({ params }) => {
+    const s = SERVICES.find((x) => x.slug === params.slug);
+    if (!s) {
+      return { meta: [{ title: "Service introuvable — CONETEC" }, { name: "robots", content: "noindex" }] };
+    }
+    const title = `${s.title} — CONETEC`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: `${s.desc} Étude, installation, maintenance et devis gratuit par les équipes CONETEC en RDC.` },
+        { property: "og:title", content: title },
+        { property: "og:description", content: s.desc },
+        { property: "og:type", content: "article" },
+        { property: "og:url", content: `/services/${params.slug}` },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+      links: [{ rel: "canonical", href: `/services/${params.slug}` }],
+    };
+  },
+});
+
+function ServiceNotFound() {
+  return (
+    <SiteShell>
+      <div className="mx-auto max-w-3xl px-4 py-24 text-center">
+        <h1 className="text-display text-2xl font-bold">Service introuvable</h1>
+        <p className="mt-2 text-muted-foreground">Ce service n'existe pas ou n'est plus disponible.</p>
+        <Link to="/services" className="mt-6 inline-block"><Button>Voir tous nos services</Button></Link>
+      </div>
+    </SiteShell>
+  );
+}
 
 function ServiceDetail() {
   const { slug } = useParams({ from: "/services/$slug" });
   const s = SERVICES.find((x) => x.slug === slug);
   if (!s) throw notFound();
   const benefits = ["Étude technique gratuite", "Matériel garanti et certifié", "Équipe qualifiée", "Intervention rapide", "Suivi et maintenance", "Devis transparent"];
+  const others = SERVICES.filter((x) => x.slug !== slug).slice(0, 3);
   return (
     <SiteShell>
       <div className="bg-hero-gradient text-primary-foreground py-12">
@@ -20,12 +55,12 @@ function ServiceDetail() {
             <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-energy text-energy-foreground"><s.icon className="h-7 w-7" /></div>
             <h1 className="mt-4 text-display text-3xl md:text-5xl font-bold">{s.title}</h1>
             <p className="mt-3 text-primary-foreground/80 text-lg max-w-xl">{s.desc}</p>
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link to="/devis"><Button size="lg" className="bg-energy text-energy-foreground hover:bg-energy/90">Demander un devis <ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
               <a href="https://wa.me/243996886079"><Button size="lg" variant="outline" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10">WhatsApp</Button></a>
             </div>
           </div>
-          <img src={s.img} alt={s.title} className="rounded-2xl w-full h-72 object-cover" />
+          <img src={s.img} alt={s.title} className="rounded-2xl w-full h-56 md:h-72 object-cover" />
         </div>
       </div>
       <div className="mx-auto max-w-7xl px-4 py-12 grid gap-8 lg:grid-cols-2">
@@ -44,8 +79,27 @@ function ServiceDetail() {
           <div className="mt-4 flex flex-col gap-2">
             <Link to="/devis"><Button className="w-full">Formulaire de devis</Button></Link>
             <a href="tel:+243996886079"><Button variant="outline" className="w-full">Appeler +243 996 886 079</Button></a>
+            <Link to="/boutique"><Button variant="ghost" className="w-full">Voir le matériel en boutique</Button></Link>
           </div>
         </CardContent></Card>
+      </div>
+      <div className="mx-auto max-w-7xl px-4 pb-16">
+        <h2 className="text-display text-xl font-bold">Autres services</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          {others.map((o) => (
+            <Link key={o.slug} to="/services/$slug" params={{ slug: o.slug }}>
+              <Card className="h-full hover:border-primary/40 hover:shadow-md transition-all">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><o.icon className="h-4 w-4" /></div>
+                    <h3 className="text-display text-sm font-semibold">{o.title}</h3>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">{o.desc}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
     </SiteShell>
   );

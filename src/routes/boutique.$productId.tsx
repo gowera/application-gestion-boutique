@@ -51,6 +51,16 @@ export const Route = createFileRoute("/boutique/$productId")({
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
         { property: "og:site_name", content: "CONETEC" },
+        ...(p
+          ? [
+              { property: "product:price:amount", content: String(Number(p.sale_price)) },
+              { property: "product:price:currency", content: "USD" },
+              { property: "og:price:amount", content: String(Number(p.sale_price)) },
+              { property: "og:price:currency", content: "USD" },
+              { property: "product:availability", content: "in stock" },
+              { property: "product:brand", content: p.brand ?? "CONETEC" },
+            ]
+          : []),
         ...(image
           ? [
               { property: "og:image", content: image },
