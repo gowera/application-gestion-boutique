@@ -212,8 +212,9 @@ function ProductCard({ p, rate, cur }: { p: any; rate: number; cur: any }) {
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Star className="h-3 w-3 fill-energy text-energy" /> 4.8 · {p.brand ?? "CONETEC"}
         </div>
-        <Link to="/boutique/$productId" params={{ productId: p.id }} className="mt-1 block min-h-[2.5rem] text-sm font-semibold hover:text-primary line-clamp-2">{p.name}</Link>
-        <ProductIdentity className="mt-2" name={p.name} brand={p.brand} sku={p.sku} id={p.id} />
+        <Link to="/boutique/$productId" params={{ productId: p.id }} className="mt-1 block min-h-[2.5rem] hover:text-primary">
+          <ProductIdentity name={p.name} brand={p.brand} sku={p.sku} id={p.id} />
+        </Link>
         <div className="mt-3 flex items-center justify-between gap-2">
           <div>
             <div className="text-display text-xl font-extrabold text-primary">{formatMoney(Number(p.sale_price), cur, rate)}</div>

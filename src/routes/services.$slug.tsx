@@ -3,7 +3,7 @@ import { SiteShell } from "@/components/public/site-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SERVICES } from "./index";
-import { CheckCircle2, ArrowRight } from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/services/$slug")({
   component: ServiceDetail,
@@ -52,6 +52,9 @@ function ServiceDetail() {
       <div className="bg-hero-gradient text-primary-foreground py-12">
         <div className="mx-auto max-w-7xl px-4 grid gap-8 lg:grid-cols-2 lg:items-center">
           <div>
+            <Link to="/services" className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary-foreground/30 px-3 py-1.5 text-xs font-semibold text-primary-foreground/90 transition-colors hover:bg-primary-foreground/10">
+              <ArrowLeft className="h-3.5 w-3.5" /> Retour aux services
+            </Link>
             <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-energy text-energy-foreground"><s.icon className="h-7 w-7" /></div>
             <h1 className="mt-4 text-display text-3xl md:text-5xl font-bold">{s.title}</h1>
             <p className="mt-3 text-primary-foreground/80 text-lg max-w-xl">{s.desc}</p>

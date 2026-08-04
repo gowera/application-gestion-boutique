@@ -400,8 +400,7 @@ function ProductDetailsPage() {
                     />
                   </div>
                   <div className="p-4">
-                    <div className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold group-hover:text-primary">{r.name}</div>
-                    <ProductIdentity className="mt-2" name={r.name} brand={r.brand} sku={r.sku} id={r.id} />
+                    <ProductIdentity className="min-h-[2.5rem] group-hover:text-primary" name={r.name} brand={r.brand} sku={r.sku} id={r.id} />
                     <div className="mt-2 text-display text-lg font-extrabold text-primary">{formatMoney(Number(r.sale_price), cur, rate)}</div>
                   </div>
                 </Link>
