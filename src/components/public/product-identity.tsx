@@ -15,7 +15,7 @@ export function ProductIdentity({
   const model = sku?.trim() || (id ? id.slice(0, 8).toUpperCase() : "");
   const parts = [name, brand?.trim() || "CONETEC", model].filter(Boolean);
   return (
-    <p className={`truncate text-[11px] font-medium leading-tight text-muted-foreground ${className}`}>
+    <p className={`text-sm font-bold leading-snug text-foreground line-clamp-2 sm:text-base ${className}`}>
       {parts.join(", ")}
     </p>
   );
