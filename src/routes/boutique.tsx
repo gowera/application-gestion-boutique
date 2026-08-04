@@ -115,7 +115,7 @@ function ShopPage() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
-          <aside className="space-y-6">
+          <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
             <div className="rounded-xl border bg-background p-5 shadow-sm">
               <h3 className="mb-4 flex items-center gap-2 text-display text-sm font-bold uppercase tracking-wide"><SlidersHorizontal className="h-4 w-4 text-energy" /> Filtres</h3>
               <div className="space-y-4">
