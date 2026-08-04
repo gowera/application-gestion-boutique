@@ -20,6 +20,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ServicesIndexRouteImport } from './routes/services.index'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as ProduitProductIdRouteImport } from './routes/produit.$productId'
 import { Route as MagicLinkTokenRouteImport } from './routes/magic-link.$token'
@@ -108,6 +109,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ServicesIndexRoute = ServicesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ServicesRoute,
 } as any)
 const ServicesSlugRoute = ServicesSlugRouteImport.update({
   id: '/$slug',
@@ -315,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/magic-link/$token': typeof MagicLinkTokenRoute
   '/produit/$productId': typeof ProduitProductIdRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/services/': typeof ServicesIndexRoute
   '/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
@@ -355,12 +362,12 @@ export interface FileRoutesByTo {
   '/devis': typeof DevisRoute
   '/equipe': typeof EquipeRoute
   '/panier': typeof PanierRoute
-  '/services': typeof ServicesRouteWithChildren
   '/boutique/$productId': typeof BoutiqueProductIdRoute
   '/commande/$code': typeof CommandeCodeRoute
   '/magic-link/$token': typeof MagicLinkTokenRoute
   '/produit/$productId': typeof ProduitProductIdRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/services': typeof ServicesIndexRoute
   '/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
@@ -409,6 +416,7 @@ export interface FileRoutesById {
   '/magic-link/$token': typeof MagicLinkTokenRoute
   '/produit/$productId': typeof ProduitProductIdRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/services/': typeof ServicesIndexRoute
   '/_authenticated/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
@@ -457,6 +465,7 @@ export interface FileRouteTypes {
     | '/magic-link/$token'
     | '/produit/$productId'
     | '/services/$slug'
+    | '/services/'
     | '/admin/caisse'
     | '/admin/categories'
     | '/admin/customers'
@@ -497,12 +506,12 @@ export interface FileRouteTypes {
     | '/devis'
     | '/equipe'
     | '/panier'
-    | '/services'
     | '/boutique/$productId'
     | '/commande/$code'
     | '/magic-link/$token'
     | '/produit/$productId'
     | '/services/$slug'
+    | '/services'
     | '/admin/caisse'
     | '/admin/categories'
     | '/admin/customers'
@@ -550,6 +559,7 @@ export interface FileRouteTypes {
     | '/magic-link/$token'
     | '/produit/$productId'
     | '/services/$slug'
+    | '/services/'
     | '/_authenticated/admin/caisse'
     | '/_authenticated/admin/categories'
     | '/_authenticated/admin/customers'
@@ -679,6 +689,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/services/': {
+      id: '/services/'
+      path: '/'
+      fullPath: '/services/'
+      preLoaderRoute: typeof ServicesIndexRouteImport
+      parentRoute: typeof ServicesRoute
     }
     '/services/$slug': {
       id: '/services/$slug'
@@ -1010,10 +1027,12 @@ const BoutiqueRouteWithChildren = BoutiqueRoute._addFileChildren(
 
 interface ServicesRouteChildren {
   ServicesSlugRoute: typeof ServicesSlugRoute
+  ServicesIndexRoute: typeof ServicesIndexRoute
 }
 
 const ServicesRouteChildren: ServicesRouteChildren = {
   ServicesSlugRoute: ServicesSlugRoute,
+  ServicesIndexRoute: ServicesIndexRoute,
 }
 
 const ServicesRouteWithChildren = ServicesRoute._addFileChildren(
