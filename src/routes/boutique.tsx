@@ -213,19 +213,28 @@ function ProductCard({ p, rate, cur }: { p: any; rate: number; cur: any }) {
         </div>
         <Link to="/boutique/$productId" params={{ productId: p.id }} className="mt-1 block min-h-[2.5rem] text-sm font-semibold hover:text-primary line-clamp-2">{p.name}</Link>
         <ProductIdentity className="mt-2" name={p.name} brand={p.brand} sku={p.sku} id={p.id} />
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-3 flex items-center justify-between gap-2">
           <div>
             <div className="text-display text-xl font-extrabold text-primary">{formatMoney(Number(p.sale_price), cur, rate)}</div>
             {p.show_stock_public && <div className="text-[11px] text-muted-foreground">Stock: {p.stock}</div>}
           </div>
-          <Button
-            size="sm"
-            className="bg-energy text-energy-foreground hover:bg-energy/90"
-            disabled={p.stock <= 0}
-            onClick={() => { add({ product_id: p.id, name: p.name, price_usd: Number(p.sale_price), image: p.images?.[0] ?? null }); toast.success("Ajouté au panier"); }}
-          >
-            <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> Panier
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <ShareButton
+              size="icon"
+              variant="outline"
+              title={p.name}
+              text={p.brand ?? "CONETEC"}
+              url={typeof window !== "undefined" ? `${window.location.origin}/produit/${p.id}` : undefined}
+            />
+            <Button
+              size="sm"
+              className="bg-energy text-energy-foreground hover:bg-energy/90"
+              disabled={p.stock <= 0}
+              onClick={() => { add({ product_id: p.id, name: p.name, price_usd: Number(p.sale_price), image: p.images?.[0] ?? null }); toast.success("Ajouté au panier"); }}
+            >
+              <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> Panier
+            </Button>
+          </div>
         </div>
         <Button
           size="sm"
