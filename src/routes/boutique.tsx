@@ -15,6 +15,7 @@ import { Search, ShoppingCart, Package, Star, SlidersHorizontal, X, Share2 } fro
 import { useCart } from "@/hooks/use-cart";
 import { ProductIdentity } from "@/components/public/product-identity";
 import { StorageImage } from "@/components/storage-image";
+import { ShareButton } from "@/components/public/share-button";
 import { toast } from "sonner";
 
 const searchSchema = z.object({
