@@ -1,4 +1,4 @@
-/** Identité produit affichée sur toutes les cartes : nom, marque et modèle, sans libellés. */
+/** Identité produit affichée sur toutes les cartes : nom, marque et modèle, empilés sans libellés. */
 export function ProductIdentity({
   name,
   brand,
@@ -13,10 +13,15 @@ export function ProductIdentity({
   className?: string;
 }) {
   const model = sku?.trim() || (id ? id.slice(0, 8).toUpperCase() : "");
-  const parts = [name, brand?.trim() || "CONETEC", model].filter(Boolean);
+  const secondary = [brand?.trim() || "CONETEC", model].filter(Boolean);
   return (
-    <p className={`text-sm font-bold leading-snug text-foreground line-clamp-2 sm:text-base ${className}`}>
-      {parts.join(", ")}
-    </p>
+    <div className={`leading-tight text-foreground ${className}`}>
+      <span className="block text-sm font-bold line-clamp-2 sm:text-base">{name}</span>
+      {secondary.map((line) => (
+        <span key={line} className="block truncate text-xs font-semibold text-muted-foreground sm:text-sm">
+          {line}
+        </span>
+      ))}
+    </div>
   );
 }
