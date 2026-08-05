@@ -127,6 +127,12 @@ function SiteFooter() {
   const address = s?.address || "Kinshasa, RDC";
   return (
     <footer className="mt-20 bg-[#0a0a0a] text-neutral-300">
+      <div className="border-b border-white/5">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-3 px-4 py-6">
+          <SocialLinks place="footer" className="justify-center text-neutral-300 [&_a]:hover:text-energy" />
+          <p className="text-xs uppercase tracking-widest text-neutral-500">Suivez {brand}</p>
+        </div>
+      </div>
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
@@ -141,8 +147,8 @@ function SiteFooter() {
           <p className="mt-4 text-sm text-neutral-400 leading-relaxed">
             Solutions techniques de pointe pour l'énergie solaire, la sécurité, les réseaux et l'infrastructure.
           </p>
-          <SocialLinks place="footer" className="mt-4 text-neutral-300" />
         </div>
+
         <div>
           <h4 className="text-display text-sm font-bold uppercase tracking-wide text-energy mb-4">Navigation</h4>
           <ul className="space-y-2.5 text-sm">

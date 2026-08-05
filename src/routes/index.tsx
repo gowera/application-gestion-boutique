@@ -6,12 +6,14 @@ import { SiteShell } from "@/components/public/site-shell";
 import { ProductIdentity } from "@/components/public/product-identity";
 import { ShareButton } from "@/components/public/share-button";
 
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney, useSettings } from "@/lib/currency";
 import {
   Zap, Sun, Camera, Wifi, Wind, Phone, Shield, PenTool, Sparkles,
   ArrowRight, Truck, ShieldCheck, HeadphonesIcon, Award, Star, ShoppingCart,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import elecPro from "@/assets/services/electricite-pro.webp";
 import elecDom from "@/assets/services/electricite-domestique.webp";
@@ -22,6 +24,7 @@ import clim from "@/assets/services/climatisation.webp";
 import decor from "@/assets/services/decor-interieur.webp";
 import decor2 from "@/assets/services/decor-interieur-2.webp";
 import habillement from "@/assets/services/habillement.webp";
+import cctvImg from "@/assets/services/video-surveillance.webp";
 
 export const Route = createFileRoute("/")({
   component: PublicHome,
@@ -38,14 +41,23 @@ export const Route = createFileRoute("/")({
 const SERVICES = [
   { slug: "electricite", icon: Zap, title: "Installation électrique", desc: "Conception et pose conformes aux normes.", img: elecDom3 },
   { slug: "solaire", icon: Sun, title: "Énergie solaire", desc: "Étude, installation et maintenance photovoltaïque.", img: elecPro },
-  { slug: "cctv", icon: Camera, title: "Vidéosurveillance CCTV", desc: "Caméras, DVR, supervision distante.", img: elecDom },
+  { slug: "cctv", icon: Camera, title: "Vidéosurveillance CCTV", desc: "Caméras, DVR, supervision distante.", img: cctvImg },
   { slug: "reseaux", icon: Wifi, title: "Réseaux & Internet", desc: "Wi-Fi, LAN, antennes, liaisons.", img: reseaux },
   { slug: "climatisation", icon: Wind, title: "Froid & climatisation", desc: "Installation, réparation, entretien.", img: clim },
   { slug: "decoration", icon: Sparkles, title: "Décoration intérieure", desc: "Aménagement lumineux et design.", img: decor },
   { slug: "telephonie", icon: Phone, title: "Téléphonie & VoIP", desc: "Installation et maintenance.", img: elecDom2 },
-  { slug: "securite", icon: Shield, title: "Sécurité & alarmes", desc: "Détection d'intrusion et alertes.", img: elecPro },
+  { slug: "securite", icon: Shield, title: "Sécurité & alarmes", desc: "Détection d'intrusion et alertes.", img: elecDom },
   { slug: "cad", icon: PenTool, title: "Plans CAD", desc: "AutoCAD, SketchUp, schémas techniques.", img: decor2 },
   { slug: "habillement", icon: Award, title: "Aménagement boutique", desc: "Habillement d'espaces commerciaux.", img: habillement },
+];
+
+const HERO_SLIDES = [
+  { slug: "solaire", title: "Énergie solaire", tagline: "Étude, installation et maintenance photovoltaïque pour un courant fiable 24/7.", img: elecPro },
+  { slug: "cctv", title: "Vidéosurveillance CCTV", tagline: "Caméras IP, enregistreurs et supervision à distance de vos sites.", img: cctvImg },
+  { slug: "reseaux", title: "Réseaux & Internet", tagline: "Wi-Fi professionnel, LAN structuré, antennes et liaisons longue portée.", img: reseaux },
+  { slug: "climatisation", title: "Froid & climatisation", tagline: "Installation, réparation et entretien de vos systèmes de froid.", img: clim },
+  { slug: "electricite", title: "Installation électrique", tagline: "Conception et pose conformes aux normes, du domestique à l'industriel.", img: elecDom3 },
+  { slug: "decoration", title: "Décoration intérieure", tagline: "Aménagement lumineux, faux plafonds et design sur mesure.", img: decor },
 ];
 
 function PublicHome() {
@@ -61,36 +73,83 @@ function PublicHome() {
 }
 
 function Hero() {
+  const [i, setI] = useState(0);
+  const slide = HERO_SLIDES[i];
+  useEffect(() => {
+    const t = setInterval(() => setI((v) => (v + 1) % HERO_SLIDES.length), 6000);
+    return () => clearInterval(t);
+  }, []);
+  const go = (d: number) => setI((v) => (v + d + HERO_SLIDES.length) % HERO_SLIDES.length);
+
   return (
     <section className="relative overflow-hidden bg-hero-gradient text-primary-foreground">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:py-24 lg:grid-cols-2 lg:items-center">
+      {HERO_SLIDES.map((s, idx) => (
+        <img
+          key={s.slug}
+          src={s.img}
+          alt=""
+          aria-hidden
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${idx === i ? "opacity-25" : "opacity-0"}`}
+        />
+      ))}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/85 to-primary/40" />
+
+      <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-16 md:py-24 lg:grid-cols-2 lg:items-center">
         <div>
           <span className="inline-flex items-center gap-2 rounded-md border border-energy/40 bg-energy/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-[oklch(0.80_0.11_195)]">
             Solutions Industrielles 4.0
           </span>
-          <h1 className="mt-6 text-display text-4xl font-extrabold leading-[1.05] md:text-6xl">
-            Expert-Grade Technical<br />
-            <span className="text-[oklch(0.78_0.12_195)]">Infrastructure</span>
+          <h1 key={slide.slug} className="mt-6 text-display text-4xl font-extrabold leading-[1.05] md:text-6xl">
+            <span className="text-[oklch(0.78_0.12_195)]">{slide.title}</span>
           </h1>
-          <p className="mt-6 max-w-lg text-base text-primary-foreground/75 md:text-lg">
-            Fournisseur leader en solutions d'énergie solaire, sécurité CCTV et réseaux haute performance pour les professionnels et les particuliers exigeants.
-          </p>
+          <p className="mt-6 max-w-lg text-base text-primary-foreground/80 md:text-lg">{slide.tagline}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/boutique">
+            <Link to="/services/$slug" params={{ slug: slide.slug }}>
               <Button size="lg" className="bg-energy text-energy-foreground hover:bg-energy/90 rounded-md px-6">
-                Explorer le Catalogue <ArrowRight className="ml-2 h-4 w-4" />
+                Découvrir ce service <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/devis">
+            <Link to="/boutique">
               <Button size="lg" variant="outline" className="rounded-md border-primary-foreground/25 bg-transparent px-6 text-primary-foreground hover:bg-primary-foreground/10">
-                Demander un Devis
+                Explorer le Catalogue
               </Button>
             </Link>
+          </div>
+          <div className="mt-8 flex items-center gap-3">
+            <button type="button" onClick={() => go(-1)} aria-label="Image précédente" className="grid h-9 w-9 place-items-center rounded-full border border-primary-foreground/30 transition-colors hover:bg-primary-foreground/10">
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-1.5">
+              {HERO_SLIDES.map((s, idx) => (
+                <button
+                  key={s.slug}
+                  type="button"
+                  onClick={() => setI(idx)}
+                  aria-label={s.title}
+                  className={`h-1.5 rounded-full transition-all ${idx === i ? "w-7 bg-energy" : "w-3 bg-primary-foreground/30"}`}
+                />
+              ))}
+            </div>
+            <button type="button" onClick={() => go(1)} aria-label="Image suivante" className="grid h-9 w-9 place-items-center rounded-full border border-primary-foreground/30 transition-colors hover:bg-primary-foreground/10">
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
         <div className="relative">
           <div className="absolute -inset-4 rounded-3xl bg-energy/10 blur-2xl" />
-          <img src={elecPro} alt="Infrastructure technique CONETEC" className="relative aspect-[4/3] w-full rounded-2xl object-cover shadow-2xl" />
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-2xl">
+            {HERO_SLIDES.map((s, idx) => (
+              <img
+                key={s.slug}
+                src={s.img}
+                alt={s.title}
+                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${idx === i ? "opacity-100" : "opacity-0"}`}
+              />
+            ))}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 to-transparent p-4">
+              <span className="text-display text-lg font-bold">{slide.title}</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -100,7 +159,8 @@ function Hero() {
 function CategoriesBento() {
   const cats = [
     { slug: "solaire", title: "Énergie Solaire", desc: "Kits complets, onduleurs hybrides et panneaux haute performance.", img: elecPro, span: "lg:col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto" },
-    { slug: "cctv", title: "CCTV & Sécurité", desc: "Surveillance IP, Alarmes, Contrôle d'accès.", img: elecDom, span: "lg:col-span-2" },
+    { slug: "cctv", title: "CCTV & Sécurité", desc: "Surveillance IP, Alarmes, Contrôle d'accès.", img: cctvImg, span: "lg:col-span-2" },
+
     { slug: "reseaux", title: "Réseautage", desc: "Fibre, switches, WiFi entreprise.", img: reseaux, span: "" },
     { slug: "electricite", title: "Outillage", desc: "Instruments de mesure & outils pro.", img: elecDom2, span: "" },
   ];

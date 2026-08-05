@@ -154,8 +154,9 @@ function ProductDetailsPage() {
             </span>
             <h1 className="mt-4 text-display text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{p.name}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">
-              {p.description || "Matériel sélectionné par nos ingénieurs, testé sur le terrain et couvert par notre garantie constructeur. Nos techniciens assurent l'installation et la mise en service."}
+              Matériel sélectionné par nos ingénieurs, testé sur le terrain et couvert par notre garantie constructeur. Nos techniciens assurent l'installation et la mise en service.
             </p>
+
             <div className="mt-5 grid gap-2 sm:grid-cols-2">
               {[
                 { k: "Marque", v: p.brand ?? "CONETEC" },
@@ -237,39 +238,6 @@ function ProductDetailsPage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
-        {/* Specs + included */}
-        <section className="mb-10 grid gap-8 sm:mb-14 lg:grid-cols-2">
-          <div>
-            <SectionTitle icon={FileText} title="Caractéristiques techniques" />
-            <div className="mt-5 overflow-hidden rounded-2xl border bg-background">
-              <SpecRow label="Désignation" value={p.name} />
-              <SpecRow label="Marque" value={p.brand ?? "—"} />
-              <SpecRow label="Modèle" value={p.sku ?? p.id.slice(0, 8).toUpperCase()} />
-              <SpecRow label="Disponibilité" value={p.show_stock_public ? `${p.stock} en stock` : (p.stock > 0 ? "En stock" : "Sur commande")} />
-              <SpecRow label="Statut" value={p.status === "active" ? "Actif au catalogue" : String(p.status ?? "—")} />
-              {areaLabel && <SpecRow label="Zones de livraison" value={areaLabel} />}
-              <SpecRow label="Prix unitaire" value={formatMoney(price, cur, rate)} last />
-            </div>
-          </div>
-          <div>
-            <SectionTitle icon={CheckCircle2} title="Ce qui est inclus" />
-            <ul className="mt-5 space-y-3 rounded-2xl border bg-background p-6 text-sm">
-              {[
-                "Produit neuf avec emballage d'origine",
-                "Garantie constructeur et facture officielle CONETEC",
-                "Conseil technique gratuit avant et après achat",
-                "Devis d'installation sur demande",
-                "Service après-vente et pièces de rechange",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-energy" />
-                  <span className="text-foreground/85">{t}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
         {/* Gallery */}
         {images.length > 0 && (
           <section className="mb-10 sm:mb-14">
@@ -308,6 +276,26 @@ function ProductDetailsPage() {
             </p>
           </div>
         </section>
+
+        {/* Ce qui est inclus */}
+        <section className="mb-10 sm:mb-14">
+          <SectionTitle icon={CheckCircle2} title="Ce qui est inclus" subtitle="Livré avec chaque commande CONETEC" />
+          <ul className="mt-5 grid gap-3 rounded-2xl border bg-background p-5 text-sm sm:grid-cols-2 sm:p-6">
+            {[
+              "Produit neuf avec emballage d'origine",
+              "Garantie constructeur et facture officielle CONETEC",
+              "Conseil technique gratuit avant et après achat",
+              "Devis d'installation sur demande",
+              "Service après-vente et pièces de rechange",
+            ].map((t) => (
+              <li key={t} className="flex items-start gap-2.5">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-energy" />
+                <span className="text-foreground/85">{t}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
 
         {/* Why buy */}
         <section className="mb-10 sm:mb-14">
@@ -435,12 +423,4 @@ function Perk({ icon: Icon, title, text }: { icon: any; title: string; text: str
   );
 }
 
-function SpecRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
-  return (
-    <div className={`flex flex-col gap-0.5 px-4 py-2.5 text-sm sm:grid sm:grid-cols-[minmax(0,40%)_minmax(0,1fr)] sm:items-start sm:gap-3 sm:px-5 sm:py-3 ${last ? "" : "border-b"}`}>
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-sm sm:font-normal sm:normal-case sm:tracking-normal">{label}</span>
-      <span className="break-words font-medium sm:text-right">{value}</span>
-    </div>
-  );
-}
 
