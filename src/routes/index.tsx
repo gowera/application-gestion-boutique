@@ -6,12 +6,14 @@ import { SiteShell } from "@/components/public/site-shell";
 import { ProductIdentity } from "@/components/public/product-identity";
 import { ShareButton } from "@/components/public/share-button";
 
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney, useSettings } from "@/lib/currency";
 import {
   Zap, Sun, Camera, Wifi, Wind, Phone, Shield, PenTool, Sparkles,
   ArrowRight, Truck, ShieldCheck, HeadphonesIcon, Award, Star, ShoppingCart,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import elecPro from "@/assets/services/electricite-pro.webp";
 import elecDom from "@/assets/services/electricite-domestique.webp";
@@ -22,6 +24,7 @@ import clim from "@/assets/services/climatisation.webp";
 import decor from "@/assets/services/decor-interieur.webp";
 import decor2 from "@/assets/services/decor-interieur-2.webp";
 import habillement from "@/assets/services/habillement.webp";
+import cctvImg from "@/assets/services/video-surveillance.webp";
 
 export const Route = createFileRoute("/")({
   component: PublicHome,
@@ -38,14 +41,23 @@ export const Route = createFileRoute("/")({
 const SERVICES = [
   { slug: "electricite", icon: Zap, title: "Installation électrique", desc: "Conception et pose conformes aux normes.", img: elecDom3 },
   { slug: "solaire", icon: Sun, title: "Énergie solaire", desc: "Étude, installation et maintenance photovoltaïque.", img: elecPro },
-  { slug: "cctv", icon: Camera, title: "Vidéosurveillance CCTV", desc: "Caméras, DVR, supervision distante.", img: elecDom },
+  { slug: "cctv", icon: Camera, title: "Vidéosurveillance CCTV", desc: "Caméras, DVR, supervision distante.", img: cctvImg },
   { slug: "reseaux", icon: Wifi, title: "Réseaux & Internet", desc: "Wi-Fi, LAN, antennes, liaisons.", img: reseaux },
   { slug: "climatisation", icon: Wind, title: "Froid & climatisation", desc: "Installation, réparation, entretien.", img: clim },
   { slug: "decoration", icon: Sparkles, title: "Décoration intérieure", desc: "Aménagement lumineux et design.", img: decor },
   { slug: "telephonie", icon: Phone, title: "Téléphonie & VoIP", desc: "Installation et maintenance.", img: elecDom2 },
-  { slug: "securite", icon: Shield, title: "Sécurité & alarmes", desc: "Détection d'intrusion et alertes.", img: elecPro },
+  { slug: "securite", icon: Shield, title: "Sécurité & alarmes", desc: "Détection d'intrusion et alertes.", img: elecDom },
   { slug: "cad", icon: PenTool, title: "Plans CAD", desc: "AutoCAD, SketchUp, schémas techniques.", img: decor2 },
   { slug: "habillement", icon: Award, title: "Aménagement boutique", desc: "Habillement d'espaces commerciaux.", img: habillement },
+];
+
+const HERO_SLIDES = [
+  { slug: "solaire", title: "Énergie solaire", tagline: "Étude, installation et maintenance photovoltaïque pour un courant fiable 24/7.", img: elecPro },
+  { slug: "cctv", title: "Vidéosurveillance CCTV", tagline: "Caméras IP, enregistreurs et supervision à distance de vos sites.", img: cctvImg },
+  { slug: "reseaux", title: "Réseaux & Internet", tagline: "Wi-Fi professionnel, LAN structuré, antennes et liaisons longue portée.", img: reseaux },
+  { slug: "climatisation", title: "Froid & climatisation", tagline: "Installation, réparation et entretien de vos systèmes de froid.", img: clim },
+  { slug: "electricite", title: "Installation électrique", tagline: "Conception et pose conformes aux normes, du domestique à l'industriel.", img: elecDom3 },
+  { slug: "decoration", title: "Décoration intérieure", tagline: "Aménagement lumineux, faux plafonds et design sur mesure.", img: decor },
 ];
 
 function PublicHome() {
