@@ -73,36 +73,83 @@ function PublicHome() {
 }
 
 function Hero() {
+  const [i, setI] = useState(0);
+  const slide = HERO_SLIDES[i];
+  useEffect(() => {
+    const t = setInterval(() => setI((v) => (v + 1) % HERO_SLIDES.length), 6000);
+    return () => clearInterval(t);
+  }, []);
+  const go = (d: number) => setI((v) => (v + d + HERO_SLIDES.length) % HERO_SLIDES.length);
+
   return (
     <section className="relative overflow-hidden bg-hero-gradient text-primary-foreground">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:py-24 lg:grid-cols-2 lg:items-center">
+      {HERO_SLIDES.map((s, idx) => (
+        <img
+          key={s.slug}
+          src={s.img}
+          alt=""
+          aria-hidden
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${idx === i ? "opacity-25" : "opacity-0"}`}
+        />
+      ))}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/85 to-primary/40" />
+
+      <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-16 md:py-24 lg:grid-cols-2 lg:items-center">
         <div>
           <span className="inline-flex items-center gap-2 rounded-md border border-energy/40 bg-energy/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-[oklch(0.80_0.11_195)]">
             Solutions Industrielles 4.0
           </span>
-          <h1 className="mt-6 text-display text-4xl font-extrabold leading-[1.05] md:text-6xl">
-            Expert-Grade Technical<br />
-            <span className="text-[oklch(0.78_0.12_195)]">Infrastructure</span>
+          <h1 key={slide.slug} className="mt-6 text-display text-4xl font-extrabold leading-[1.05] md:text-6xl">
+            <span className="text-[oklch(0.78_0.12_195)]">{slide.title}</span>
           </h1>
-          <p className="mt-6 max-w-lg text-base text-primary-foreground/75 md:text-lg">
-            Fournisseur leader en solutions d'énergie solaire, sécurité CCTV et réseaux haute performance pour les professionnels et les particuliers exigeants.
-          </p>
+          <p className="mt-6 max-w-lg text-base text-primary-foreground/80 md:text-lg">{slide.tagline}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/boutique">
+            <Link to="/services/$slug" params={{ slug: slide.slug }}>
               <Button size="lg" className="bg-energy text-energy-foreground hover:bg-energy/90 rounded-md px-6">
-                Explorer le Catalogue <ArrowRight className="ml-2 h-4 w-4" />
+                Découvrir ce service <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/devis">
+            <Link to="/boutique">
               <Button size="lg" variant="outline" className="rounded-md border-primary-foreground/25 bg-transparent px-6 text-primary-foreground hover:bg-primary-foreground/10">
-                Demander un Devis
+                Explorer le Catalogue
               </Button>
             </Link>
+          </div>
+          <div className="mt-8 flex items-center gap-3">
+            <button type="button" onClick={() => go(-1)} aria-label="Image précédente" className="grid h-9 w-9 place-items-center rounded-full border border-primary-foreground/30 transition-colors hover:bg-primary-foreground/10">
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-1.5">
+              {HERO_SLIDES.map((s, idx) => (
+                <button
+                  key={s.slug}
+                  type="button"
+                  onClick={() => setI(idx)}
+                  aria-label={s.title}
+                  className={`h-1.5 rounded-full transition-all ${idx === i ? "w-7 bg-energy" : "w-3 bg-primary-foreground/30"}`}
+                />
+              ))}
+            </div>
+            <button type="button" onClick={() => go(1)} aria-label="Image suivante" className="grid h-9 w-9 place-items-center rounded-full border border-primary-foreground/30 transition-colors hover:bg-primary-foreground/10">
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
         <div className="relative">
           <div className="absolute -inset-4 rounded-3xl bg-energy/10 blur-2xl" />
-          <img src={elecPro} alt="Infrastructure technique CONETEC" className="relative aspect-[4/3] w-full rounded-2xl object-cover shadow-2xl" />
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-2xl">
+            {HERO_SLIDES.map((s, idx) => (
+              <img
+                key={s.slug}
+                src={s.img}
+                alt={s.title}
+                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${idx === i ? "opacity-100" : "opacity-0"}`}
+              />
+            ))}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 to-transparent p-4">
+              <span className="text-display text-lg font-bold">{slide.title}</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -112,7 +159,8 @@ function Hero() {
 function CategoriesBento() {
   const cats = [
     { slug: "solaire", title: "Énergie Solaire", desc: "Kits complets, onduleurs hybrides et panneaux haute performance.", img: elecPro, span: "lg:col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto" },
-    { slug: "cctv", title: "CCTV & Sécurité", desc: "Surveillance IP, Alarmes, Contrôle d'accès.", img: elecDom, span: "lg:col-span-2" },
+    { slug: "cctv", title: "CCTV & Sécurité", desc: "Surveillance IP, Alarmes, Contrôle d'accès.", img: cctvImg, span: "lg:col-span-2" },
+
     { slug: "reseaux", title: "Réseautage", desc: "Fibre, switches, WiFi entreprise.", img: reseaux, span: "" },
     { slug: "electricite", title: "Outillage", desc: "Instruments de mesure & outils pro.", img: elecDom2, span: "" },
   ];
