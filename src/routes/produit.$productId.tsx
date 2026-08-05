@@ -154,8 +154,9 @@ function ProductDetailsPage() {
             </span>
             <h1 className="mt-4 text-display text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{p.name}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">
-              {p.description || "Matériel sélectionné par nos ingénieurs, testé sur le terrain et couvert par notre garantie constructeur. Nos techniciens assurent l'installation et la mise en service."}
+              Matériel sélectionné par nos ingénieurs, testé sur le terrain et couvert par notre garantie constructeur. Nos techniciens assurent l'installation et la mise en service.
             </p>
+
             <div className="mt-5 grid gap-2 sm:grid-cols-2">
               {[
                 { k: "Marque", v: p.brand ?? "CONETEC" },
