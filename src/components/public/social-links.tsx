@@ -13,7 +13,11 @@ function extrasOf(settings: unknown): Extras {
 export function useSocialLinks() {
   const { data } = useSettings();
   const extras = extrasOf(data);
-  const str = (k: string) => String(extras[k] ?? "").trim();
+  const str = (k: string) => {
+    const v = String(extras[k] ?? "").trim();
+    if (!v) return "";
+    return /^https?:\/\//i.test(v) ? v : `https://${v.replace(/^\/+/, "")}`;
+  };
   const links = [
     { key: "facebook", label: "Facebook", href: str("social_facebook"), icon: Facebook },
     { key: "instagram", label: "Instagram", href: str("social_instagram"), icon: Instagram },
