@@ -16,15 +16,16 @@ import {
   ChevronLeft, ChevronRight,
 } from "lucide-react";
 import elecPro from "@/assets/services/electricite-pro.webp";
-import elecDom from "@/assets/services/electricite-domestique.webp";
 import elecDom2 from "@/assets/services/electricite-domestique-2.webp";
 import elecDom3 from "@/assets/services/electricite-domestique-3.webp";
 import reseaux from "@/assets/services/reseaux.webp";
 import clim from "@/assets/services/climatisation.webp";
 import decor from "@/assets/services/decor-interieur.webp";
-import decor2 from "@/assets/services/decor-interieur-2.webp";
 import habillement from "@/assets/services/habillement.webp";
 import cctvImg from "@/assets/services/video-surveillance.webp";
+import voipImg from "@/assets/services/telephonie-voip.webp";
+import alarmeImg from "@/assets/services/securite-alarme.webp";
+import cadImg from "@/assets/services/plan-cad.png";
 
 export const Route = createFileRoute("/")({
   component: PublicHome,
@@ -45,10 +46,10 @@ const SERVICES = [
   { slug: "reseaux", icon: Wifi, title: "Réseaux & Internet", desc: "Wi-Fi, LAN, antennes, liaisons.", img: reseaux },
   { slug: "climatisation", icon: Wind, title: "Froid & climatisation", desc: "Installation, réparation, entretien.", img: clim },
   { slug: "decoration", icon: Sparkles, title: "Décoration intérieure", desc: "Aménagement lumineux et design.", img: decor },
-  { slug: "telephonie", icon: Phone, title: "Téléphonie & VoIP", desc: "Installation et maintenance.", img: elecDom2 },
-  { slug: "securite", icon: Shield, title: "Sécurité & alarmes", desc: "Détection d'intrusion et alertes.", img: elecDom },
-  { slug: "cad", icon: PenTool, title: "Plans CAD", desc: "AutoCAD, SketchUp, schémas techniques.", img: decor2 },
-  { slug: "habillement", icon: Award, title: "Aménagement boutique", desc: "Habillement d'espaces commerciaux.", img: habillement },
+  { slug: "telephonie", icon: Phone, title: "Téléphonie & VoIP", desc: "Installation et maintenance.", img: voipImg },
+  { slug: "securite", icon: Shield, title: "Sécurité & alarmes", desc: "Détection d'intrusion et alertes.", img: alarmeImg },
+  { slug: "cad", icon: PenTool, title: "Plans CAD", desc: "AutoCAD, SketchUp, schémas techniques.", img: cadImg },
+  { slug: "habillement", icon: Award, title: "Habillement & vente de vêtements", desc: "Vente de vêtements et aménagement d'espaces mode.", img: habillement },
 ];
 
 const HERO_SLIDES = [
