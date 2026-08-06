@@ -153,9 +153,6 @@ function ProductDetailsPage() {
               <BadgeCheck className="h-3.5 w-3.5" /> Caractéristiques techniques
             </span>
             <h1 className="mt-4 text-display text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{p.name}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">
-              Matériel sélectionné par nos ingénieurs, testé sur le terrain et couvert par notre garantie constructeur. Nos techniciens assurent l'installation et la mise en service.
-            </p>
 
             <div className="mt-5 grid gap-2 sm:grid-cols-2">
               {[
@@ -170,6 +167,11 @@ function ProductDetailsPage() {
                 </div>
               ))}
             </div>
+            {p.description?.trim() && (
+              <p className="mt-4 max-w-2xl whitespace-pre-line text-sm leading-relaxed text-primary-foreground/85 line-clamp-4">
+                {p.description.trim()}
+              </p>
+            )}
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-primary-foreground/80">
               <a href="#avis" className="flex items-center gap-1.5 hover:text-primary-foreground">
                 <Stars value={stats.count ? stats.average : 0} />
