@@ -16,13 +16,11 @@ import {
   ChevronLeft, ChevronRight,
 } from "lucide-react";
 import elecPro from "@/assets/services/electricite-pro.webp";
-import elecDom from "@/assets/services/electricite-domestique.webp";
 import elecDom2 from "@/assets/services/electricite-domestique-2.webp";
 import elecDom3 from "@/assets/services/electricite-domestique-3.webp";
 import reseaux from "@/assets/services/reseaux.webp";
 import clim from "@/assets/services/climatisation.webp";
 import decor from "@/assets/services/decor-interieur.webp";
-import decor2 from "@/assets/services/decor-interieur-2.webp";
 import habillement from "@/assets/services/habillement.webp";
 import cctvImg from "@/assets/services/video-surveillance.webp";
 import voipImg from "@/assets/services/telephonie-voip.webp";
