@@ -172,6 +172,7 @@ function Page() {
             <div><Label>Instagram</Label><Input value={ex("social_instagram", "")} onChange={(e) => setEx("social_instagram", e.target.value)} placeholder="https://instagram.com/…" /></div>
             <div><Label>TikTok</Label><Input value={ex("social_tiktok", "")} onChange={(e) => setEx("social_tiktok", e.target.value)} placeholder="https://tiktok.com/@…" /></div>
             <div><Label>YouTube</Label><Input value={ex("social_youtube", "")} onChange={(e) => setEx("social_youtube", e.target.value)} placeholder="https://youtube.com/…" /></div>
+            <div><Label>LinkedIn</Label><Input value={ex("social_linkedin", "")} onChange={(e) => setEx("social_linkedin", e.target.value)} placeholder="https://linkedin.com/in/…" /></div>
           </div>
           <div>
             <Label>Afficher les réseaux sociaux</Label>

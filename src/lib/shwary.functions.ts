@@ -98,3 +98,24 @@ export const getOrderPaymentStatus = createServerFn({ method: "GET" })
       .maybeSingle();
     return order ?? { payment_status: null, paid: false, status: null };
   });
+
+/** Annule une commande dont le paiement Mobile Money n'a pas abouti. */
+export const cancelUnpaidOrder = createServerFn({ method: "POST" })
+  .inputValidator((input: { orderId: string; reason?: string }) => {
+    if (!input?.orderId) throw new Error("orderId requis");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order } = await supabaseAdmin
+      .from("online_orders")
+      .select("id, paid")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (!order || order.paid) return { cancelled: false };
+    await supabaseAdmin
+      .from("online_orders")
+      .update({ status: "cancelled", payment_status: data.reason ?? "failed" })
+      .eq("id", data.orderId);
+    return { cancelled: true };
+  });

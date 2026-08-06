@@ -1,4 +1,4 @@
-import { Facebook, Instagram, Youtube, Music2 } from "lucide-react";
+import { Facebook, Instagram, Youtube, Music2, Linkedin } from "lucide-react";
 import { useSettings } from "@/lib/currency";
 
 type Extras = Record<string, unknown>;
@@ -13,12 +13,17 @@ function extrasOf(settings: unknown): Extras {
 export function useSocialLinks() {
   const { data } = useSettings();
   const extras = extrasOf(data);
-  const str = (k: string) => String(extras[k] ?? "").trim();
+  const str = (k: string) => {
+    const v = String(extras[k] ?? "").trim();
+    if (!v) return "";
+    return /^https?:\/\//i.test(v) ? v : `https://${v.replace(/^\/+/, "")}`;
+  };
   const links = [
     { key: "facebook", label: "Facebook", href: str("social_facebook"), icon: Facebook },
     { key: "instagram", label: "Instagram", href: str("social_instagram"), icon: Instagram },
     { key: "tiktok", label: "TikTok", href: str("social_tiktok"), icon: Music2 },
     { key: "youtube", label: "YouTube", href: str("social_youtube"), icon: Youtube },
+    { key: "linkedin", label: "LinkedIn", href: str("social_linkedin"), icon: Linkedin },
   ].filter((l) => !!l.href);
   const raw = String(extras.social_position ?? "footer");
   const position = (["footer", "header", "both", "none"].includes(raw) ? raw : "footer") as SocialPosition;
