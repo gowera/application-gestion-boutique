@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { feeForCity, useDeliveryConfig, useSelectedCity } from "@/lib/delivery";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { initiateShwaryPayment } from "@/lib/shwary.functions";
+import { initiateShwaryPayment, getOrderPaymentStatus, cancelUnpaidOrder } from "@/lib/shwary.functions";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
@@ -29,7 +29,10 @@ function CheckoutPage() {
   const rate = settings?.usd_to_cdf_rate ?? 2800;
   const cur = settings?.primary_currency ?? "USD";
   const initShwary = useServerFn(initiateShwaryPayment);
+  const checkStatus = useServerFn(getOrderPaymentStatus);
+  const cancelOrder = useServerFn(cancelUnpaidOrder);
   const [loading, setLoading] = useState(false);
+  const [waiting, setWaiting] = useState(false);
   const [form, setForm] = useState({
     name: "", phone: "", email: "", address: "", note: "",
     mode: "delivery" as "delivery" | "pickup",
