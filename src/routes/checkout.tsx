@@ -196,7 +196,7 @@ function CheckoutPage() {
               <div className="flex justify-between text-lg font-bold pt-2 border-t"><span>Total</span><span>{formatMoney(total, cur, rate)}</span></div>
             </div>
             <Button type="submit" size="lg" className="w-full mt-6" disabled={loading || !items.length}>
-              {loading ? "Traitement…" : form.pay === "shwary" ? "Payer avec Mobile Money" : "Confirmer la commande"}
+              {waiting ? "En attente du paiement…" : loading ? "Traitement…" : form.pay === "shwary" ? "Payer avec Mobile Money" : "Confirmer la commande"}
             </Button>
           </CardContent></Card>
         </form>
