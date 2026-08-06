@@ -25,6 +25,9 @@ import decor from "@/assets/services/decor-interieur.webp";
 import decor2 from "@/assets/services/decor-interieur-2.webp";
 import habillement from "@/assets/services/habillement.webp";
 import cctvImg from "@/assets/services/video-surveillance.webp";
+import voipImg from "@/assets/services/telephonie-voip.webp";
+import alarmeImg from "@/assets/services/securite-alarme.webp";
+import cadImg from "@/assets/services/plan-cad.png";
 
 export const Route = createFileRoute("/")({
   component: PublicHome,
