@@ -50,6 +50,7 @@ function CheckoutPage() {
     if (form.mode === "delivery" && delivery.cities.length > 0 && !activeCity) return toast.error("Choisissez la ville de livraison");
     if (form.pay === "shwary" && !form.payPhone) return toast.error("Numéro Mobile Money requis");
     setLoading(true);
+    setWaiting(false);
     const { data, error } = await supabase.rpc("create_online_order", {
       _customer_name: form.name,
       _customer_phone: form.phone,
@@ -63,27 +64,54 @@ function CheckoutPage() {
     if (error) { setLoading(false); return toast.error(error.message); }
     const orderId = data as unknown as string;
     const { data: order } = await supabase.from("online_orders").select("code").eq("id", orderId).maybeSingle();
-    await createNotification({
-      title: "Nouvelle commande", message: `Commande ${order?.code ?? orderId} reçue de ${form.name}.`, type: "info", entity_type: "online_order", entity_id: orderId,
-    });
+    const code = order?.code as string | undefined;
 
     if (form.pay === "shwary") {
+      // Le paiement doit aboutir avant que la commande soit validée.
       try {
         await initShwary({ data: { orderId, phone: form.payPhone } });
-        toast.success("Demande de paiement envoyée. Validez sur votre téléphone.");
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Erreur paiement Shwary");
+        await cancelOrder({ data: { orderId, reason: "failed" } }).catch(() => {});
         setLoading(false);
-        if (order?.code) nav({ to: "/commande/$code", params: { code: order.code } });
-        return;
+        return toast.error(err instanceof Error ? err.message : "Erreur paiement Shwary");
       }
+      setWaiting(true);
+      toast.info("Validez l'invite Mobile Money sur votre téléphone…");
+      const deadline = Date.now() + 180_000;
+      let paid = false;
+      let failure: string | null = null;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 3000));
+        try {
+          const st = (await checkStatus({ data: { code: code ?? "" } })) as { paid?: boolean; payment_status?: string | null };
+          if (st?.paid) { paid = true; break; }
+          if (st?.payment_status === "failed" || st?.payment_status === "cancelled") { failure = st.payment_status; break; }
+        } catch { /* réessai */ }
+      }
+      setWaiting(false);
+      if (!paid) {
+        await cancelOrder({ data: { orderId, reason: failure ?? "timeout" } }).catch(() => {});
+        setLoading(false);
+        return toast.error(
+          failure === "cancelled" ? "Paiement annulé — commande non validée."
+          : failure === "failed" ? "Paiement refusé — commande non validée."
+          : "Paiement non confirmé à temps — commande non validée. Réessayez.",
+        );
+      }
+      toast.success("Paiement confirmé ! Commande validée.");
     } else {
       toast.success("Commande enregistrée !");
     }
 
+    await createNotification({
+      title: "Nouvelle commande",
+      message: `Commande ${code ?? orderId} reçue de ${form.name}${form.pay === "shwary" ? " (payée Mobile Money)" : ""}.`,
+      type: "info", entity_type: "online_order", entity_id: orderId,
+    });
+
     clear();
     setLoading(false);
-    if (order?.code) nav({ to: "/commande/$code", params: { code: order.code } });
+    if (code) nav({ to: "/commande/$code", params: { code } });
   }
 
   return (
