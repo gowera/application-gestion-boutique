@@ -210,7 +210,7 @@ function ProductCard({ p, rate, cur }: { p: any; rate: number; cur: any }) {
       </Link>
       <div className="p-4">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Star className="h-3 w-3 fill-energy text-energy" /> 4.8 · {p.brand ?? "CONETEC"}
+          <Star className="h-3 w-3 fill-energy text-energy" /> 4.8
         </div>
         <Link to="/boutique/$productId" params={{ productId: p.id }} className="mt-1 block min-h-[2.5rem] hover:text-primary">
           <ProductIdentity name={p.name} brand={p.brand} sku={p.sku} id={p.id} />
