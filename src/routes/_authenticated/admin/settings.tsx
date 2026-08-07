@@ -520,8 +520,8 @@ function ShwarySection() {
   }
 
   return (
-    <div className="rounded-2xl border p-5 space-y-4 bg-gradient-to-br from-primary/5 to-transparent">
-      <div className="flex items-center justify-between">
+    <div className="min-w-0 rounded-2xl border p-4 sm:p-5 space-y-4 bg-gradient-to-br from-primary/5 to-transparent">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-display font-semibold">Shwary — Mobile Money (boutique en ligne)</h3>
           <p className="text-xs text-muted-foreground">Créez votre compte marchand sur app.shwary.com puis collez vos identifiants ici.</p>
@@ -532,8 +532,8 @@ function ShwarySection() {
         <div><Label>Identifiant marchand (x-merchant-id)</Label><Input value={merchantId} onChange={(e) => setMerchantId(e.target.value)} placeholder="uuid marchand" /></div>
         <div><Label>Clé marchande (x-merchant-key)</Label><Input type="password" value={merchantKey} onChange={(e) => setMerchantKey(e.target.value)} placeholder="shwary_live_..." /></div>
       </div>
-      <div className="flex items-center justify-between rounded border p-3 bg-background/50">
-        <div className="text-xs text-muted-foreground">URL de callback à renseigner côté Shwary : <br /><code className="text-[11px]">{typeof window !== "undefined" ? `${window.location.origin}/api/public/shwary/callback` : ""}</code></div>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded border p-3 bg-background/50">
+        <div className="min-w-0 break-all text-xs text-muted-foreground">URL de callback à renseigner côté Shwary : <br /><code className="text-[11px]">{typeof window !== "undefined" ? `${window.location.origin}/api/public/shwary/callback` : ""}</code></div>
         <Button size="sm" onClick={save} disabled={saving}>{saving ? "…" : "Enregistrer Shwary"}</Button>
       </div>
     </div>
