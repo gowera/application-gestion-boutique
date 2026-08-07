@@ -129,7 +129,7 @@ export const getOrderPaymentStatus = createServerFn({ method: "GET" })
             update.paid = true;
             update.status = "confirmed";
           }
-          await supabaseAdmin.from("online_orders").update(update).eq("id", order.id);
+          await supabaseAdmin.from("online_orders").update(update as never).eq("id", order.id);
           return {
             payment_status: remote,
             paid: Boolean(update.paid),
