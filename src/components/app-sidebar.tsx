@@ -6,7 +6,7 @@ import {
 import logo from "@/assets/brand/logo.png";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
 
 const groups: { label: string; items: { title: string; url: string; icon: typeof Zap }[] }[] = [
