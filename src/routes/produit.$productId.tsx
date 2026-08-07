@@ -10,7 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { formatMoney, useSettings } from "@/lib/currency";
 import {
   ShoppingCart, Package, ChevronRight, ShieldCheck, Truck, HeadphonesIcon, Star, Zap,
-  FileText, ArrowRight, CheckCircle2, Wrench, RotateCcw, CreditCard, BadgeCheck, Clock,
+  ArrowRight, CheckCircle2, Wrench, RotateCcw, CreditCard, BadgeCheck, Clock,
 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { ProductReviews, Stars, reviewStats, useProductReviews } from "@/components/public/product-reviews";
