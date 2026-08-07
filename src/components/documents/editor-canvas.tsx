@@ -143,7 +143,7 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
           <Button size="sm" variant="outline" onClick={() => addEl("line")}><Minus className="h-4 w-4 mr-1" />Ligne</Button>
           <Button size="sm" variant="outline" onClick={() => addEl("image")}><ImageIcon className="h-4 w-4 mr-1" />Logo</Button>
           <Button size="sm" variant="outline" onClick={() => addEl("items_table")}><TableIcon className="h-4 w-4 mr-1" />Tableau articles</Button>
-          <div className="ml-auto flex gap-2">
+          <div className="flex flex-wrap gap-2 sm:ml-auto">
             <Button size="sm" variant="outline" onClick={() => setZoom((z) => Math.max(0.4, +(z - 0.2).toFixed(2)))} title="Dézoomer">−</Button>
             <span className="self-center text-xs tabular-nums text-muted-foreground">{Math.round(zoom * 100)}%</span>
             <Button size="sm" variant="outline" onClick={() => setZoom((z) => Math.min(3, +(z + 0.2).toFixed(2)))} title="Zoomer">+</Button>

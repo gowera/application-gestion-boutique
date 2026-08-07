@@ -69,7 +69,7 @@ function InboxTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {[
           { v: "all", l: "Toutes" }, { v: "new", l: "Nouvelles" },
           { v: "read", l: "Lues" }, { v: "replied", l: "Répondues" }, { v: "closed", l: "Fermées" },
@@ -89,7 +89,7 @@ function InboxTab() {
                     <Badge variant={r.status === "new" ? "default" : "secondary"}>{r.status}</Badge>
                     <span className="text-xs text-muted-foreground">{r.service}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1 flex gap-3">
+                  <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1">
                     <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{r.phone}</span>
                     {r.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{r.email}</span>}
                     <span>{formatDate(r.created_at, true)}</span>
@@ -155,7 +155,7 @@ function ThreadDialog({ request, onClose, onMark }: { request: QuoteRequest | nu
           <div className="rounded border bg-muted/30 p-3 text-sm">
             <div className="text-xs text-muted-foreground mb-1">Demande initiale — {formatDate(request.created_at, true)}</div>
             <p className="whitespace-pre-wrap">{request.message ?? "—"}</p>
-            <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
               <a href={`tel:${request.phone}`} className="hover:underline flex items-center gap-1"><Phone className="h-3 w-3" />{request.phone}</a>
               {request.email && <a href={`mailto:${request.email}`} className="hover:underline flex items-center gap-1"><Mail className="h-3 w-3" />{request.email}</a>}
             </div>
@@ -177,7 +177,7 @@ function ThreadDialog({ request, onClose, onMark }: { request: QuoteRequest | nu
           </div>
 
           <div className="border-t pt-3 space-y-2">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {(["whatsapp", "email", "note"] as const).map((c) => (
                 <Button key={c} size="sm" variant={channel === c ? "default" : "outline"} onClick={() => setChannel(c)} disabled={c === "email" && !request.email}>
                   {c === "whatsapp" && <MessageCircle className="mr-1 h-3 w-3" />}

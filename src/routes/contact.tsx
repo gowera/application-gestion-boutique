@@ -80,21 +80,21 @@ function ContactPage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 py-14 grid gap-10 lg:grid-cols-[1fr_1.2fr]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <h2 className="text-display text-2xl font-bold">Nos canaux directs</h2>
           <p className="text-sm text-muted-foreground">Choisissez le canal qui vous convient — WhatsApp est le plus rapide.</p>
           <div className="grid gap-3">
             {contacts.map((c) => (
               <Card key={c.label} className="border-l-4 border-l-energy transition-all hover:shadow-md">
-                <CardContent className="p-5 flex items-center gap-4">
+                <CardContent className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                     <c.icon className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-[11px] uppercase tracking-widest text-muted-foreground">{c.label}</div>
                     {c.href
-                      ? <a href={c.href} className="block font-semibold text-primary hover:underline truncate">{c.val}</a>
-                      : <div className="font-semibold truncate">{c.val}</div>}
+                      ? <a href={c.href} className="block break-words font-semibold text-primary hover:underline">{c.val}</a>
+                      : <div className="break-words font-semibold">{c.val}</div>}
                   </div>
                 </CardContent>
               </Card>
@@ -114,8 +114,8 @@ function ContactPage() {
           </Card>
         </div>
 
-        <Card className="border-t-4 border-t-energy">
-          <CardContent className="p-6 md:p-8">
+        <Card className="min-w-0 border-t-4 border-t-energy">
+          <CardContent className="p-4 sm:p-6 md:p-8">
             {sent ? (
               <div className="flex flex-col items-center text-center py-8 space-y-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-energy/15 text-energy">

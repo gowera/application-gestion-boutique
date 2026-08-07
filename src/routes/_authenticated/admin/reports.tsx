@@ -71,11 +71,11 @@ function Page() {
   const creditARecouvrerRows = sales.filter((s) => Number(s.credit_usd ?? 0) > 0);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <h1 className="text-display text-2xl font-bold">Rapports de caisse</h1>
 
       <Tabs defaultValue="periode">
-        <TabsList>
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="periode">Rapport de période</TabsTrigger>
           <TabsTrigger value="caisse">Sessions de caisse</TabsTrigger>
           <TabsTrigger value="recouvrer">Crédit à recouvrer</TabsTrigger>
@@ -109,33 +109,33 @@ function Page() {
           </div>
 
           <Card><CardContent className="p-4">
-            <div className="flex justify-between items-center mb-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-semibold">Ventes directes (POS)</h3>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => exportToXlsx(`ventes_${from}_${to}.xlsx`, sales as unknown as Record<string, unknown>[])}><FileDown className="mr-2 h-4 w-4" />Excel</Button>
                 <Button size="sm" variant="outline" onClick={() => downloadTablePdf({ title: "Ventes directes", subtitle: `${from} → ${to}`, columns: ["Code", "Date", "Statut", "Total"], rows: sales.map((s) => [s.code, formatDate(s.created_at, true), s.status, formatMoney(Number(s.total_usd), cur, rate)]), filename: `ventes_${from}_${to}.pdf` })}><Download className="mr-2 h-4 w-4" />PDF</Button>
               </div>
             </div>
-            <Table><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Date</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Total</TableHead></TableRow></TableHeader>
+            <div className="overflow-x-auto"><Table className="min-w-[600px]"><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Date</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Total</TableHead></TableRow></TableHeader>
               <TableBody>{sales.map((s) => <TableRow key={s.code}><TableCell className="font-mono text-xs">{s.code}</TableCell><TableCell>{formatDate(s.created_at, true)}</TableCell><TableCell>{s.status}</TableCell><TableCell className="text-right">{formatMoney(Number(s.total_usd), cur, rate)}</TableCell></TableRow>)}</TableBody>
-            </Table>
+            </Table></div>
           </CardContent></Card>
 
           <Card><CardContent className="p-4">
-            <div className="flex justify-between items-center mb-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-semibold">Commandes en ligne</h3>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => exportToXlsx(`commandes_${from}_${to}.xlsx`, orders as unknown as Record<string, unknown>[])}><FileDown className="mr-2 h-4 w-4" />Excel</Button>
                 <Button size="sm" variant="outline" onClick={() => downloadTablePdf({ title: "Commandes en ligne", subtitle: `${from} → ${to}`, columns: ["Code", "Date", "Statut", "Total"], rows: orders.map((o) => [o.code, formatDate(o.created_at, true), o.status, formatMoney(Number(o.total_usd), cur, rate)]), filename: `commandes_${from}_${to}.pdf` })}><Download className="mr-2 h-4 w-4" />PDF</Button>
               </div>
             </div>
-            <Table><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Date</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Total</TableHead></TableRow></TableHeader>
+            <div className="overflow-x-auto"><Table className="min-w-[600px]"><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Date</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Total</TableHead></TableRow></TableHeader>
               <TableBody>{orders.map((o) => <TableRow key={o.code}><TableCell className="font-mono text-xs">{o.code}</TableCell><TableCell>{formatDate(o.created_at, true)}</TableCell><TableCell>{o.status}</TableCell><TableCell className="text-right">{formatMoney(Number(o.total_usd), cur, rate)}</TableCell></TableRow>)}</TableBody>
-            </Table>
+            </Table></div>
           </CardContent></Card>
 
           <Card><CardContent className="p-4">
-            <div className="flex justify-between items-center mb-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-semibold">Dépenses</h3>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => exportToXlsx(`depenses_${from}_${to}.xlsx`, exp as unknown as Record<string, unknown>[])}><FileDown className="mr-2 h-4 w-4" />Excel</Button>
@@ -149,12 +149,12 @@ function Page() {
 
         <TabsContent value="recouvrer" className="mt-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Crédit à recouvrer</CardTitle>
               <Button variant="outline" size="sm" onClick={() => downloadTablePdf({ title: "Crédit à recouvrer", columns: ["Code", "Client", "Échéance", "Total", "Crédit"], rows: creditARecouvrerRows.map((s) => [s.code, (s.customers as { name?: string } | null)?.name ?? "—", s.due_date ?? "—", formatMoney(Number(s.total_usd), cur, rate), formatMoney(Number(s.credit_usd), cur, rate)]), footer: [`Total : ${formatMoney(creditARecouvrer, cur, rate)}`], filename: "credit_a_recouvrer.pdf", orientation: "l" })}><Download className="mr-2 h-4 w-4" />PDF</Button>
             </CardHeader>
             <CardContent className="p-0">
-              <Table><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Client</TableHead><TableHead>Échéance</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Crédit</TableHead></TableRow></TableHeader>
+              <div className="overflow-x-auto"><Table className="min-w-[600px]"><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Client</TableHead><TableHead>Échéance</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Crédit</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {!creditARecouvrerRows.length && <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucun crédit ouvert.</TableCell></TableRow>}
                   {creditARecouvrerRows.map((s) => (
@@ -167,19 +167,19 @@ function Page() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+              </Table></div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="payer" className="mt-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Crédit à payer</CardTitle>
               <Button variant="outline" size="sm" onClick={() => downloadTablePdf({ title: "Crédit à payer", columns: ["Type", "Référence", "Bénéficiaire", "Date", "Montant"], rows: creditAPayerRows.map((r) => [r.type, r.ref, r.party, formatDate(r.date), formatMoney(r.amount, cur, rate)]), footer: [`Total : ${formatMoney(creditAPayerTotal, cur, rate)}`], filename: "credit_a_payer.pdf", orientation: "l" })}><Download className="mr-2 h-4 w-4" />PDF</Button>
             </CardHeader>
             <CardContent className="p-0">
-              <Table><TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Référence</TableHead><TableHead>Bénéficiaire</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Montant</TableHead></TableRow></TableHeader>
+              <div className="overflow-x-auto"><Table className="min-w-[600px]"><TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Référence</TableHead><TableHead>Bénéficiaire</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Montant</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {!creditAPayerRows.length && <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucune dette à payer.</TableCell></TableRow>}
                   {creditAPayerRows.map((r, i) => (
@@ -192,7 +192,7 @@ function Page() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+              </Table></div>
             </CardContent>
           </Card>
         </TabsContent>

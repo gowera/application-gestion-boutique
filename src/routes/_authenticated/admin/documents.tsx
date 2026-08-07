@@ -119,10 +119,10 @@ function Page() {
                   <CardTitle>Éditeur de modèle</CardTitle>
                   <p className="text-sm text-muted-foreground">Glissez-déposez les éléments, ajustez couleurs, tailles, positions et format. Le modèle enregistré est utilisé partout (POS, caisse, ventes, création manuelle).</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex w-full items-center gap-2 sm:w-auto">
                   <Label className="text-sm">Type :</Label>
                   <Select value={designerKind} onValueChange={(v) => setDesignerKind(v as DocumentKind)}>
-                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="facture">Facture</SelectItem>
                       <SelectItem value="recu">Reçu</SelectItem>

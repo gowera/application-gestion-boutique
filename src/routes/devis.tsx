@@ -78,7 +78,7 @@ function QuotePage() {
       <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="grid gap-10 lg:grid-cols-[1fr_1.3fr]">
           {/* Left column */}
-          <aside className="space-y-5">
+          <aside className="order-2 min-w-0 space-y-5 lg:order-1">
             <SideCard icon={Award} title="Certification industrielle" desc="Équipe technique certifiée sur 10+ domaines : solaire, CCTV, réseaux, climatisation." />
             <SideCard icon={ClipboardCheck} title="Étude de faisabilité" desc="Visite technique, dimensionnement, choix des marques et plan d'installation détaillé." />
             <SideCard icon={Clock} title="Réponse sous 24h" desc="Un chargé d'affaires vous rappelle rapidement pour affiner votre besoin." />
@@ -93,7 +93,7 @@ function QuotePage() {
           </aside>
 
           {/* Form */}
-          <div className="rounded-2xl border bg-background p-6 shadow-sm md:p-8">
+          <div className="order-1 min-w-0 rounded-2xl border bg-background p-4 shadow-sm sm:p-6 md:p-8 lg:order-2">
             <h2 className="text-display text-2xl font-extrabold">Décrivez votre besoin</h2>
             <p className="mt-1 text-sm text-muted-foreground">Les champs marqués d'un * sont obligatoires.</p>
 

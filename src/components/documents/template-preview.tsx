@@ -82,9 +82,9 @@ export function TemplatePreview({ template, docLabel }: { template: CanvasTempla
     <div className="flex h-full flex-col rounded border bg-muted/20">
       <div className="flex flex-wrap items-center gap-2 border-b bg-background/60 p-2">
         <span className="text-xs font-semibold uppercase text-muted-foreground">Aperçu PDF · {docLabel}</span>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
           <Button size="icon" variant="ghost" onClick={() => setZoom((z) => Math.max(50, z - 10))} title="Dézoomer"><ZoomOut className="h-4 w-4" /></Button>
-          <div className="w-32"><Slider value={[zoom]} min={50} max={200} step={5} onValueChange={(v) => setZoom(v[0])} /></div>
+          <div className="w-24 sm:w-32"><Slider value={[zoom]} min={50} max={200} step={5} onValueChange={(v) => setZoom(v[0])} /></div>
           <Button size="icon" variant="ghost" onClick={() => setZoom((z) => Math.min(200, z + 10))} title="Zoomer"><ZoomIn className="h-4 w-4" /></Button>
           <span className="w-12 text-right text-xs tabular-nums">{zoom}%</span>
           <Button size="icon" variant="ghost" onClick={() => setNonce((n) => n + 1)} title="Rafraîchir"><RefreshCw className="h-4 w-4" /></Button>

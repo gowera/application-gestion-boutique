@@ -36,21 +36,21 @@ function CartPage() {
             <div className="space-y-3">
               {items.map((it) => (
                 <Card key={it.product_id}>
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div className="h-20 w-20 bg-secondary rounded-md overflow-hidden flex-shrink-0">
+                  <CardContent className="p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 sm:flex sm:gap-4">
+                    <div className="h-16 w-16 sm:h-20 sm:w-20 bg-secondary rounded-md overflow-hidden flex-shrink-0">
                       <StorageImage src={it.image} alt={it.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium line-clamp-2">{it.name}</div>
                       <div className="text-sm text-muted-foreground">{formatMoney(it.price_usd, cur, rate)}</div>
                     </div>
-                    <div className="flex items-center rounded-md border">
+                    <div className="col-span-2 flex items-center rounded-md border sm:col-span-1 w-fit">
                       <Button size="sm" variant="ghost" onClick={() => update(it.product_id, it.qty - 1)}>−</Button>
                       <span className="w-8 text-center">{it.qty}</span>
                       <Button size="sm" variant="ghost" onClick={() => update(it.product_id, it.qty + 1)}>+</Button>
                     </div>
-                    <div className="w-24 text-right font-semibold">{formatMoney(it.price_usd * it.qty, cur, rate)}</div>
-                    <Button size="sm" variant="ghost" onClick={() => remove(it.product_id)}><Trash2 className="h-4 w-4" /></Button>
+                    <div className="text-right font-semibold sm:w-24">{formatMoney(it.price_usd * it.qty, cur, rate)}</div>
+                    <Button size="sm" variant="ghost" className="ml-auto sm:ml-0" onClick={() => remove(it.product_id)}><Trash2 className="h-4 w-4" /></Button>
                   </CardContent>
                 </Card>
               ))}

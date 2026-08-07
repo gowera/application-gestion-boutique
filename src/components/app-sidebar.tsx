@@ -6,7 +6,7 @@ import {
 import logo from "@/assets/brand/logo.png";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
 
 const groups: { label: string; items: { title: string; url: string; icon: typeof Zap }[] }[] = [
@@ -58,13 +58,15 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { isMobile, setOpenMobile } = useSidebar();
+  const closeOnMobile = () => { if (isMobile) setOpenMobile(false); };
   const isActive = (url: string) =>
     url === "/admin" ? pathname === "/admin" : pathname === url || pathname.startsWith(url + "/");
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border/50">
-        <Link to="/admin" className="flex items-center gap-2 px-2 py-3">
+        <Link to="/admin" onClick={closeOnMobile} className="flex items-center gap-2 px-2 py-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white/90 p-1 shadow-sm">
             <img src={logo} alt="CONETEC" className="h-7 w-7 object-contain" />
           </div>
@@ -83,7 +85,7 @@ export function AppSidebar() {
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                      <Link to={item.url}>
+                      <Link to={item.url} onClick={closeOnMobile}>
                         <item.icon />
                         <span>{item.title}</span>
                       </Link>

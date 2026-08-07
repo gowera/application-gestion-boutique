@@ -84,6 +84,26 @@ export const initiateShwaryPayment = createServerFn({ method: "POST" })
     return { transactionId: tx.id, status: tx.status ?? "pending" };
   });
 
+/** Interroge directement Shwary pour connaître l'état d'une transaction. */
+async function fetchRemoteStatus(ref: string, creds: ShwaryCreds): Promise<string | null> {
+  const base = "https://api.shwary.com/api/v1/merchants";
+  const paths = creds.sandbox
+    ? [`${base}/payment/sandbox/${ref}`, `${base}/payment/${ref}`, `${base}/transactions/${ref}`]
+    : [`${base}/payment/${ref}`, `${base}/transactions/${ref}`];
+  for (const url of paths) {
+    try {
+      const res = await fetch(url, {
+        headers: { "x-merchant-id": creds.merchant_id, "x-merchant-key": creds.merchant_key },
+      });
+      if (!res.ok) continue;
+      const body = (await res.json().catch(() => null)) as { status?: string; data?: { status?: string } } | null;
+      const status = body?.status ?? body?.data?.status;
+      if (typeof status === "string" && status) return status.toLowerCase();
+    } catch { /* endpoint suivant */ }
+  }
+  return null;
+}
+
 export const getOrderPaymentStatus = createServerFn({ method: "GET" })
   .inputValidator((input: { code: string }) => {
     if (!input?.code) throw new Error("code requis");
@@ -93,10 +113,32 @@ export const getOrderPaymentStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order } = await supabaseAdmin
       .from("online_orders")
-      .select("payment_status, paid, status")
+      .select("id, payment_status, paid, status, payment_ref")
       .eq("code", data.code)
       .maybeSingle();
-    return order ?? { payment_status: null, paid: false, status: null };
+    if (!order) return { payment_status: null, paid: false, status: null };
+
+    // Le webhook Shwary peut tarder : on interroge activement l'API.
+    if (!order.paid && order.payment_ref && !["failed", "cancelled"].includes(String(order.payment_status))) {
+      const creds = await loadCreds();
+      if (creds) {
+        const remote = await fetchRemoteStatus(order.payment_ref as string, creds);
+        if (remote && remote !== order.payment_status) {
+          const update: Record<string, unknown> = { payment_status: remote };
+          if (["completed", "success", "successful", "paid"].includes(remote)) {
+            update.paid = true;
+            update.status = "confirmed";
+          }
+          await supabaseAdmin.from("online_orders").update(update as never).eq("id", order.id);
+          return {
+            payment_status: remote,
+            paid: Boolean(update.paid),
+            status: (update.status as string) ?? order.status,
+          };
+        }
+      }
+    }
+    return { payment_status: order.payment_status, paid: order.paid, status: order.status };
   });
 
 /** Annule une commande dont le paiement Mobile Money n'a pas abouti. */
