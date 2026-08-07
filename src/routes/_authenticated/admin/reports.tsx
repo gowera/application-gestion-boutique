@@ -109,7 +109,7 @@ function Page() {
           </div>
 
           <Card><CardContent className="p-4">
-            <div className="flex justify-between items-center mb-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-semibold">Ventes directes (POS)</h3>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => exportToXlsx(`ventes_${from}_${to}.xlsx`, sales as unknown as Record<string, unknown>[])}><FileDown className="mr-2 h-4 w-4" />Excel</Button>
@@ -122,7 +122,7 @@ function Page() {
           </CardContent></Card>
 
           <Card><CardContent className="p-4">
-            <div className="flex justify-between items-center mb-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-semibold">Commandes en ligne</h3>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => exportToXlsx(`commandes_${from}_${to}.xlsx`, orders as unknown as Record<string, unknown>[])}><FileDown className="mr-2 h-4 w-4" />Excel</Button>
@@ -135,7 +135,7 @@ function Page() {
           </CardContent></Card>
 
           <Card><CardContent className="p-4">
-            <div className="flex justify-between items-center mb-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-semibold">Dépenses</h3>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => exportToXlsx(`depenses_${from}_${to}.xlsx`, exp as unknown as Record<string, unknown>[])}><FileDown className="mr-2 h-4 w-4" />Excel</Button>
