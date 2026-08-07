@@ -268,16 +268,8 @@ function ProductDetailsPage() {
           </section>
         )}
 
-        {/* Autres descriptions */}
-        <section className="mb-10 sm:mb-14">
-          <SectionTitle icon={FileText} title="Autres descriptions" subtitle="Informations complémentaires fournies par CONETEC" />
-          <div className="mt-5 rounded-2xl border bg-background p-5 sm:p-6">
-            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/85">
-              {p.description?.trim()
-                || "Aucune description détaillée n'a encore été publiée pour ce produit. Contactez notre équipe technique pour obtenir la fiche complète et les conseils d'installation."}
-            </p>
-          </div>
-        </section>
+
+
 
         {/* Ce qui est inclus */}
         <section className="mb-10 sm:mb-14">
