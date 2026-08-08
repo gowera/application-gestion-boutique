@@ -16,6 +16,20 @@ export const Route = createFileRoute("/_authenticated/admin/orders")({ component
 const STATUS = ["pending", "confirmed", "preparing", "shipping", "delivered", "cancelled", "refunded"] as const;
 const LABEL: Record<string, string> = { pending: "En attente", confirmed: "Confirmée", preparing: "Préparation", shipping: "Livraison", delivered: "Livrée", cancelled: "Annulée", refunded: "Remboursée" };
 
+const PAY_LABEL: Record<string, string> = { pending: "En attente", processing: "En cours", initiated: "Initié", completed: "Payé", success: "Payé", successful: "Payé", paid: "Payé", failed: "Échoué", cancelled: "Annulé", timeout: "Expiré" };
+function payLabel(paid: boolean | null, status: string | null) {
+  if (paid) return "Payé";
+  if (!status) return "Non payé";
+  return PAY_LABEL[status.toLowerCase()] ?? status;
+}
+function payVariant(paid: boolean | null, status: string | null): "default" | "secondary" | "destructive" | "outline" {
+  if (paid) return "default";
+  const s = (status ?? "").toLowerCase();
+  if (["failed", "cancelled", "timeout"].includes(s)) return "destructive";
+  if (s) return "secondary";
+  return "outline";
+}
+
 function Page() {
   const { data: settings } = useSettings();
   const rate = settings?.usd_to_cdf_rate ?? 2800;
