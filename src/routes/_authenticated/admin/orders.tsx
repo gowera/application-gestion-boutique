@@ -16,6 +16,20 @@ export const Route = createFileRoute("/_authenticated/admin/orders")({ component
 const STATUS = ["pending", "confirmed", "preparing", "shipping", "delivered", "cancelled", "refunded"] as const;
 const LABEL: Record<string, string> = { pending: "En attente", confirmed: "Confirmée", preparing: "Préparation", shipping: "Livraison", delivered: "Livrée", cancelled: "Annulée", refunded: "Remboursée" };
 
+const PAY_LABEL: Record<string, string> = { pending: "En attente", processing: "En cours", initiated: "Initié", completed: "Payé", success: "Payé", successful: "Payé", paid: "Payé", failed: "Échoué", cancelled: "Annulé", timeout: "Expiré" };
+function payLabel(paid: boolean | null, status: string | null) {
+  if (paid) return "Payé";
+  if (!status) return "Non payé";
+  return PAY_LABEL[status.toLowerCase()] ?? status;
+}
+function payVariant(paid: boolean | null, status: string | null): "default" | "secondary" | "destructive" | "outline" {
+  if (paid) return "default";
+  const s = (status ?? "").toLowerCase();
+  if (["failed", "cancelled", "timeout"].includes(s)) return "destructive";
+  if (s) return "secondary";
+  return "outline";
+}
+
 function Page() {
   const { data: settings } = useSettings();
   const rate = settings?.usd_to_cdf_rate ?? 2800;
@@ -34,9 +48,9 @@ function Page() {
     <div className="space-y-6">
       <h1 className="text-display text-2xl font-bold">Commandes en ligne</h1>
       <Card><CardContent className="p-0">
-        <Table><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Date</TableHead><TableHead>Client</TableHead><TableHead>Mode</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
+        <Table><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Date</TableHead><TableHead>Client</TableHead><TableHead>Mode</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Paiement</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
           <TableBody>
-            {!orders?.length && <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">Aucune commande.</TableCell></TableRow>}
+            {!orders?.length && <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Aucune commande.</TableCell></TableRow>}
             {orders?.map((o) => (
               <TableRow key={o.id}>
                 <TableCell className="font-mono text-xs">{o.code}</TableCell>
@@ -44,6 +58,13 @@ function Page() {
                 <TableCell>{o.customer_name}<div className="text-xs text-muted-foreground">{o.customer_phone}</div></TableCell>
                 <TableCell><Badge variant="outline">{o.delivery_mode}</Badge></TableCell>
                 <TableCell className="text-right">{formatMoney(Number(o.total_usd), cur, rate)}</TableCell>
+                <TableCell>
+                  <Badge variant={payVariant(o.paid, o.payment_status)}>{payLabel(o.paid, o.payment_status)}</Badge>
+                  <div className="text-[10px] text-muted-foreground mt-1">
+                    {(o.payment_method ?? o.payment_provider) ? `${o.payment_provider ?? ""} ${o.payment_method ?? ""}`.trim() : "—"}
+                    {o.payment_ref ? ` · ${o.payment_ref}` : ""}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <Select value={o.status} onValueChange={(v) => upd.mutate({ id: o.id, status: v })}>
                     <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
