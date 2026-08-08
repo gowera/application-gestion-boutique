@@ -44,6 +44,24 @@ export type Database = {
         }
         Relationships: []
       }
+      app_secrets: {
+        Row: {
+          created_at: string
+          key: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           created_at: string
@@ -1729,6 +1747,34 @@ export type Database = {
         Returns: string
       }
       restore_trash_item: { Args: { _id: string }; Returns: undefined }
+      shwary_apply_status: {
+        Args: {
+          _order_id: string
+          _reason?: string
+          _ref: string
+          _secret: string
+          _status: string
+        }
+        Returns: Json
+      }
+      shwary_check_secret: { Args: { _secret: string }; Returns: boolean }
+      shwary_get_order: {
+        Args: { _order_id: string; _secret: string }
+        Returns: Json
+      }
+      shwary_get_order_by_code: {
+        Args: { _code: string; _secret: string }
+        Returns: Json
+      }
+      shwary_set_ref: {
+        Args: {
+          _order_id: string
+          _ref: string
+          _secret: string
+          _status: string
+        }
+        Returns: undefined
+      }
       slugify: { Args: { "": string }; Returns: string }
     }
     Enums: {

@@ -1,44 +1,29 @@
 import { createServerFn } from "@tanstack/react-start";
 
-type ShwaryCreds = {
-  merchant_id: string;
-  merchant_key: string;
-  sandbox: boolean;
-};
-
-async function loadCreds(): Promise<ShwaryCreds | null> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("payment_credentials")
-    .select("merchant_id, merchant_key, sandbox")
-    .eq("provider", "shwary")
-    .maybeSingle();
-  if (!data || !data.merchant_id || !data.merchant_key) return null;
-  return data as ShwaryCreds;
-}
-
 export const initiateShwaryPayment = createServerFn({ method: "POST" })
   .inputValidator((input: { orderId: string; phone: string }) => {
     if (!input?.orderId || !input?.phone) throw new Error("orderId et phone requis");
     return input;
   })
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: order, error: oErr } = await supabaseAdmin
-      .from("online_orders")
-      .select("id, code, total_usd, paid, payment_status")
-      .eq("id", data.orderId)
-      .maybeSingle();
-    if (oErr || !order) throw new Error("Commande introuvable");
-    if (order.paid) throw new Error("Commande déjà payée");
+    const { serverClient, rpcSecret, loadCreds } = await import("@/lib/shwary.server");
+    const sb = serverClient();
+    const secret = rpcSecret();
+
+    const { data: order, error: oErr } = await sb.rpc("shwary_get_order", {
+      _secret: secret,
+      _order_id: data.orderId,
+    });
+    if (oErr) throw new Error(oErr.message);
+    const o = order as { total_usd: number; paid: boolean; rate: number } | null;
+    if (!o) throw new Error("Commande introuvable");
+    if (o.paid) throw new Error("Commande déjà payée");
 
     const creds = await loadCreds();
     if (!creds) throw new Error("Shwary non configuré");
 
-    // Load rate for USD -> CDF conversion
-    const { data: settings } = await supabaseAdmin.from("settings").select("usd_to_cdf_rate").eq("id", 1).maybeSingle();
-    const rate = Number(settings?.usd_to_cdf_rate ?? 2800);
-    const amountCdf = Math.max(2900, Math.round(Number(order.total_usd) * rate));
+    const rate = Number(o.rate ?? 2800);
+    const amountCdf = Math.max(2900, Math.round(Number(o.total_usd) * rate));
 
     let phone = data.phone.replace(/\s+/g, "");
     if (!phone.startsWith("+")) {
@@ -47,7 +32,7 @@ export const initiateShwaryPayment = createServerFn({ method: "POST" })
       else phone = "+243" + phone;
     }
 
-    const origin = process.env.PUBLIC_APP_URL || "https://project--265340c6-f4cb-4a09-8b9b-e443b084fee4.lovable.app";
+    const origin = process.env['PUBLIC_APP_URL'] || "https://project--265340c6-f4cb-4a09-8b9b-e443b084fee4.lovable.app";
     const callbackUrl = `${origin}/api/public/shwary/callback`;
 
     const endpoint = creds.sandbox
@@ -71,38 +56,15 @@ export const initiateShwaryPayment = createServerFn({ method: "POST" })
     }
 
     const tx = body as { id: string; status: string };
-    await supabaseAdmin
-      .from("online_orders")
-      .update({
-        payment_provider: "shwary",
-        payment_ref: tx.id,
-        payment_status: tx.status ?? "pending",
-        payment_method: "mobile_money",
-      })
-      .eq("id", data.orderId);
+    await sb.rpc("shwary_set_ref", {
+      _secret: secret,
+      _order_id: data.orderId,
+      _ref: tx.id,
+      _status: tx.status ?? "pending",
+    });
 
     return { transactionId: tx.id, status: tx.status ?? "pending" };
   });
-
-/** Interroge directement Shwary pour connaître l'état d'une transaction. */
-async function fetchRemoteStatus(ref: string, creds: ShwaryCreds): Promise<string | null> {
-  const base = "https://api.shwary.com/api/v1/merchants";
-  const paths = creds.sandbox
-    ? [`${base}/payment/sandbox/${ref}`, `${base}/payment/${ref}`, `${base}/transactions/${ref}`]
-    : [`${base}/payment/${ref}`, `${base}/transactions/${ref}`];
-  for (const url of paths) {
-    try {
-      const res = await fetch(url, {
-        headers: { "x-merchant-id": creds.merchant_id, "x-merchant-key": creds.merchant_key },
-      });
-      if (!res.ok) continue;
-      const body = (await res.json().catch(() => null)) as { status?: string; data?: { status?: string } } | null;
-      const status = body?.status ?? body?.data?.status;
-      if (typeof status === "string" && status) return status.toLowerCase();
-    } catch { /* endpoint suivant */ }
-  }
-  return null;
-}
 
 export const getOrderPaymentStatus = createServerFn({ method: "GET" })
   .inputValidator((input: { code: string }) => {
@@ -110,31 +72,31 @@ export const getOrderPaymentStatus = createServerFn({ method: "GET" })
     return input;
   })
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: order } = await supabaseAdmin
-      .from("online_orders")
-      .select("id, payment_status, paid, status, payment_ref")
-      .eq("code", data.code)
-      .maybeSingle();
+    const { serverClient, rpcSecret, loadCreds, fetchRemoteStatus } = await import("@/lib/shwary.server");
+    const sb = serverClient();
+    const secret = rpcSecret();
+
+    const { data: raw } = await sb.rpc("shwary_get_order_by_code", { _secret: secret, _code: data.code });
+    const order = raw as {
+      id: string; payment_status: string | null; paid: boolean; status: string | null; payment_ref: string | null;
+    } | null;
     if (!order) return { payment_status: null, paid: false, status: null };
 
     // Le webhook Shwary peut tarder : on interroge activement l'API.
     if (!order.paid && order.payment_ref && !["failed", "cancelled"].includes(String(order.payment_status))) {
       const creds = await loadCreds();
       if (creds) {
-        const remote = await fetchRemoteStatus(order.payment_ref as string, creds);
+        const remote = await fetchRemoteStatus(order.payment_ref, creds);
         if (remote && remote !== order.payment_status) {
-          const update: Record<string, unknown> = { payment_status: remote };
-          if (["completed", "success", "successful", "paid"].includes(remote)) {
-            update.paid = true;
-            update.status = "confirmed";
-          }
-          await supabaseAdmin.from("online_orders").update(update as never).eq("id", order.id);
-          return {
-            payment_status: remote,
-            paid: Boolean(update.paid),
-            status: (update.status as string) ?? order.status,
-          };
+          const { data: applied } = await sb.rpc("shwary_apply_status", {
+            _secret: secret,
+            _order_id: order.id,
+            _ref: order.payment_ref,
+            _status: remote,
+            _reason: null,
+          });
+          const a = applied as { paid?: boolean; status?: string; payment_status?: string } | null;
+          if (a) return { payment_status: a.payment_status ?? remote, paid: Boolean(a.paid), status: a.status ?? order.status };
         }
       }
     }
@@ -148,16 +110,18 @@ export const cancelUnpaidOrder = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: order } = await supabaseAdmin
-      .from("online_orders")
-      .select("id, paid")
-      .eq("id", data.orderId)
-      .maybeSingle();
-    if (!order || order.paid) return { cancelled: false };
-    await supabaseAdmin
-      .from("online_orders")
-      .update({ status: "cancelled", payment_status: data.reason ?? "failed" })
-      .eq("id", data.orderId);
+    const { serverClient, rpcSecret } = await import("@/lib/shwary.server");
+    const sb = serverClient();
+    const secret = rpcSecret();
+    const { data: raw } = await sb.rpc("shwary_get_order", { _secret: secret, _order_id: data.orderId });
+    const o = raw as { paid?: boolean } | null;
+    if (!o || o.paid) return { cancelled: false };
+    await sb.rpc("shwary_apply_status", {
+      _secret: secret,
+      _order_id: data.orderId,
+      _ref: null,
+      _status: data.reason ?? "failed",
+      _reason: data.reason ?? null,
+    });
     return { cancelled: true };
   });
