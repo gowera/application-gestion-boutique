@@ -34,9 +34,9 @@ function Page() {
     <div className="space-y-6">
       <h1 className="text-display text-2xl font-bold">Commandes en ligne</h1>
       <Card><CardContent className="p-0">
-        <Table><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Date</TableHead><TableHead>Client</TableHead><TableHead>Mode</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
+        <Table><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Date</TableHead><TableHead>Client</TableHead><TableHead>Mode</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Paiement</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
           <TableBody>
-            {!orders?.length && <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">Aucune commande.</TableCell></TableRow>}
+            {!orders?.length && <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Aucune commande.</TableCell></TableRow>}
             {orders?.map((o) => (
               <TableRow key={o.id}>
                 <TableCell className="font-mono text-xs">{o.code}</TableCell>
