@@ -45,6 +45,13 @@ function Page() {
                 <TableCell><Badge variant="outline">{o.delivery_mode}</Badge></TableCell>
                 <TableCell className="text-right">{formatMoney(Number(o.total_usd), cur, rate)}</TableCell>
                 <TableCell>
+                  <Badge variant={payVariant(o.paid, o.payment_status)}>{payLabel(o.paid, o.payment_status)}</Badge>
+                  <div className="text-[10px] text-muted-foreground mt-1">
+                    {(o.payment_method ?? o.payment_provider) ? `${o.payment_provider ?? ""} ${o.payment_method ?? ""}`.trim() : "—"}
+                    {o.payment_ref ? ` · ${o.payment_ref}` : ""}
+                  </div>
+                </TableCell>
+                <TableCell>
                   <Select value={o.status} onValueChange={(v) => upd.mutate({ id: o.id, status: v })}>
                     <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
                     <SelectContent>{STATUS.map((s) => <SelectItem key={s} value={s}>{LABEL[s]}</SelectItem>)}</SelectContent>
