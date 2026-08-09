@@ -6,10 +6,19 @@ export type ShwaryCreds = {
   sandbox: boolean;
 };
 
+// Valeurs publiques (inlinées au build) — servent de repli si l'env serveur est vide en production.
+const FALLBACK_URL = "https://nqbfwchpzkobrxypemhf.supabase.co";
+const FALLBACK_KEY = "sb_publishable_JQ5E8pkevD9_rS3jG23U3w_drmOUj8u";
+
 /** Client Supabase serveur avec la clé publiable (aucune clé service role requise). */
 export function serverClient(): SupabaseClient {
-  const url = process.env['SUPABASE_URL'] || process.env['VITE_SUPABASE_URL'];
-  const key = process.env['SUPABASE_PUBLISHABLE_KEY'] || process.env['VITE_SUPABASE_PUBLISHABLE_KEY'];
+  const env = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
+  const url =
+    env['SUPABASE_URL'] || env['VITE_SUPABASE_URL'] ||
+    import.meta.env.VITE_SUPABASE_URL || FALLBACK_URL;
+  const key =
+    env['SUPABASE_PUBLISHABLE_KEY'] || env['VITE_SUPABASE_PUBLISHABLE_KEY'] ||
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || FALLBACK_KEY;
   if (!url || !key) throw new Error("Configuration backend indisponible");
   return createClient(url, key, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
