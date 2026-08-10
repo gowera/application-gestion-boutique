@@ -1,17 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { serverClient } from "@/lib/shwary.server";
 
 /**
- * Public Open Graph image proxy for a product.
- * Product images live in a private bucket, so social crawlers cannot read them directly.
- * This route streams the first readable product image with a public, cacheable response
- * (and answers HEAD requests, which several crawlers send first).
+ * Proxy Open Graph public de l'image d'un produit.
+ * Les crawlers sociaux (WhatsApp, Facebook, X…) ne peuvent pas lire le bucket privé :
+ * cette route diffuse la première image du produit depuis notre origine, en cache public.
+ * Elle n'utilise que la clé publiable (aucune clé service role requise en production).
  */
 const STORAGE_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+?)(?:\?.*)?$/;
 
+function imageResponse(buf: ArrayBuffer, type: string, headOnly: boolean): Response {
+  return new Response(headOnly ? null : buf, {
+    headers: {
+      "content-type": type || "image/jpeg",
+      "content-length": String(buf.byteLength),
+      "cache-control": "public, max-age=86400, s-maxage=86400",
+      "access-control-allow-origin": "*",
+    },
+  });
+}
+
 async function serve(productId: string, headOnly: boolean): Promise<Response> {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: product } = await supabaseAdmin
+    const client = serverClient();
+    const { data: product } = await client
       .from("products")
       .select("images")
       .eq("id", productId)
@@ -23,35 +35,24 @@ async function serve(productId: string, headOnly: boolean): Promise<Response> {
     for (const candidate of images) {
       const match = candidate.match(STORAGE_RE);
       if (!match) {
-        // External URL — fetch it so crawlers always get an image body from our origin.
+        // URL externe — on la récupère pour toujours servir un corps d'image depuis notre origine.
         try {
           const res = await fetch(candidate);
           if (!res.ok) continue;
           const buf = await res.arrayBuffer();
-          return new Response(headOnly ? null : buf, {
-            headers: {
-              "content-type": res.headers.get("content-type") || "image/jpeg",
-              "content-length": String(buf.byteLength),
-              "cache-control": "public, max-age=86400",
-            },
-          });
+          return imageResponse(buf, res.headers.get("content-type") || "image/jpeg", headOnly);
         } catch {
           continue;
         }
       }
 
-      const bucket = match[1];
-      const path = decodeURIComponent(match[2]);
-      const { data: file, error } = await supabaseAdmin.storage.from(bucket).download(path);
-      if (error || !file) continue;
-      const buf = await file.arrayBuffer();
-      return new Response(headOnly ? null : buf, {
-        headers: {
-          "content-type": file.type || "image/jpeg",
-          "content-length": String(buf.byteLength),
-          "cache-control": "public, max-age=86400",
-        },
-      });
+      const bucket = match[1]!;
+      const path = decodeURIComponent(match[2]!);
+      const { data: file, error } = await client.storage.from(bucket).download(path);
+      if (!error && file) {
+        const buf = await file.arrayBuffer();
+        return imageResponse(buf, file.type || "image/jpeg", headOnly);
+      }
     }
 
     return new Response("not found", { status: 404 });
