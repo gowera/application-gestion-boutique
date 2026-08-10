@@ -1758,6 +1758,7 @@ export type Database = {
         Returns: Json
       }
       shwary_check_secret: { Args: { _secret: string }; Returns: boolean }
+      shwary_get_creds: { Args: { _secret: string }; Returns: Json }
       shwary_get_order: {
         Args: { _order_id: string; _secret: string }
         Returns: Json
@@ -1765,6 +1766,15 @@ export type Database = {
       shwary_get_order_by_code: {
         Args: { _code: string; _secret: string }
         Returns: Json
+      }
+      shwary_save_creds: {
+        Args: {
+          _merchant_id: string
+          _merchant_key: string
+          _sandbox: boolean
+          _secret: string
+        }
+        Returns: undefined
       }
       shwary_set_ref: {
         Args: {
