@@ -52,7 +52,6 @@ import { Route as AuthenticatedAdminDocumentsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin/categories'
 import { Route as AuthenticatedAdminCaisseRouteImport } from './routes/_authenticated/admin/caisse'
-import { Route as ApiPublicShwaryDiagRouteImport } from './routes/api/public/shwary.diag'
 import { Route as ApiPublicShwaryCallbackRouteImport } from './routes/api/public/shwary.callback'
 import { Route as AuthenticatedAdminDocumentsHistoryRouteImport } from './routes/_authenticated/admin/documents/history'
 import { Route as ApiPublicOgProductProductIdRouteImport } from './routes/api/public/og.product.$productId'
@@ -288,11 +287,6 @@ const AuthenticatedAdminCaisseRoute =
     path: '/admin/caisse',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicShwaryDiagRoute = ApiPublicShwaryDiagRouteImport.update({
-  id: '/api/public/shwary/diag',
-  path: '/api/public/shwary/diag',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicShwaryCallbackRoute = ApiPublicShwaryCallbackRouteImport.update({
   id: '/api/public/shwary/callback',
   path: '/api/public/shwary/callback',
@@ -356,7 +350,6 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/documents/history': typeof AuthenticatedAdminDocumentsHistoryRoute
   '/api/public/shwary/callback': typeof ApiPublicShwaryCallbackRoute
-  '/api/public/shwary/diag': typeof ApiPublicShwaryDiagRoute
   '/api/public/og/product/$productId': typeof ApiPublicOgProductProductIdRoute
 }
 export interface FileRoutesByTo {
@@ -403,7 +396,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/documents/history': typeof AuthenticatedAdminDocumentsHistoryRoute
   '/api/public/shwary/callback': typeof ApiPublicShwaryCallbackRoute
-  '/api/public/shwary/diag': typeof ApiPublicShwaryDiagRoute
   '/api/public/og/product/$productId': typeof ApiPublicOgProductProductIdRoute
 }
 export interface FileRoutesById {
@@ -453,7 +445,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/documents/history': typeof AuthenticatedAdminDocumentsHistoryRoute
   '/api/public/shwary/callback': typeof ApiPublicShwaryCallbackRoute
-  '/api/public/shwary/diag': typeof ApiPublicShwaryDiagRoute
   '/api/public/og/product/$productId': typeof ApiPublicOgProductProductIdRoute
 }
 export interface FileRouteTypes {
@@ -503,7 +494,6 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/documents/history'
     | '/api/public/shwary/callback'
-    | '/api/public/shwary/diag'
     | '/api/public/og/product/$productId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -550,7 +540,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/documents/history'
     | '/api/public/shwary/callback'
-    | '/api/public/shwary/diag'
     | '/api/public/og/product/$productId'
   id:
     | '__root__'
@@ -599,7 +588,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/admin/documents/history'
     | '/api/public/shwary/callback'
-    | '/api/public/shwary/diag'
     | '/api/public/og/product/$productId'
   fileRoutesById: FileRoutesById
 }
@@ -620,7 +608,6 @@ export interface RootRouteChildren {
   ProduitProductIdRoute: typeof ProduitProductIdRoute
   SalaireConfirmerTokenRoute: typeof SalaireConfirmerTokenRoute
   ApiPublicShwaryCallbackRoute: typeof ApiPublicShwaryCallbackRoute
-  ApiPublicShwaryDiagRoute: typeof ApiPublicShwaryDiagRoute
   ApiPublicOgProductProductIdRoute: typeof ApiPublicOgProductProductIdRoute
 }
 
@@ -927,13 +914,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCaisseRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/shwary/diag': {
-      id: '/api/public/shwary/diag'
-      path: '/api/public/shwary/diag'
-      fullPath: '/api/public/shwary/diag'
-      preLoaderRoute: typeof ApiPublicShwaryDiagRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/shwary/callback': {
       id: '/api/public/shwary/callback'
       path: '/api/public/shwary/callback'
@@ -1076,7 +1056,6 @@ const rootRouteChildren: RootRouteChildren = {
   ProduitProductIdRoute: ProduitProductIdRoute,
   SalaireConfirmerTokenRoute: SalaireConfirmerTokenRoute,
   ApiPublicShwaryCallbackRoute: ApiPublicShwaryCallbackRoute,
-  ApiPublicShwaryDiagRoute: ApiPublicShwaryDiagRoute,
   ApiPublicOgProductProductIdRoute: ApiPublicOgProductProductIdRoute,
 }
 export const routeTree = rootRouteImport
