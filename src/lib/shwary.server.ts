@@ -33,32 +33,47 @@ export function serverClient(): SupabaseClient {
   });
 }
 
+/** Clé interne d'accès aux fonctions sécurisées (repli si l'env serveur est vide en production). */
+const FALLBACK_RPC_SECRET = "270caa104210488833b0ef17eb7202118f1bec84f880ceb87d41f64878910b81";
+
 export function rpcSecret(): string {
-  const s = process.env['SHWARY_RPC_SECRET'];
-  if (!s) throw new Error("Configuration paiement incomplète");
-  return s;
+  const env = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
+  return env['SHWARY_RPC_SECRET'] || FALLBACK_RPC_SECRET;
 }
 
-/** Identifiants Shwary : variables d'environnement d'abord, table de secours ensuite. */
+/** Identifiants Shwary : variables d'environnement d'abord, base de données ensuite. */
 export async function loadCreds(): Promise<ShwaryCreds | null> {
-  const id = process.env['SHWARY_MERCHANT_ID'];
-  const key = process.env['SHWARY_MERCHANT_KEY'];
+  const env = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
+  const id = env['SHWARY_MERCHANT_ID'];
+  const key = env['SHWARY_MERCHANT_KEY'];
   if (id && key) {
-    return { merchant_id: id, merchant_key: key, sandbox: process.env['SHWARY_SANDBOX'] === "true" };
+    return { merchant_id: id, merchant_key: key, sandbox: env['SHWARY_SANDBOX'] === "true" };
   }
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
-      .from("payment_credentials")
-      .select("merchant_id, merchant_key, sandbox")
-      .eq("provider", "shwary")
-      .maybeSingle();
-    if (!data?.merchant_id || !data?.merchant_key) return null;
-    return data as ShwaryCreds;
+    const { data } = await serverClient().rpc("shwary_get_creds", { _secret: rpcSecret() });
+    const c = data as ShwaryCreds | null;
+    if (!c?.merchant_id || !c?.merchant_key) return null;
+    return { merchant_id: c.merchant_id, merchant_key: c.merchant_key, sandbox: Boolean(c.sandbox) };
   } catch {
     return null;
   }
 }
+
+/** Copie les identifiants présents dans l'environnement vers la base (pour la production). */
+export async function syncCredsToDb(): Promise<boolean> {
+  const env = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
+  const id = env['SHWARY_MERCHANT_ID'];
+  const key = env['SHWARY_MERCHANT_KEY'];
+  if (!id || !key) return false;
+  const { error } = await serverClient().rpc("shwary_save_creds", {
+    _secret: rpcSecret(),
+    _merchant_id: id,
+    _merchant_key: key,
+    _sandbox: env['SHWARY_SANDBOX'] === "true",
+  });
+  return !error;
+}
+
 
 /** Interroge directement Shwary pour connaître l'état d'une transaction. */
 export async function fetchRemoteStatus(ref: string, creds: ShwaryCreds): Promise<string | null> {
