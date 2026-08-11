@@ -12,7 +12,14 @@ export interface TeamMember {
   phone: string | null;
   sort_order: number;
   is_published: boolean;
+  website_url?: string | null;
+  linkedin_url?: string | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  youtube_url?: string | null;
+  x_url?: string | null;
 }
+
 
 export type TeamMemberInput = Omit<TeamMember, "id"> & { id?: string };
 
