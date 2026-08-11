@@ -21,7 +21,9 @@ export const Route = createFileRoute("/_authenticated/admin/team")({ component: 
 const EMPTY: TeamMemberInput = {
   name: "", role: "", bio: "", photo_url: null, cv_url: null,
   email: "", phone: "", sort_order: 0, is_published: true,
+  website_url: "", linkedin_url: "", facebook_url: "", instagram_url: "", youtube_url: "", x_url: "",
 };
+
 
 function MemberDialog({ member, trigger }: { member?: TeamMember; trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false);
