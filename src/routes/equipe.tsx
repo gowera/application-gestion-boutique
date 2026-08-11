@@ -27,6 +27,41 @@ async function openFile(url: string) {
   window.open(resolved, "_blank", "noopener");
 }
 
+function normalize(url?: string | null) {
+  const v = String(url ?? "").trim();
+  if (!v) return "";
+  return /^https?:\/\//i.test(v) ? v : `https://${v.replace(/^\/+/, "")}`;
+}
+
+function MemberLinks({ m }: { m: TeamMember }) {
+  const links = [
+    { href: normalize(m.website_url), label: "Site web", icon: Globe },
+    { href: normalize(m.linkedin_url), label: "LinkedIn", icon: Linkedin },
+    { href: normalize(m.facebook_url), label: "Facebook", icon: Facebook },
+    { href: normalize(m.instagram_url), label: "Instagram", icon: Instagram },
+    { href: normalize(m.youtube_url), label: "YouTube", icon: Youtube },
+    { href: normalize(m.x_url), label: "X", icon: Twitter },
+  ].filter((l) => l.href);
+  if (!links.length) return null;
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2">
+      {links.map(({ href, label, icon: Icon }) => (
+        <a
+          key={label}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={label}
+          title={label}
+          className="grid h-8 w-8 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-energy hover:text-energy"
+        >
+          <Icon className="h-4 w-4" />
+        </a>
+      ))}
+    </div>
+  );
+}
+
 function TeamCard({ m }: { m: TeamMember }) {
   return (
     <article className="group overflow-hidden rounded-2xl border border-l-4 border-l-energy border-border/60 bg-background shadow-sm transition-all hover:shadow-lg">
@@ -46,6 +81,7 @@ function TeamCard({ m }: { m: TeamMember }) {
           {m.email && <p className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-primary" /><a href={`mailto:${m.email}`} className="hover:text-primary">{m.email}</a></p>}
           {m.phone && <p className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-primary" /><a href={`tel:${m.phone}`} className="hover:text-primary">{m.phone}</a></p>}
         </div>
+        <MemberLinks m={m} />
         {m.cv_url && (
           <Button variant="outline" size="sm" className="mt-4 w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground" onClick={() => openFile(m.cv_url!)}>
             <FileText className="mr-2 h-4 w-4" /> Consulter le CV
@@ -55,6 +91,7 @@ function TeamCard({ m }: { m: TeamMember }) {
     </article>
   );
 }
+
 
 function TeamPage() {
   const { data: team, isLoading } = usePublicTeam();
