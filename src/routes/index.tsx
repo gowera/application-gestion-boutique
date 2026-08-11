@@ -204,7 +204,7 @@ function CategoriesBento() {
 
 function TrustStrip() {
   const items = [
-    { icon: Truck, title: "Livraison rapide", desc: "Kinshasa & environs" },
+    { icon: Truck, title: "Livraison rapide", desc: "Partout en RDC" },
     { icon: ShieldCheck, title: "Matériel garanti", desc: "Marques officielles" },
     { icon: HeadphonesIcon, title: "Support 7j/7", desc: "Équipe technique dédiée" },
     { icon: Award, title: "Équipe certifiée", desc: "10+ domaines d'expertise" },

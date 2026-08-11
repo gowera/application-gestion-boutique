@@ -176,7 +176,7 @@ function ProductPage() {
 
             <div className="mt-6 space-y-2.5 text-sm">
               <Feature icon={ShieldCheck} label="Garantie constructeur incluse" />
-              <Feature icon={Truck} label="Livraison rapide Kinshasa & environs" />
+              <Feature icon={Truck} label="Livraison rapide en RDC" />
               <Feature icon={HeadphonesIcon} label="Support technique 7j/7" />
             </div>
 
