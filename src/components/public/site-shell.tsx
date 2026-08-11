@@ -124,7 +124,9 @@ function SiteFooter() {
   const logoUrl = s?.logo_url || logo;
   const phone = s?.phone || "+243 996 886 079";
   const email = s?.email || "oredymusanda@gmail.com";
-  const address = s?.address || "Kinshasa, RDC";
+  const address = s?.address || "République Démocratique du Congo";
+  const wa = (s?.whatsapp || phone).replace(/\D/g, "");
+
   return (
     <footer className="mt-20 bg-[#0a0a0a] text-neutral-300">
       <div className="border-b border-white/5">
