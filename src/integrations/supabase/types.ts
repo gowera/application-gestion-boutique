@@ -706,6 +706,7 @@ export type Database = {
           payment_ref: string | null
           payment_status: string | null
           status: Database["public"]["Enums"]["order_status"]
+          stock_applied: boolean
           subtotal_usd: number
           total_usd: number
           updated_at: string
@@ -728,6 +729,7 @@ export type Database = {
           payment_ref?: string | null
           payment_status?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          stock_applied?: boolean
           subtotal_usd?: number
           total_usd?: number
           updated_at?: string
@@ -750,6 +752,7 @@ export type Database = {
           payment_ref?: string | null
           payment_status?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          stock_applied?: boolean
           subtotal_usd?: number
           total_usd?: number
           updated_at?: string
@@ -1605,42 +1608,60 @@ export type Database = {
           created_at: string
           cv_url: string | null
           email: string | null
+          facebook_url: string | null
           id: string
+          instagram_url: string | null
           is_published: boolean
+          linkedin_url: string | null
           name: string
           phone: string | null
           photo_url: string | null
           role: string
           sort_order: number
           updated_at: string
+          website_url: string | null
+          x_url: string | null
+          youtube_url: string | null
         }
         Insert: {
           bio?: string | null
           created_at?: string
           cv_url?: string | null
           email?: string | null
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
           is_published?: boolean
+          linkedin_url?: string | null
           name: string
           phone?: string | null
           photo_url?: string | null
           role?: string
           sort_order?: number
           updated_at?: string
+          website_url?: string | null
+          x_url?: string | null
+          youtube_url?: string | null
         }
         Update: {
           bio?: string | null
           created_at?: string
           cv_url?: string | null
           email?: string | null
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
           is_published?: boolean
+          linkedin_url?: string | null
           name?: string
           phone?: string | null
           photo_url?: string | null
           role?: string
           sort_order?: number
           updated_at?: string
+          website_url?: string | null
+          x_url?: string | null
+          youtube_url?: string | null
         }
         Relationships: []
       }
