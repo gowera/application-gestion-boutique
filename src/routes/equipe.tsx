@@ -130,7 +130,17 @@ function TeamPage() {
             {team.map((m) => <TeamCard key={m.id} m={m} />)}
           </div>
         )}
+
+        <div className="mt-12 rounded-2xl border border-border/60 bg-secondary/40 p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Site web fièrement conçu par{" "}
+            <a href="https://oredytech.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-energy hover:underline">
+              Oredy MUSANDA — Oredy TECHNOLOGIES
+            </a>
+          </p>
+        </div>
       </div>
+
     </SiteShell>
   );
 }
