@@ -4,7 +4,7 @@ import { StorageImage } from "@/components/storage-image";
 import { Button } from "@/components/ui/button";
 import { usePublicTeam, type TeamMember } from "@/lib/team";
 import { resolveImageUrl } from "@/lib/storage";
-import { FileText, Mail, Phone, User, Users } from "lucide-react";
+import { Facebook, FileText, Globe, Instagram, Linkedin, Mail, Phone, Twitter, User, Users, Youtube } from "lucide-react";
 
 export const Route = createFileRoute("/equipe")({
   component: TeamPage,
