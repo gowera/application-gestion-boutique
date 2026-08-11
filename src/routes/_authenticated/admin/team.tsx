@@ -99,10 +99,39 @@ function MemberDialog({ member, trigger }: { member?: TeamMember; trigger: React
               </Button>
             )}
           </div>
+          <div className="sm:col-span-2">
+            <Label>CV en ligne (lien)</Label>
+            <Input value={form.cv_url ?? ""} onChange={(e) => patch({ cv_url: e.target.value })} placeholder="https://… (ou téléversez un fichier ci-dessus)" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Site web</Label>
+            <Input value={form.website_url ?? ""} onChange={(e) => patch({ website_url: e.target.value })} placeholder="https://exemple.com" />
+          </div>
+          <div>
+            <Label>LinkedIn</Label>
+            <Input value={form.linkedin_url ?? ""} onChange={(e) => patch({ linkedin_url: e.target.value })} placeholder="https://linkedin.com/in/…" />
+          </div>
+          <div>
+            <Label>Facebook</Label>
+            <Input value={form.facebook_url ?? ""} onChange={(e) => patch({ facebook_url: e.target.value })} placeholder="https://facebook.com/…" />
+          </div>
+          <div>
+            <Label>Instagram</Label>
+            <Input value={form.instagram_url ?? ""} onChange={(e) => patch({ instagram_url: e.target.value })} placeholder="https://instagram.com/…" />
+          </div>
+          <div>
+            <Label>YouTube</Label>
+            <Input value={form.youtube_url ?? ""} onChange={(e) => patch({ youtube_url: e.target.value })} placeholder="https://youtube.com/@…" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>X (Twitter)</Label>
+            <Input value={form.x_url ?? ""} onChange={(e) => patch({ x_url: e.target.value })} placeholder="https://x.com/…" />
+          </div>
           <div className="flex items-center gap-3 sm:col-span-2">
             <Switch checked={form.is_published} onCheckedChange={(v) => patch({ is_published: v })} />
             <span className="text-sm">Afficher sur le site public</span>
           </div>
+
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
