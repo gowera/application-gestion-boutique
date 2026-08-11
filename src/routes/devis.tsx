@@ -87,7 +87,7 @@ function QuotePage() {
               <img src={elecPro} alt="Ingénieurs CONETEC sur chantier" className="h-56 w-full object-cover" />
               <div className="border-l-4 border-l-energy bg-primary p-4 text-primary-foreground">
                 <p className="text-sm font-semibold">Chantiers récents</p>
-                <p className="text-xs text-primary-foreground/80">Installations solaires, systèmes CCTV et réseaux haute performance à Kinshasa.</p>
+                <p className="text-xs text-primary-foreground/80">Installations solaires, systèmes CCTV et réseaux haute performance en RDC.</p>
               </div>
             </div>
           </aside>

@@ -124,7 +124,9 @@ function SiteFooter() {
   const logoUrl = s?.logo_url || logo;
   const phone = s?.phone || "+243 996 886 079";
   const email = s?.email || "oredymusanda@gmail.com";
-  const address = s?.address || "Kinshasa, RDC";
+  const address = s?.address || "République Démocratique du Congo";
+  const wa = (s?.whatsapp || phone).replace(/\D/g, "");
+
   return (
     <footer className="mt-20 bg-[#0a0a0a] text-neutral-300">
       <div className="border-b border-white/5">
@@ -172,20 +174,19 @@ function SiteFooter() {
           <ul className="space-y-2.5 text-sm">
             <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-energy" /> {phone}</li>
             <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-energy" /> {email}</li>
-            <li className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-energy" /> WhatsApp Support</li>
+            <li>
+              <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-white">
+                <MessageCircle className="h-4 w-4 text-energy" /> WhatsApp Support
+              </a>
+            </li>
             <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-energy" /> {address}</li>
           </ul>
         </div>
       </div>
-      <div className="border-t border-white/5 py-5 text-center text-xs text-neutral-500 space-y-1">
-        <div>© {new Date().getFullYear()} {brand}. Expert-Grade Technical Solutions.</div>
-        <div>
-          Fièrement conçu par{" "}
-          <a href="https://oredytech.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-energy hover:underline">
-            Oredy TECHNOLOGIES
-          </a>
-        </div>
+      <div className="border-t border-white/5 py-5 text-center text-xs text-neutral-500">
+        © {new Date().getFullYear()} {brand}. Expert-Grade Technical Solutions.
       </div>
     </footer>
   );
 }
+

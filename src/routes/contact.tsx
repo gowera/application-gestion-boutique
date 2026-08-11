@@ -29,7 +29,7 @@ function ContactPage() {
   const phone = s?.phone || "+243 996 886 079";
   const email = s?.email || "oredymusanda@gmail.com";
   const whatsapp = s?.whatsapp || phone;
-  const address = s?.address || "Kinshasa, République Démocratique du Congo";
+  const address = s?.address || "République Démocratique du Congo";
   const waLink = `https://wa.me/${whatsapp.replace(/\D/g, "")}`;
 
   const [loading, setLoading] = useState(false);

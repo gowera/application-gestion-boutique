@@ -40,7 +40,7 @@ export const Route = createFileRoute("/produit/$productId")({
     const title = p ? `${p.name}${p.brand ? ` — ${p.brand}` : ""} | CONETEC` : "Détails du produit — CONETEC";
     const description = p
       ? (p.description?.trim().slice(0, 155) ||
-          `${p.name} disponible chez CONETEC à ${Number(p.sale_price).toFixed(2)} USD. Garantie, livraison à Kinshasa et installation par nos techniciens.`)
+          `${p.name} disponible chez CONETEC à ${Number(p.sale_price).toFixed(2)} USD. Garantie, livraison en RDC et installation par nos techniciens.`)
       : "Fiche complète : caractéristiques techniques, garantie, livraison et installation du matériel CONETEC.";
     const image = p?.images?.length ? `${origin}/api/public/og/product/${params.productId}` : null;
     return {
@@ -159,7 +159,7 @@ function ProductDetailsPage() {
                 { k: "Marque", v: p.brand ?? "CONETEC" },
                 { k: "Modèle", v: p.sku ?? p.id.slice(0, 8).toUpperCase() },
                 { k: "Disponibilité", v: p.show_stock_public ? `${p.stock} en stock` : (p.stock > 0 ? "En stock" : "Sur commande") },
-                { k: "Livraison", v: areaLabel || "Kinshasa et environs" },
+                { k: "Livraison", v: areaLabel || "Toute la RDC" },
               ].map((s) => (
                 <div key={s.k} className="min-w-0 rounded-lg border border-primary-foreground/15 bg-primary-foreground/10 px-3 py-2">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-primary-foreground/60">{s.k}</div>
@@ -178,7 +178,7 @@ function ProductDetailsPage() {
                 {stats.count ? `${stats.average.toFixed(1)}/5 · ${stats.count} avis` : "Aucun avis pour l'instant"}
               </a>
               <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 shrink-0 text-energy" /> Garantie incluse</span>
-              <span className="flex items-center gap-1.5"><Truck className="h-4 w-4 shrink-0 text-energy" /> Livraison {areaLabel || "Kinshasa et environs"}</span>
+              <span className="flex items-center gap-1.5"><Truck className="h-4 w-4 shrink-0 text-energy" /> Livraison {areaLabel || "Toute la RDC"}</span>
               <span className="flex items-center gap-1.5"><Wrench className="h-4 w-4 shrink-0 text-energy" /> Pose par nos techniciens</span>
             </div>
 
@@ -298,7 +298,7 @@ function ProductDetailsPage() {
             <Perk icon={ShieldCheck} title="Qualité certifiée" text="Matériel conforme aux normes, sourcé auprès de fournisseurs agréés." />
             <Perk icon={Wrench} title="Installation clé en main" text="Nos techniciens posent, configurent et testent sur site." />
             <Perk icon={HeadphonesIcon} title="Support 7j/7" text="Assistance téléphonique et WhatsApp après achat." />
-            <Perk icon={Truck} title="Livraison rapide" text={areaLabel ? `Livraison : ${areaLabel}.` : "Kinshasa et environs, retrait boutique possible."} />
+            <Perk icon={Truck} title="Livraison rapide" text={areaLabel ? `Livraison : ${areaLabel}.` : "Partout en RDC, retrait boutique possible."} />
           </div>
         </section>
 
@@ -309,7 +309,7 @@ function ProductDetailsPage() {
             <Accordion type="single" collapsible>
               <AccordionItem value="1">
                 <AccordionTrigger className="text-sm">Quels sont les délais de livraison ?</AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground">Expédition sous 24 à 48h pour les articles en stock à Kinshasa. {areaLabel ? `Zones desservies : ${areaLabel}.` : "Pour les autres provinces, nous convenons du transporteur avec vous lors de la confirmation de commande."}</AccordionContent>
+                <AccordionContent className="text-sm text-muted-foreground">Expédition sous 24 à 48h pour les articles en stock, partout en RDC. {areaLabel ? `Zones desservies : ${areaLabel}.` : "Nous convenons du transporteur avec vous lors de la confirmation de commande."}</AccordionContent>
               </AccordionItem>
               <AccordionItem value="2">
                 <AccordionTrigger className="text-sm">Comment puis-je payer ?</AccordionTrigger>
