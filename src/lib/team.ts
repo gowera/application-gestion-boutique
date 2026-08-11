@@ -70,12 +70,19 @@ export function useSaveTeamMember() {
         phone: input.phone,
         sort_order: input.sort_order,
         is_published: input.is_published,
+        website_url: input.website_url ?? null,
+        linkedin_url: input.linkedin_url ?? null,
+        facebook_url: input.facebook_url ?? null,
+        instagram_url: input.instagram_url ?? null,
+        youtube_url: input.youtube_url ?? null,
+        x_url: input.x_url ?? null,
       };
       const res = input.id
         ? await supabase.from("team_members").update(payload).eq("id", input.id)
         : await supabase.from("team_members").insert(payload);
       if (res.error) throw res.error;
     },
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["team-admin"] });
       qc.invalidateQueries({ queryKey: ["team-public"] });
