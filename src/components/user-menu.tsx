@@ -13,6 +13,7 @@ export function UserMenu() {
   const qc = useQueryClient();
 
   async function signOut() {
+    await supabase.rpc("log_auth_event", { _action: "auth.signout", _metadata: {} }).then(() => {}, () => {});
     await qc.cancelQueries();
     qc.clear();
     await supabase.auth.signOut();
