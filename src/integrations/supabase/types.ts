@@ -1757,6 +1757,10 @@ export type Database = {
           table_name: string
         }[]
       }
+      log_auth_event: {
+        Args: { _action: string; _metadata?: Json }
+        Returns: undefined
+      }
       next_intervention_code: { Args: never; Returns: string }
       next_order_code: { Args: never; Returns: string }
       next_purchase_code: { Args: never; Returns: string }
