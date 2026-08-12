@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated")({
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
     const list = (roles ?? []).map((r) => r.role as string);
     const isStaff = list.some((r) => (STAFF_ROLES as string[]).includes(r));
-    if (!isStaff) throw redirect({ to: "/", search: { acces: "refuse" } as never });
+    if (!isStaff) throw redirect({ to: "/" });
     return { user: data.user };
   },
   component: AuthenticatedLayout,
