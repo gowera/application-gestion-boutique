@@ -7,7 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/format";
+
+const ACTION_LABELS: Record<string, string> = {
+  "role.grant": "Rôle attribué",
+  "role.revoke": "Rôle retiré",
+  "auth.signin": "Connexion",
+  "auth.signout": "Déconnexion",
+  "auth.denied": "Accès refusé",
+};
+const SECURITY_ACTIONS = Object.keys(ACTION_LABELS);
 
 export const Route = createFileRoute("/_authenticated/admin/history")({ component: Page });
 
@@ -26,6 +37,7 @@ function Page() {
   const [actionFilter, setActionFilter] = useState("all");
   const [entityFilter, setEntityFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("");
+  const [securityOnly, setSecurityOnly] = useState(false);
 
   const { data: rows = [] } = useQuery<ActivityLogRow[]>({
     queryKey: ["activity-log"],
@@ -37,8 +49,9 @@ function Page() {
     const matchesAction = actionFilter === "all" || row.action === actionFilter;
     const matchesEntity = entityFilter === "all" || row.entity === entityFilter;
     const matchesDate = !dateFilter || row.created_at.startsWith(dateFilter);
-    return matchesUser && matchesAction && matchesEntity && matchesDate;
-  }), [rows, userFilter, actionFilter, entityFilter, dateFilter]);
+    const matchesSecurity = !securityOnly || SECURITY_ACTIONS.includes(row.action);
+    return matchesUser && matchesAction && matchesEntity && matchesDate && matchesSecurity;
+  }), [rows, userFilter, actionFilter, entityFilter, dateFilter, securityOnly]);
 
   const actionOptions = Array.from(new Set(rows.map((row) => row.action)));
   const entityOptions = Array.from(new Set(rows.map((row) => row.entity).filter(Boolean) as string[]));
@@ -46,14 +59,22 @@ function Page() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-display text-2xl font-bold">Historique</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-display text-2xl font-bold">Historique & audit</h1>
+          <p className="text-sm text-muted-foreground">Suivi des actions, des connexions et des changements d'accès.</p>
+        </div>
+        <Button variant={securityOnly ? "default" : "outline"} size="sm" onClick={() => setSecurityOnly((v) => !v)}>
+          {securityOnly ? "Voir tout l'historique" : "Rôles & connexions uniquement"}
+        </Button>
+      </div>
       <Card><CardContent className="p-4 grid gap-3 md:grid-cols-4">
         <div><Label>Utilisateur</Label><Select value={userFilter} onValueChange={setUserFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Tous</SelectItem>{userOptions.map((userId) => <SelectItem key={userId} value={userId}>{userId}</SelectItem>)}</SelectContent></Select></div>
         <div><Label>Action</Label><Select value={actionFilter} onValueChange={setActionFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Toutes</SelectItem>{actionOptions.map((action) => <SelectItem key={action} value={action}>{action}</SelectItem>)}</SelectContent></Select></div>
         <div><Label>Entité</Label><Select value={entityFilter} onValueChange={setEntityFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Toutes</SelectItem>{entityOptions.map((entity) => <SelectItem key={entity} value={entity}>{entity}</SelectItem>)}</SelectContent></Select></div>
         <div><Label>Date</Label><Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} /></div>
       </CardContent></Card>
-      <Card><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Action</TableHead><TableHead>Entité</TableHead><TableHead>Détails</TableHead></TableRow></TableHeader><TableBody>{filteredRows.map((row) => <TableRow key={row.id}><TableCell>{formatDate(row.created_at, true)}</TableCell><TableCell>{row.action}</TableCell><TableCell>{row.entity ?? "—"}</TableCell><TableCell className="text-sm text-muted-foreground">{row.metadata ? JSON.stringify(row.metadata) : "—"}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>
+      <Card><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Action</TableHead><TableHead>Entité</TableHead><TableHead>Détails</TableHead></TableRow></TableHeader><TableBody>{filteredRows.map((row) => <TableRow key={row.id}><TableCell>{formatDate(row.created_at, true)}</TableCell><TableCell>{ACTION_LABELS[row.action] ? <Badge variant={row.action === "auth.denied" ? "destructive" : "secondary"}>{ACTION_LABELS[row.action]}</Badge> : row.action}</TableCell><TableCell>{row.entity ?? "—"}</TableCell><TableCell className="text-sm text-muted-foreground">{row.metadata ? JSON.stringify(row.metadata) : "—"}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>
     </div>
   );
 }
