@@ -1701,6 +1701,7 @@ export type Database = {
         Returns: undefined
       }
       cancel_sale: { Args: { _sale_id: string }; Returns: undefined }
+      check_invitation: { Args: { _token: string }; Returns: Json }
       create_online_order: {
         Args: {
           _customer_email: string
