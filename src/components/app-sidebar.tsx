@@ -58,6 +58,10 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { allowed } = useAllowedMenus();
+  const visibleGroups = groups
+    .map((g) => ({ ...g, items: g.items.filter((i) => allowed.includes(i.url)) }))
+    .filter((g) => g.items.length > 0);
   const { isMobile, setOpenMobile } = useSidebar();
   const closeOnMobile = () => { if (isMobile) setOpenMobile(false); };
   const isActive = (url: string) =>
