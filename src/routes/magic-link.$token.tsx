@@ -11,9 +11,10 @@ function Page() {
   const { data, isLoading } = useQuery({
     queryKey: ["magic-link", token],
     queryFn: async () => {
-      const { data, error } = await supabase.from("invitations").select("token, expires_at, role").eq("token", token).maybeSingle();
+      const { data, error } = await supabase.rpc("check_invitation", { _token: token });
       if (error) throw error;
-      return data;
+      const info = data as { role: string; valid: boolean } | null;
+      return info && info.valid ? info : null;
     },
     retry: false,
   });
@@ -24,7 +25,7 @@ function Page() {
         <CardContent className="p-8 text-center">
           <h1 className="text-2xl font-bold">Invitation</h1>
           {isLoading ? <p className="mt-4 text-muted-foreground">Vérification de l’invitation…</p> : null}
-          {!isLoading && data ? <p className="mt-4 text-muted-foreground">L’invitation est valide pour le rôle {data.role}. La suite de connexion peut être branchée à Supabase Auth.</p> : null}
+          {!isLoading && data ? <p className="mt-4 text-muted-foreground">L’invitation est valide pour le rôle {data.role}. Créez votre compte puis un administrateur activera vos accès.</p> : null}
           {!isLoading && !data ? <p className="mt-4 text-muted-foreground">Lien d’invitation invalide ou expiré.</p> : null}
           <Button className="mt-6" onClick={() => window.location.assign("/auth")}>Aller à la connexion</Button>
         </CardContent>

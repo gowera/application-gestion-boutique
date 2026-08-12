@@ -85,6 +85,12 @@ function RootComponent() {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      if (event === "SIGNED_IN") {
+        void supabase.rpc("log_auth_event", {
+          _action: "auth.signin",
+          _metadata: { agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 180) : null },
+        });
+      }
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });

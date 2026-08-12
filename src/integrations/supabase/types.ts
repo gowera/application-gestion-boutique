@@ -1701,6 +1701,7 @@ export type Database = {
         Returns: undefined
       }
       cancel_sale: { Args: { _sale_id: string }; Returns: undefined }
+      check_invitation: { Args: { _token: string }; Returns: Json }
       create_online_order: {
         Args: {
           _customer_email: string
@@ -1756,6 +1757,10 @@ export type Database = {
           id: string
           table_name: string
         }[]
+      }
+      log_auth_event: {
+        Args: { _action: string; _metadata?: Json }
+        Returns: undefined
       }
       next_intervention_code: { Args: never; Returns: string }
       next_order_code: { Args: never; Returns: string }

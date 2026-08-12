@@ -33,9 +33,10 @@ export const Route = createFileRoute("/boutique/$productId")({
     const p = loaderData?.product;
     const origin = loaderData?.origin ?? "";
     const path = `/boutique/${params.productId}`;
-    const title = p ? `${p.name}${p.brand ? ` — ${p.brand}` : ""} | CONETEC` : "Fiche produit — CONETEC";
+    const priceLabel = p ? `${Number(p.sale_price).toFixed(2)} USD` : "";
+    const title = p ? `${p.name}${p.brand ? ` — ${p.brand}` : ""} — ${priceLabel} | CONETEC` : "Fiche produit — CONETEC";
     const description = p
-      ? (p.description?.trim().slice(0, 155) ||
+      ? (`Prix : ${priceLabel}. ${p.description?.trim() ?? ""}`.trim().slice(0, 155) ||
           `${p.name} disponible chez CONETEC à ${Number(p.sale_price).toFixed(2)} USD.`)
       : "Consultez les caractéristiques, disponibilité et prix du matériel CONETEC.";
     const image = p?.images?.length ? `${origin}/api/public/og/product/${params.productId}` : null;
@@ -59,6 +60,8 @@ export const Route = createFileRoute("/boutique/$productId")({
               { property: "og:price:currency", content: "USD" },
               { property: "product:availability", content: "in stock" },
               { property: "product:brand", content: p.brand ?? "CONETEC" },
+              { name: "twitter:label1", content: "Prix" },
+              { name: "twitter:data1", content: priceLabel },
             ]
           : []),
         ...(image
