@@ -37,9 +37,12 @@ export const Route = createFileRoute("/produit/$productId")({
     const p = loaderData?.product;
     const origin = loaderData?.origin ?? "";
     const path = `/produit/${params.productId}`;
-    const title = p ? `${p.name}${p.brand ? ` — ${p.brand}` : ""} | CONETEC` : "Détails du produit — CONETEC";
+    const priceLabel = p ? `${Number(p.sale_price).toFixed(2)} USD` : "";
+    const title = p
+      ? `${p.name}${p.brand ? ` — ${p.brand}` : ""} — ${priceLabel} | CONETEC`
+      : "Détails du produit — CONETEC";
     const description = p
-      ? (p.description?.trim().slice(0, 155) ||
+      ? (`Prix : ${priceLabel}. ${p.description?.trim() ?? ""}`.trim().slice(0, 155) ||
           `${p.name} disponible chez CONETEC à ${Number(p.sale_price).toFixed(2)} USD. Garantie, livraison en RDC et installation par nos techniciens.`)
       : "Fiche complète : caractéristiques techniques, garantie, livraison et installation du matériel CONETEC.";
     const image = p?.images?.length ? `${origin}/api/public/og/product/${params.productId}` : null;
@@ -63,6 +66,10 @@ export const Route = createFileRoute("/produit/$productId")({
               { property: "og:price:currency", content: "USD" },
               { property: "product:availability", content: "in stock" },
               { property: "product:brand", content: p.brand ?? "CONETEC" },
+              { name: "twitter:label1", content: "Prix" },
+              { name: "twitter:data1", content: priceLabel },
+              { name: "twitter:label2", content: "Disponibilité" },
+              { name: "twitter:data2", content: "En stock — livraison en RDC" },
             ]
           : []),
         ...(image

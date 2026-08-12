@@ -42,6 +42,7 @@ export const MENU_ITEMS: { key: string; label: string; group: string }[] = [
   { key: "/admin/team", label: "Espace équipe", group: "Configuration" },
   { key: "/admin/users", label: "Rôles utilisateurs", group: "Configuration" },
   { key: "/admin/settings", label: "Paramètres", group: "Configuration" },
+  { key: "/admin/history", label: "Historique & audit", group: "Configuration" },
 ];
 
 export const ALL_MENU_KEYS = MENU_ITEMS.map((m) => m.key);
@@ -49,7 +50,7 @@ export const ALL_MENU_KEYS = MENU_ITEMS.map((m) => m.key);
 /** Permissions par défaut (modifiables dans Paramètres → Accès & rôles). */
 export const DEFAULT_ROLE_MENUS: Record<AppRole, string[]> = {
   admin: ALL_MENU_KEYS,
-  manager: ALL_MENU_KEYS.filter((k) => k !== "/admin/users"),
+  manager: ALL_MENU_KEYS.filter((k) => k !== "/admin/users" && k !== "/admin/history"),
   caissier: ["/admin", "/admin/pos", "/admin/sales", "/admin/documents", "/admin/customers", "/admin/orders", "/admin/reports"],
   vendeur: ["/admin", "/admin/pos", "/admin/orders", "/admin/sales", "/admin/customers", "/admin/products", "/admin/messages"],
   comptable: ["/admin", "/admin/sales", "/admin/documents", "/admin/expenses", "/admin/rent", "/admin/employees", "/admin/purchases", "/admin/reports"],
