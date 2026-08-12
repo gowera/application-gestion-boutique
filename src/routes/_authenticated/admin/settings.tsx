@@ -16,16 +16,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MENU_ITEMS, DEFAULT_ROLE_MENUS, ROLE_LABELS, STAFF_ROLES, type AppRole } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({ component: Page });
 
 type TabId =
-  | "boutique" | "compte" | "utilisateurs" | "paiements" | "livraison"
+  | "boutique" | "compte" | "utilisateurs" | "acces" | "paiements" | "livraison"
   | "stocks" | "facturation" | "materiel" | "boutiqueEnLigne" | "notifications"
   | "fidelite" | "securite" | "integrations" | "preferences" | "donnees" | "apropos";
 
 const TABS: [TabId, string][] = [
-  ["boutique", "Boutique"], ["compte", "Compte"], ["utilisateurs", "Utilisateurs"],
+  ["boutique", "Boutique"], ["compte", "Compte"], ["utilisateurs", "Utilisateurs"], ["acces", "Accès & rôles"],
   ["paiements", "Paiements"], ["livraison", "Livraison"], ["stocks", "Stocks"],
   ["facturation", "Facturation"], ["materiel", "Matériel"],
   ["boutiqueEnLigne", "Boutique en ligne"], ["notifications", "Notifications"],
@@ -217,6 +219,53 @@ function Page() {
             <Label>Journal d'audit des actions</Label>
             <Switch checked={ex("audit_log", true)} onCheckedChange={(v) => setEx("audit_log", v)} />
           </div>
+        </>}
+
+        {tab === "acces" && <>
+          <p className="text-sm text-muted-foreground">
+            Définissez les onglets du tableau de bord visibles par chaque rôle. Les comptes créés depuis la page de
+            connexion sont de simples <strong>clients</strong> : ils n'ont aucun accès à l'administration tant qu'un
+            administrateur ne leur attribue pas un rôle du personnel (page « Rôles utilisateurs »).
+          </p>
+          {STAFF_ROLES.map((role) => {
+            const current = ((extras["role_menus"] as Record<string, string[]> | undefined)?.[role]) ?? DEFAULT_ROLE_MENUS[role as AppRole];
+            const setRole = (keys: string[]) => {
+              const map = { ...((extras["role_menus"] as Record<string, string[]>) ?? {}) };
+              map[role] = keys;
+              setEx("role_menus", map);
+            };
+            const disabled = role === "admin";
+            return (
+              <div key={role} className="rounded border p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <Label className="text-base">{ROLE_LABELS[role as AppRole]}</Label>
+                  {!disabled && (
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" variant="outline" onClick={() => setRole(MENU_ITEMS.map((m) => m.key))}>Tout</Button>
+                      <Button type="button" size="sm" variant="outline" onClick={() => setRole([])}>Aucun</Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setRole(DEFAULT_ROLE_MENUS[role as AppRole])}>Défaut</Button>
+                    </div>
+                  )}
+                </div>
+                {disabled ? (
+                  <p className="text-xs text-muted-foreground">L'administrateur a toujours accès à tous les onglets.</p>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {MENU_ITEMS.map((m) => (
+                      <label key={m.key} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={current.includes(m.key)}
+                          onCheckedChange={(v) => setRole(v ? [...current.filter((k) => k !== m.key), m.key] : current.filter((k) => k !== m.key))}
+                        />
+                        <span className="truncate">{m.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <p className="text-xs text-muted-foreground">Le rôle « Client » n'a jamais accès au tableau de bord : il ne voit que la boutique et ses notifications (nouveaux produits, promotions).</p>
         </>}
 
         {tab === "paiements" && <>

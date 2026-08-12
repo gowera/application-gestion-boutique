@@ -4,6 +4,7 @@ import {
   Inbox, UserCog, Zap, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, Activity, FileText, Users2,
 } from "lucide-react";
 import logo from "@/assets/brand/logo.png";
+import { useAllowedMenus } from "@/lib/permissions";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
@@ -58,6 +59,10 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { allowed } = useAllowedMenus();
+  const visibleGroups = groups
+    .map((g) => ({ ...g, items: g.items.filter((i) => allowed.includes(i.url)) }))
+    .filter((g) => g.items.length > 0);
   const { isMobile, setOpenMobile } = useSidebar();
   const closeOnMobile = () => { if (isMobile) setOpenMobile(false); };
   const isActive = (url: string) =>
@@ -77,7 +82,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {groups.map((group) => (
+        {visibleGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>

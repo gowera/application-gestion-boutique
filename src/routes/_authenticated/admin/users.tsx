@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
-const ROLES: AppRole[] = ["admin", "manager", "caissier", "vendeur", "comptable"];
+const ROLES: AppRole[] = ["admin", "manager", "caissier", "vendeur", "comptable", "technicien", "livreur", "client"];
 
 export const Route = createFileRoute("/_authenticated/admin/users")({ component: Page });
 
@@ -60,7 +60,7 @@ function Page() {
   return (
     <div className="space-y-6">
       <h1 className="text-display text-2xl font-bold">Employés & rôles</h1>
-      <p className="text-sm text-muted-foreground">Les employés créent leur compte depuis la page de connexion, puis vous leur attribuez un rôle ici.</p>
+      <p className="text-sm text-muted-foreground">Tout nouveau compte est un simple <strong>client</strong> sans accès au tableau de bord. Attribuez ici un rôle du personnel pour ouvrir l'accès ; les onglets visibles par rôle se configurent dans Paramètres → Accès &amp; rôles.</p>
       <Card><CardContent className="p-0"><Table>
         <TableHeader><TableRow><TableHead>Nom</TableHead><TableHead>Téléphone</TableHead><TableHead>Rôles</TableHead><TableHead>Attribuer</TableHead></TableRow></TableHeader>
         <TableBody>
