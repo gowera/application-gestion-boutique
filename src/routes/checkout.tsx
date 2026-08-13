@@ -13,10 +13,13 @@ import { feeForCity, useDeliveryConfig, useSelectedCity } from "@/lib/delivery";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { initiateShwaryPayment, getOrderPaymentStatus, cancelUnpaidOrder } from "@/lib/shwary.functions";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
-import { Smartphone, Wallet } from "lucide-react";
+import { Smartphone, Wallet, UserPlus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { useCurrentUser } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
 
@@ -39,6 +42,24 @@ function CheckoutPage() {
     pay: "shwary" as PayMethod,
     payPhone: "",
   });
+  const { user } = useCurrentUser();
+  const { data: profile } = useQuery({
+    queryKey: ["checkout", "profile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("full_name, phone").eq("id", user!.id).maybeSingle();
+      return data;
+    },
+  });
+  useEffect(() => {
+    if (!user) return;
+    setForm((f) => ({
+      ...f,
+      name: f.name || profile?.full_name || "",
+      phone: f.phone || profile?.phone || "",
+      email: f.email || user.email || "",
+    }));
+  }, [user, profile]);
   const delivery = useDeliveryConfig();
   const { city, setCity } = useSelectedCity();
   const activeCity = delivery.cities.some((c) => c.city === city) ? city : null;
@@ -124,6 +145,23 @@ function CheckoutPage() {
         <form onSubmit={submit} className="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]">
           <Card><CardContent className="p-6 space-y-4">
             <h3 className="text-display font-semibold">Vos informations</h3>
+            {!user && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <UserPlus className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <div>
+                    <p className="font-medium">Créer un compte (optionnel)</p>
+                    <p className="text-xs text-muted-foreground">
+                      Suivez la livraison de vos produits, retrouvez vos commandes, votre solde et vos bonus.
+                      Vous pouvez aussi commander sans compte : le suivi restera accessible via le numéro de commande.
+                    </p>
+                    <Link to="/auth" className="mt-2 inline-block text-xs font-semibold text-primary hover:underline">
+                      Créer un compte ou se connecter →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div><Label>Nom complet *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
               <div><Label>Téléphone *</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required /></div>

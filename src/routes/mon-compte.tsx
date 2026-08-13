@@ -12,7 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
-import { Package, Wallet, Gift, LogOut, Send, User as UserIcon } from "lucide-react";
+import { Package, Wallet, Gift, LogOut, Send, User as UserIcon, Search, Truck } from "lucide-react";
+import { OrderTimeline, ORDER_STATUS_LABEL } from "@/components/public/order-timeline";
+
 
 const fmtUsd = (n: number) => `$${(Number(n) || 0).toFixed(2)}`;
 
@@ -37,15 +39,23 @@ export const Route = createFileRoute("/mon-compte")({
   }),
 });
 
-const ORDER_LABEL: Record<string, string> = {
-  pending: "En attente", confirmed: "Confirmée", preparing: "En préparation",
-  shipping: "En livraison", delivered: "Livrée", cancelled: "Annulée", refunded: "Remboursée",
-};
+const ORDER_LABEL = ORDER_STATUS_LABEL;
+
+const FILTERS: { key: string; label: string; match: (s: string) => boolean }[] = [
+  { key: "all", label: "Toutes", match: () => true },
+  { key: "progress", label: "En cours", match: (s) => ["pending", "confirmed", "preparing", "shipping"].includes(s) },
+  { key: "delivered", label: "Livrées", match: (s) => s === "delivered" },
+  { key: "cancelled", label: "Annulées", match: (s) => s === "cancelled" || s === "refunded" },
+];
+
 
 function AccountPage() {
   const { user } = Route.useRouteContext();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [filter, setFilter] = useState("all");
+  const [track, setTrack] = useState("");
+
 
   const { data: profile } = useQuery({
     queryKey: ["account", "profile", user.id],
@@ -66,7 +76,9 @@ function AccountPage() {
       if (error) throw error;
       return data ?? [];
     },
+    refetchInterval: 30_000,
   });
+
 
   const { data: customer } = useQuery({
     queryKey: ["account", "customer", user.email, profile?.phone],
@@ -80,6 +92,10 @@ function AccountPage() {
   });
 
   const delivered = (orders ?? []).filter((o) => o.status === "delivered");
+  const activeFilter = FILTERS.find((f) => f.key === filter) ?? FILTERS[0];
+  const filtered = (orders ?? []).filter((o) => activeFilter.match(o.status));
+  const inProgress = (orders ?? []).filter((o) => ["pending", "confirmed", "preparing", "shipping"].includes(o.status));
+
   const spent = delivered.reduce((s, o) => s + Number(o.total_usd ?? 0), 0);
   const points = Math.floor(spent);
   const debt = Number(customer?.balance ?? 0);
@@ -107,11 +123,13 @@ function AccountPage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 py-10 space-y-8">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat icon={Package} label="Commandes" value={String((orders ?? []).length)} hint={`${delivered.length} livrée(s)`} />
+          <Stat icon={Truck} label="En cours" value={String(inProgress.length)} hint={inProgress.length ? `Dernière : ${inProgress[0].code}` : "Aucun suivi actif"} />
           <Stat icon={Wallet} label="Solde / dettes" value={fmtUsd(debt)} hint={debt > 0 ? "Montant dû à la boutique" : "Aucune dette"} />
           <Stat icon={Gift} label="Bonus fidélité" value={`${points} pts`} hint={`Sur ${fmtUsd(spent)} d'achats livrés`} />
         </div>
+
 
         <Card className="min-w-0">
           <CardContent className="p-4 sm:p-6">
@@ -127,15 +145,29 @@ function AccountPage() {
 
         <Card className="min-w-0">
           <CardContent className="p-4 sm:p-6">
-            <h2 className="text-display text-xl font-bold">Mes commandes</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-display text-xl font-bold">Mes commandes & suivi</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {FILTERS.map((f) => {
+                  const count = (orders ?? []).filter((o) => f.match(o.status)).length;
+                  return (
+                    <Button key={f.key} size="sm" variant={filter === f.key ? "default" : "outline"} onClick={() => setFilter(f.key)} className="h-8 text-xs">
+                      {f.label} ({count})
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
             {!orders?.length ? (
               <div className="py-8 text-center text-sm text-muted-foreground">
                 Aucune commande pour le moment.
                 <div className="mt-4"><Link to="/boutique"><Button>Découvrir la boutique</Button></Link></div>
               </div>
+            ) : !filtered.length ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">Aucune commande dans cette catégorie.</div>
             ) : (
               <div className="mt-4 space-y-3">
-                {orders.map((o) => (
+                {filtered.map((o) => (
                   <div key={o.id} className="rounded-lg border p-3 sm:p-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold">{o.code}</span>
@@ -148,13 +180,14 @@ function AccountPage() {
                     <div className="mt-1 text-xs text-muted-foreground">
                       {new Date(o.created_at).toLocaleString("fr-FR")} · {o.delivery_mode === "pickup" ? "Retrait" : "Livraison"}
                     </div>
-                    <ul className="mt-2 space-y-0.5 text-sm text-muted-foreground">
+                    <OrderTimeline status={o.status} mode={o.delivery_mode} className="mt-4" />
+                    <ul className="mt-3 space-y-0.5 text-sm text-muted-foreground">
                       {(o.order_items ?? []).map((it, i) => (
                         <li key={i} className="break-words">{it.qty} × {it.product_name} — {fmtUsd(Number(it.line_total_usd))}</li>
                       ))}
                     </ul>
                     <Link to="/commande/$code" params={{ code: o.code }} className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
-                      Voir le suivi →
+                      Voir le suivi détaillé →
                     </Link>
                   </div>
                 ))}
@@ -162,6 +195,21 @@ function AccountPage() {
             )}
           </CardContent>
         </Card>
+
+        <Card className="min-w-0">
+          <CardContent className="p-4 sm:p-6">
+            <h2 className="text-display text-xl font-bold">Suivre une commande passée sans compte</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Entrez le numéro reçu lors de votre achat (ex. CMD-20260813-0001).</p>
+            <form
+              className="mt-3 flex flex-col gap-2 sm:flex-row"
+              onSubmit={(e) => { e.preventDefault(); const c = track.trim(); if (c) navigate({ to: "/commande/$code", params: { code: c } }); }}
+            >
+              <Input value={track} onChange={(e) => setTrack(e.target.value)} placeholder="CMD-…" className="uppercase" />
+              <Button type="submit" className="sm:w-auto"><Search className="mr-2 h-4 w-4" />Suivre</Button>
+            </form>
+          </CardContent>
+        </Card>
+
 
         <div className="grid gap-6 lg:grid-cols-2">
           <ContactCard defaultName={profile?.full_name ?? ""} defaultEmail={user.email ?? ""} defaultPhone={profile?.phone ?? ""} />

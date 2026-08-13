@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatMoney, useSettings } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
+import { OrderTimeline } from "@/components/public/order-timeline";
 
 export const Route = createFileRoute("/commande/$code")({ component: OrderTracking });
 
@@ -46,7 +47,12 @@ function OrderTracking() {
             <p className="mt-2 text-muted-foreground">Numéro : <span className="font-mono font-semibold">{order.code}</span></p>
             <Badge className="mt-3">{STATUS_LABEL[order.status]}</Badge>
           </div>
+          <OrderTimeline status={order.status} mode={(order as { delivery_mode?: string }).delivery_mode ?? null} className="mt-8" />
           <PaymentBanner paid={!!order.paid} status={order.payment_status ?? null} />
+          <div className="mt-4 text-center text-sm">
+            <Link to="/mon-compte" className="font-medium text-primary hover:underline">Suivre toutes mes commandes dans mon compte →</Link>
+          </div>
+
           <Card className="mt-8"><CardContent className="p-6 space-y-4">
             <h3 className="text-display font-semibold">Détails</h3>
             <div className="text-sm space-y-1">
