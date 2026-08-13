@@ -12,7 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
-import { fmtUsd } from "@/lib/format";
+
+const fmtUsd = (n: number) => `$${(Number(n) || 0).toFixed(2)}`;
 import { Package, Wallet, Gift, LogOut, Send, User as UserIcon } from "lucide-react";
 
 export const Route = createFileRoute("/mon-compte")({
