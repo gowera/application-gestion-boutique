@@ -134,15 +134,29 @@ function AccountPage() {
 
         <Card className="min-w-0">
           <CardContent className="p-4 sm:p-6">
-            <h2 className="text-display text-xl font-bold">Mes commandes</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-display text-xl font-bold">Mes commandes & suivi</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {FILTERS.map((f) => {
+                  const count = (orders ?? []).filter((o) => f.match(o.status)).length;
+                  return (
+                    <Button key={f.key} size="sm" variant={filter === f.key ? "default" : "outline"} onClick={() => setFilter(f.key)} className="h-8 text-xs">
+                      {f.label} ({count})
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
             {!orders?.length ? (
               <div className="py-8 text-center text-sm text-muted-foreground">
                 Aucune commande pour le moment.
                 <div className="mt-4"><Link to="/boutique"><Button>Découvrir la boutique</Button></Link></div>
               </div>
+            ) : !filtered.length ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">Aucune commande dans cette catégorie.</div>
             ) : (
               <div className="mt-4 space-y-3">
-                {orders.map((o) => (
+                {filtered.map((o) => (
                   <div key={o.id} className="rounded-lg border p-3 sm:p-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold">{o.code}</span>
@@ -155,13 +169,14 @@ function AccountPage() {
                     <div className="mt-1 text-xs text-muted-foreground">
                       {new Date(o.created_at).toLocaleString("fr-FR")} · {o.delivery_mode === "pickup" ? "Retrait" : "Livraison"}
                     </div>
-                    <ul className="mt-2 space-y-0.5 text-sm text-muted-foreground">
+                    <OrderTimeline status={o.status} mode={o.delivery_mode} className="mt-4" />
+                    <ul className="mt-3 space-y-0.5 text-sm text-muted-foreground">
                       {(o.order_items ?? []).map((it, i) => (
                         <li key={i} className="break-words">{it.qty} × {it.product_name} — {fmtUsd(Number(it.line_total_usd))}</li>
                       ))}
                     </ul>
                     <Link to="/commande/$code" params={{ code: o.code }} className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
-                      Voir le suivi →
+                      Voir le suivi détaillé →
                     </Link>
                   </div>
                 ))}
@@ -169,6 +184,21 @@ function AccountPage() {
             )}
           </CardContent>
         </Card>
+
+        <Card className="min-w-0">
+          <CardContent className="p-4 sm:p-6">
+            <h2 className="text-display text-xl font-bold">Suivre une commande passée sans compte</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Entrez le numéro reçu lors de votre achat (ex. CMD-20260813-0001).</p>
+            <form
+              className="mt-3 flex flex-col gap-2 sm:flex-row"
+              onSubmit={(e) => { e.preventDefault(); const c = track.trim(); if (c) navigate({ to: "/commande/$code", params: { code: c } }); }}
+            >
+              <Input value={track} onChange={(e) => setTrack(e.target.value)} placeholder="CMD-…" className="uppercase" />
+              <Button type="submit" className="sm:w-auto"><Search className="mr-2 h-4 w-4" />Suivre</Button>
+            </form>
+          </CardContent>
+        </Card>
+
 
         <div className="grid gap-6 lg:grid-cols-2">
           <ContactCard defaultName={profile?.full_name ?? ""} defaultEmail={user.email ?? ""} defaultPhone={profile?.phone ?? ""} />
