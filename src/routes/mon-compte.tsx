@@ -12,7 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
-import { Package, Wallet, Gift, LogOut, Send, User as UserIcon } from "lucide-react";
+import { Package, Wallet, Gift, LogOut, Send, User as UserIcon, Search } from "lucide-react";
+import { OrderTimeline, ORDER_STATUS_LABEL } from "@/components/public/order-timeline";
+
 
 const fmtUsd = (n: number) => `$${(Number(n) || 0).toFixed(2)}`;
 
