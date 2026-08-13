@@ -84,11 +84,8 @@ function MainNav() {
           <Button variant="ghost" size="icon" className="hidden sm:inline-flex text-foreground/70" aria-label="Rechercher">
             <Search className="h-5 w-5" />
           </Button>
-          <Link to="/auth" className="hidden sm:inline-flex">
-            <Button variant="ghost" size="icon" aria-label="Compte" className="text-foreground/70">
-              <User className="h-5 w-5" />
-            </Button>
-          </Link>
+          <AccountButton />
+
           <Link to="/panier">
             <Button variant="ghost" size="icon" className="relative text-foreground/70" aria-label="Panier">
               <ShoppingCart className="h-5 w-5" />
