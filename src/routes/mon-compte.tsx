@@ -76,7 +76,9 @@ function AccountPage() {
       if (error) throw error;
       return data ?? [];
     },
+    refetchInterval: 30_000,
   });
+
 
   const { data: customer } = useQuery({
     queryKey: ["account", "customer", user.email, profile?.phone],
