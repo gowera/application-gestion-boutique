@@ -6,7 +6,6 @@ import { UserMenu } from "@/components/user-menu";
 import { NotificationsCenter } from "@/components/admin/notifications-center";
 import { useAllowedMenus, STAFF_ROLES } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -21,10 +20,7 @@ export const Route = createFileRoute("/_authenticated")({
         _action: "auth.denied",
         _metadata: { path: typeof window !== "undefined" ? window.location.pathname : null, roles: list },
       }).then(() => {}, () => {});
-      toast.error("Accès refusé", {
-        description: "Votre compte client n'a pas accès au tableau de bord. Contactez un administrateur.",
-      });
-      throw redirect({ to: "/boutique" });
+      throw redirect({ to: "/mon-compte" });
     }
     return { user: data.user };
   },

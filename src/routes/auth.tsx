@@ -7,13 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useLogoUrl } from "@/lib/logo";
+import { STAFF_ROLES } from "@/lib/permissions";
+
+async function landingFor(userId: string): Promise<"/admin" | "/mon-compte"> {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  const list = (data ?? []).map((r) => r.role as string);
+  return list.some((r) => (STAFF_ROLES as string[]).includes(r)) ? "/admin" : "/mon-compte";
+}
 
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/admin" });
+    if (data.user) throw redirect({ to: await landingFor(data.user.id) });
   },
   component: AuthPage,
 });
@@ -30,7 +37,8 @@ function AuthPage() {
 
   useEffect(() => {
     const sub = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) navigate({ to: "/admin", replace: true });
+      if (!session) return;
+      void landingFor(session.user.id).then((to) => navigate({ to, replace: true }));
     });
     return () => sub.data.subscription.unsubscribe();
   }, [navigate]);
@@ -48,13 +56,13 @@ function AuthPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/admin`,
+          emailRedirectTo: `${window.location.origin}/mon-compte`,
           data: { full_name: fullName },
         },
       });
       setLoading(false);
       if (error) return toast.error(error.message);
-      toast.success("Compte créé. Un administrateur doit vous attribuer un rôle.");
+      toast.success("Compte créé — bienvenue dans votre espace client.");
     }
   }
 
@@ -72,7 +80,7 @@ function AuthPage() {
               {mode === "login" ? "Connexion" : "Créer un compte"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {mode === "login" ? "Accédez à votre espace d'administration." : "Ouvrez un compte employé."}
+              {mode === "login" ? "Accédez à votre espace client ou d'administration." : "Ouvrez votre compte client CONETEC."}
             </p>
             <form className="mt-6 space-y-4" onSubmit={submit}>
               {mode === "signup" && (
