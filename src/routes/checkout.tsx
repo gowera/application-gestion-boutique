@@ -42,6 +42,24 @@ function CheckoutPage() {
     pay: "shwary" as PayMethod,
     payPhone: "",
   });
+  const { user } = useCurrentUser();
+  const { data: profile } = useQuery({
+    queryKey: ["checkout", "profile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("full_name, phone").eq("id", user!.id).maybeSingle();
+      return data;
+    },
+  });
+  useEffect(() => {
+    if (!user) return;
+    setForm((f) => ({
+      ...f,
+      name: f.name || profile?.full_name || "",
+      phone: f.phone || profile?.phone || "",
+      email: f.email || user.email || "",
+    }));
+  }, [user, profile]);
   const delivery = useDeliveryConfig();
   const { city, setCity } = useSelectedCity();
   const activeCity = delivery.cities.some((c) => c.city === city) ? city : null;
