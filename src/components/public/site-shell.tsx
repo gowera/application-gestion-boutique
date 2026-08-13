@@ -7,6 +7,59 @@ import { useSettings } from "@/lib/currency";
 import { StorageImage } from "@/components/storage-image";
 import { SocialLinks } from "@/components/public/social-links";
 import logo from "@/assets/brand/logo.png";
+import { useCurrentUser } from "@/hooks/use-auth";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { LogOut, LayoutDashboard } from "lucide-react";
+import { useHasRole } from "@/hooks/use-auth";
+import { STAFF_ROLES } from "@/lib/permissions";
+
+function AccountButton() {
+  const { user } = useCurrentUser();
+  const isStaff = useHasRole(STAFF_ROLES);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+
+  if (!user) {
+    return (
+      <Link to="/auth" className="hidden sm:inline-flex">
+        <Button variant="ghost" size="sm" className="gap-2 text-foreground/70" aria-label="Se connecter">
+          <User className="h-5 w-5" /><span className="hidden md:inline">Connexion</span>
+        </Button>
+      </Link>
+    );
+  }
+
+  async function signOut() {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/", replace: true });
+  }
+
+  const initial = (user.email ?? "?").slice(0, 1).toUpperCase();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="gap-2" aria-label="Mon compte">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">{initial}</span>
+          <span className="hidden md:inline max-w-[140px] truncate text-sm">{user.email}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="truncate">Connecté · {user.email}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild><Link to="/mon-compte"><User className="mr-2 h-4 w-4" />Mon compte</Link></DropdownMenuItem>
+        {isStaff && (
+          <DropdownMenuItem asChild><Link to="/admin"><LayoutDashboard className="mr-2 h-4 w-4" />Tableau de bord</Link></DropdownMenuItem>
+        )}
+        <DropdownMenuItem onClick={signOut}><LogOut className="mr-2 h-4 w-4" />Se déconnecter</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 const NAV = [
   { to: "/boutique", label: "Boutique" },
@@ -107,7 +160,7 @@ function MainNav() {
             {NAV.map((n) => (
               <Link key={n.label} to={n.to} className="py-2 text-sm" onClick={() => setOpen(false)}>{n.label}</Link>
             ))}
-            <Link to="/auth" className="py-2 text-sm" onClick={() => setOpen(false)}>Connexion</Link>
+            <Link to="/mon-compte" className="py-2 text-sm" onClick={() => setOpen(false)}>Mon compte</Link>
           </div>
         </div>
       )}
