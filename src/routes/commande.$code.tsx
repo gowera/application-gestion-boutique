@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatMoney, useSettings } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
+import { OrderTimeline } from "@/components/public/order-timeline";
 
 export const Route = createFileRoute("/commande/$code")({ component: OrderTracking });
 

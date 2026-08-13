@@ -13,10 +13,13 @@ import { feeForCity, useDeliveryConfig, useSelectedCity } from "@/lib/delivery";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { initiateShwaryPayment, getOrderPaymentStatus, cancelUnpaidOrder } from "@/lib/shwary.functions";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
-import { Smartphone, Wallet } from "lucide-react";
+import { Smartphone, Wallet, UserPlus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { useCurrentUser } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
 
