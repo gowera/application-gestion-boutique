@@ -53,6 +53,9 @@ function AccountPage() {
   const { user } = Route.useRouteContext();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [filter, setFilter] = useState("all");
+  const [track, setTrack] = useState("");
+
 
   const { data: profile } = useQuery({
     queryKey: ["account", "profile", user.id],
