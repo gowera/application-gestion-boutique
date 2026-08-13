@@ -123,11 +123,13 @@ function AccountPage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 py-10 space-y-8">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat icon={Package} label="Commandes" value={String((orders ?? []).length)} hint={`${delivered.length} livrée(s)`} />
+          <Stat icon={Truck} label="En cours" value={String(inProgress.length)} hint={inProgress.length ? `Dernière : ${inProgress[0].code}` : "Aucun suivi actif"} />
           <Stat icon={Wallet} label="Solde / dettes" value={fmtUsd(debt)} hint={debt > 0 ? "Montant dû à la boutique" : "Aucune dette"} />
           <Stat icon={Gift} label="Bonus fidélité" value={`${points} pts`} hint={`Sur ${fmtUsd(spent)} d'achats livrés`} />
         </div>
+
 
         <Card className="min-w-0">
           <CardContent className="p-4 sm:p-6">
