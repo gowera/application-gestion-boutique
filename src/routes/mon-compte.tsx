@@ -92,6 +92,10 @@ function AccountPage() {
   });
 
   const delivered = (orders ?? []).filter((o) => o.status === "delivered");
+  const activeFilter = FILTERS.find((f) => f.key === filter) ?? FILTERS[0];
+  const filtered = (orders ?? []).filter((o) => activeFilter.match(o.status));
+  const inProgress = (orders ?? []).filter((o) => ["pending", "confirmed", "preparing", "shipping"].includes(o.status));
+
   const spent = delivered.reduce((s, o) => s + Number(o.total_usd ?? 0), 0);
   const points = Math.floor(spent);
   const debt = Number(customer?.balance ?? 0);
