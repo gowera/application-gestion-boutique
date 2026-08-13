@@ -37,10 +37,15 @@ export const Route = createFileRoute("/mon-compte")({
   }),
 });
 
-const ORDER_LABEL: Record<string, string> = {
-  pending: "En attente", confirmed: "Confirmée", preparing: "En préparation",
-  shipping: "En livraison", delivered: "Livrée", cancelled: "Annulée", refunded: "Remboursée",
-};
+const ORDER_LABEL = ORDER_STATUS_LABEL;
+
+const FILTERS: { key: string; label: string; match: (s: string) => boolean }[] = [
+  { key: "all", label: "Toutes", match: () => true },
+  { key: "progress", label: "En cours", match: (s) => ["pending", "confirmed", "preparing", "shipping"].includes(s) },
+  { key: "delivered", label: "Livrées", match: (s) => s === "delivered" },
+  { key: "cancelled", label: "Annulées", match: (s) => s === "cancelled" || s === "refunded" },
+];
+
 
 function AccountPage() {
   const { user } = Route.useRouteContext();
