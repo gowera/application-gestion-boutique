@@ -1,9 +1,10 @@
 import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteShell } from "@/components/public/site-shell";
 import { SiteMap } from "@/components/public/site-map";
+import { AccountAddresses } from "@/components/public/account-addresses";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
-import { Package, Wallet, Gift, LogOut, Send, User as UserIcon, Search, Truck } from "lucide-react";
+import { Package, Wallet, Gift, LogOut, Send, User as UserIcon, Search, Truck, FileDown, Link2, MapPin } from "lucide-react";
 import { OrderTimeline, ORDER_STATUS_LABEL } from "@/components/public/order-timeline";
+import { useSettings } from "@/lib/currency";
+import { downloadOnlineOrderDocument } from "@/lib/order-pdf";
 
 
 const fmtUsd = (n: number) => `$${(Number(n) || 0).toFixed(2)}`;
+
 
 
 export const Route = createFileRoute("/mon-compte")({
