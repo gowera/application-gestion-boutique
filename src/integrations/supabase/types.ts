@@ -165,6 +165,42 @@ export type Database = {
           },
         ]
       }
+      customer_addresses: {
+        Row: {
+          address: string
+          city: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          label: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customer_ledger: {
         Row: {
           created_at: string
@@ -1702,6 +1738,11 @@ export type Database = {
       }
       cancel_sale: { Args: { _sale_id: string }; Returns: undefined }
       check_invitation: { Args: { _token: string }; Returns: Json }
+      claim_my_orders: { Args: never; Returns: number }
+      claim_order_by_code: {
+        Args: { _code: string; _contact?: string }
+        Returns: Json
+      }
       create_online_order: {
         Args: {
           _customer_email: string

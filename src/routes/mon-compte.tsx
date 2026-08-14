@@ -1,9 +1,10 @@
 import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteShell } from "@/components/public/site-shell";
 import { SiteMap } from "@/components/public/site-map";
+import { AccountAddresses } from "@/components/public/account-addresses";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
-import { Package, Wallet, Gift, LogOut, Send, User as UserIcon, Search, Truck } from "lucide-react";
+import { Package, Wallet, Gift, LogOut, Send, User as UserIcon, Search, Truck, FileDown, Link2, MapPin } from "lucide-react";
 import { OrderTimeline, ORDER_STATUS_LABEL } from "@/components/public/order-timeline";
+import { useSettings } from "@/lib/currency";
+import { downloadOnlineOrderDocument } from "@/lib/order-pdf";
 
 
 const fmtUsd = (n: number) => `$${(Number(n) || 0).toFixed(2)}`;
+
 
 
 export const Route = createFileRoute("/mon-compte")({
@@ -55,6 +59,9 @@ function AccountPage() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState("all");
   const [track, setTrack] = useState("");
+  const [claimCode, setClaimCode] = useState("");
+  const [claiming, setClaiming] = useState(false);
+  const { data: settings } = useSettings();
 
 
   const { data: profile } = useQuery({
@@ -70,7 +77,7 @@ function AccountPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("online_orders")
-        .select("id, code, created_at, status, total_usd, paid, payment_status, delivery_mode, order_items(product_name, qty, line_total_usd)")
+        .select("id, code, created_at, status, total_usd, subtotal_usd, delivery_fee_usd, paid, payment_status, delivery_mode, delivery_address, customer_name, customer_phone, order_items(product_name, qty, unit_price_usd, line_total_usd)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -78,6 +85,72 @@ function AccountPage() {
     },
     refetchInterval: 30_000,
   });
+
+  // Rattachement automatique des commandes passées sans compte (email / téléphone).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.rpc("claim_my_orders");
+      if (!cancelled && Number(data) > 0) {
+        toast.success(`${data} commande(s) passée(s) avant votre inscription ont été liées à votre compte.`);
+        qc.invalidateQueries({ queryKey: ["account", "orders", user.id] });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user.id, profile?.phone, qc]);
+
+  async function claimByCode(e: React.FormEvent) {
+    e.preventDefault();
+    const code = claimCode.trim();
+    if (!code) return;
+    setClaiming(true);
+    const { data, error } = await supabase.rpc("claim_order_by_code", { _code: code });
+    setClaiming(false);
+    const res = data as { ok?: boolean; reason?: string } | null;
+    if (error || !res?.ok) {
+      const reason = res?.reason;
+      toast.error(
+        reason === "not_found" ? "Commande introuvable."
+        : reason === "already_linked" ? "Cette commande est déjà liée à un autre compte."
+        : reason === "mismatch" ? "Le numéro ne correspond pas à votre email ou téléphone."
+        : "Rattachement impossible.",
+      );
+      return;
+    }
+    toast.success("Commande rattachée à votre compte.");
+    setClaimCode("");
+    qc.invalidateQueries({ queryKey: ["account", "orders", user.id] });
+  }
+
+  async function downloadDoc(o: { code: string }) {
+    const order = (orders ?? []).find((x) => x.code === o.code);
+    if (!order) return;
+    try {
+      await downloadOnlineOrderDocument(
+        {
+          code: order.code,
+          customer_name: order.customer_name,
+          customer_phone: order.customer_phone,
+          delivery_address: order.delivery_address,
+          delivery_fee_usd: Number(order.delivery_fee_usd ?? 0),
+          subtotal_usd: Number(order.subtotal_usd ?? order.total_usd),
+          total_usd: Number(order.total_usd),
+          paid: !!order.paid,
+          order_items: (order.order_items ?? []).map((i) => ({
+            product_name: i.product_name,
+            qty: i.qty,
+            unit_price_usd: Number(i.unit_price_usd),
+            line_total_usd: Number(i.line_total_usd),
+          })),
+        },
+        settings,
+        order.paid ? "Reçu" : "Facture",
+      );
+    } catch {
+      toast.error("Téléchargement impossible");
+    }
+  }
+
 
 
   const { data: customer } = useQuery({
@@ -180,15 +253,26 @@ function AccountPage() {
                     <div className="mt-1 text-xs text-muted-foreground">
                       {new Date(o.created_at).toLocaleString("fr-FR")} · {o.delivery_mode === "pickup" ? "Retrait" : "Livraison"}
                     </div>
+                    {o.delivery_address && (
+                      <div className="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-energy" />
+                        <span className="break-words">{o.delivery_address}</span>
+                      </div>
+                    )}
                     <OrderTimeline status={o.status} mode={o.delivery_mode} className="mt-4" />
                     <ul className="mt-3 space-y-0.5 text-sm text-muted-foreground">
                       {(o.order_items ?? []).map((it, i) => (
                         <li key={i} className="break-words">{it.qty} × {it.product_name} — {fmtUsd(Number(it.line_total_usd))}</li>
                       ))}
                     </ul>
-                    <Link to="/commande/$code" params={{ code: o.code }} className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
-                      Voir le suivi détaillé →
-                    </Link>
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <Link to="/commande/$code" params={{ code: o.code }} className="text-sm font-medium text-primary hover:underline">
+                        Voir le suivi détaillé →
+                      </Link>
+                      <Button size="sm" variant="outline" onClick={() => downloadDoc(o)}>
+                        <FileDown className="mr-2 h-4 w-4" />{o.paid ? "Télécharger le reçu" : "Télécharger la facture"}
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -196,9 +280,11 @@ function AccountPage() {
           </CardContent>
         </Card>
 
+        <AccountAddresses userId={user.id} />
+
         <Card className="min-w-0">
           <CardContent className="p-4 sm:p-6">
-            <h2 className="text-display text-xl font-bold">Suivre une commande passée sans compte</h2>
+            <h2 className="text-display text-xl font-bold">Suivre ou rattacher une commande passée sans compte</h2>
             <p className="mt-1 text-sm text-muted-foreground">Entrez le numéro reçu lors de votre achat (ex. CMD-20260813-0001).</p>
             <form
               className="mt-3 flex flex-col gap-2 sm:flex-row"
@@ -207,8 +293,21 @@ function AccountPage() {
               <Input value={track} onChange={(e) => setTrack(e.target.value)} placeholder="CMD-…" className="uppercase" />
               <Button type="submit" className="sm:w-auto"><Search className="mr-2 h-4 w-4" />Suivre</Button>
             </form>
+            <div className="mt-5 border-t pt-4">
+              <h3 className="font-semibold">Rattacher une commande à mon compte</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Vos commandes passées avec le même email ou téléphone sont liées automatiquement. Sinon, saisissez le numéro ici.
+              </p>
+              <form className="mt-3 flex flex-col gap-2 sm:flex-row" onSubmit={claimByCode}>
+                <Input value={claimCode} onChange={(e) => setClaimCode(e.target.value)} placeholder="CMD-…" className="uppercase" />
+                <Button type="submit" variant="secondary" className="sm:w-auto" disabled={claiming}>
+                  <Link2 className="mr-2 h-4 w-4" />{claiming ? "Liaison…" : "Rattacher"}
+                </Button>
+              </form>
+            </div>
           </CardContent>
         </Card>
+
 
 
         <div className="grid gap-6 lg:grid-cols-2">
