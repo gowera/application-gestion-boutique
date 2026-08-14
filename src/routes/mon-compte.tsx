@@ -104,7 +104,7 @@ function AccountPage() {
     const code = claimCode.trim();
     if (!code) return;
     setClaiming(true);
-    const { data, error } = await supabase.rpc("claim_order_by_code", { _code: code, _contact: null });
+    const { data, error } = await supabase.rpc("claim_order_by_code", { _code: code });
     setClaiming(false);
     const res = data as { ok?: boolean; reason?: string } | null;
     if (error || !res?.ok) {
