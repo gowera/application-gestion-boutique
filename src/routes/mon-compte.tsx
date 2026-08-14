@@ -253,15 +253,26 @@ function AccountPage() {
                     <div className="mt-1 text-xs text-muted-foreground">
                       {new Date(o.created_at).toLocaleString("fr-FR")} · {o.delivery_mode === "pickup" ? "Retrait" : "Livraison"}
                     </div>
+                    {o.delivery_address && (
+                      <div className="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-energy" />
+                        <span className="break-words">{o.delivery_address}</span>
+                      </div>
+                    )}
                     <OrderTimeline status={o.status} mode={o.delivery_mode} className="mt-4" />
                     <ul className="mt-3 space-y-0.5 text-sm text-muted-foreground">
                       {(o.order_items ?? []).map((it, i) => (
                         <li key={i} className="break-words">{it.qty} × {it.product_name} — {fmtUsd(Number(it.line_total_usd))}</li>
                       ))}
                     </ul>
-                    <Link to="/commande/$code" params={{ code: o.code }} className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
-                      Voir le suivi détaillé →
-                    </Link>
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <Link to="/commande/$code" params={{ code: o.code }} className="text-sm font-medium text-primary hover:underline">
+                        Voir le suivi détaillé →
+                      </Link>
+                      <Button size="sm" variant="outline" onClick={() => downloadDoc(o)}>
+                        <FileDown className="mr-2 h-4 w-4" />{o.paid ? "Télécharger le reçu" : "Télécharger la facture"}
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -269,9 +280,11 @@ function AccountPage() {
           </CardContent>
         </Card>
 
+        <AccountAddresses userId={user.id} />
+
         <Card className="min-w-0">
           <CardContent className="p-4 sm:p-6">
-            <h2 className="text-display text-xl font-bold">Suivre une commande passée sans compte</h2>
+            <h2 className="text-display text-xl font-bold">Suivre ou rattacher une commande passée sans compte</h2>
             <p className="mt-1 text-sm text-muted-foreground">Entrez le numéro reçu lors de votre achat (ex. CMD-20260813-0001).</p>
             <form
               className="mt-3 flex flex-col gap-2 sm:flex-row"
@@ -280,8 +293,21 @@ function AccountPage() {
               <Input value={track} onChange={(e) => setTrack(e.target.value)} placeholder="CMD-…" className="uppercase" />
               <Button type="submit" className="sm:w-auto"><Search className="mr-2 h-4 w-4" />Suivre</Button>
             </form>
+            <div className="mt-5 border-t pt-4">
+              <h3 className="font-semibold">Rattacher une commande à mon compte</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Vos commandes passées avec le même email ou téléphone sont liées automatiquement. Sinon, saisissez le numéro ici.
+              </p>
+              <form className="mt-3 flex flex-col gap-2 sm:flex-row" onSubmit={claimByCode}>
+                <Input value={claimCode} onChange={(e) => setClaimCode(e.target.value)} placeholder="CMD-…" className="uppercase" />
+                <Button type="submit" variant="secondary" className="sm:w-auto" disabled={claiming}>
+                  <Link2 className="mr-2 h-4 w-4" />{claiming ? "Liaison…" : "Rattacher"}
+                </Button>
+              </form>
+            </div>
           </CardContent>
         </Card>
+
 
 
         <div className="grid gap-6 lg:grid-cols-2">
