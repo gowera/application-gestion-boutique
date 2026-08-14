@@ -59,6 +59,9 @@ function AccountPage() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState("all");
   const [track, setTrack] = useState("");
+  const [claimCode, setClaimCode] = useState("");
+  const [claiming, setClaiming] = useState(false);
+  const { data: settings } = useSettings();
 
 
   const { data: profile } = useQuery({
@@ -74,7 +77,7 @@ function AccountPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("online_orders")
-        .select("id, code, created_at, status, total_usd, paid, payment_status, delivery_mode, order_items(product_name, qty, line_total_usd)")
+        .select("id, code, created_at, status, total_usd, subtotal_usd, delivery_fee_usd, paid, payment_status, delivery_mode, delivery_address, customer_name, customer_phone, order_items(product_name, qty, unit_price_usd, line_total_usd)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -82,6 +85,72 @@ function AccountPage() {
     },
     refetchInterval: 30_000,
   });
+
+  // Rattachement automatique des commandes passées sans compte (email / téléphone).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.rpc("claim_my_orders");
+      if (!cancelled && Number(data) > 0) {
+        toast.success(`${data} commande(s) passée(s) avant votre inscription ont été liées à votre compte.`);
+        qc.invalidateQueries({ queryKey: ["account", "orders", user.id] });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user.id, profile?.phone, qc]);
+
+  async function claimByCode(e: React.FormEvent) {
+    e.preventDefault();
+    const code = claimCode.trim();
+    if (!code) return;
+    setClaiming(true);
+    const { data, error } = await supabase.rpc("claim_order_by_code", { _code: code, _contact: null });
+    setClaiming(false);
+    const res = data as { ok?: boolean; reason?: string } | null;
+    if (error || !res?.ok) {
+      const reason = res?.reason;
+      toast.error(
+        reason === "not_found" ? "Commande introuvable."
+        : reason === "already_linked" ? "Cette commande est déjà liée à un autre compte."
+        : reason === "mismatch" ? "Le numéro ne correspond pas à votre email ou téléphone."
+        : "Rattachement impossible.",
+      );
+      return;
+    }
+    toast.success("Commande rattachée à votre compte.");
+    setClaimCode("");
+    qc.invalidateQueries({ queryKey: ["account", "orders", user.id] });
+  }
+
+  async function downloadDoc(o: { code: string }) {
+    const order = (orders ?? []).find((x) => x.code === o.code);
+    if (!order) return;
+    try {
+      await downloadOnlineOrderDocument(
+        {
+          code: order.code,
+          customer_name: order.customer_name,
+          customer_phone: order.customer_phone,
+          delivery_address: order.delivery_address,
+          delivery_fee_usd: Number(order.delivery_fee_usd ?? 0),
+          subtotal_usd: Number(order.subtotal_usd ?? order.total_usd),
+          total_usd: Number(order.total_usd),
+          paid: !!order.paid,
+          order_items: (order.order_items ?? []).map((i) => ({
+            product_name: i.product_name,
+            qty: i.qty,
+            unit_price_usd: Number(i.unit_price_usd),
+            line_total_usd: Number(i.line_total_usd),
+          })),
+        },
+        settings,
+        order.paid ? "Reçu" : "Facture",
+      );
+    } catch {
+      toast.error("Téléchargement impossible");
+    }
+  }
+
 
 
   const { data: customer } = useQuery({
