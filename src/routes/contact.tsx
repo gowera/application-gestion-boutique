@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 import { useSettings } from "@/lib/currency";
-import { SiteMap, MAPS_LINK } from "@/components/public/site-map";
+import { SiteMap, useMapConfig } from "@/components/public/site-map";
 import { Phone, Mail, MessageCircle, MapPin, Clock, CheckCircle2, Send } from "lucide-react";
 
 export const Route = createFileRoute("/contact")({
@@ -32,6 +32,8 @@ function ContactPage() {
   const whatsapp = s?.whatsapp || phone;
   const address = s?.address || "République Démocratique du Congo";
   const waLink = `https://wa.me/${whatsapp.replace(/\D/g, "")}`;
+
+  const { link: mapsLink } = useMapConfig();
 
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -160,7 +162,7 @@ function ContactPage() {
         <h2 className="text-display text-2xl font-bold">Nous trouver</h2>
         <p className="mt-1 text-sm text-muted-foreground">{address}</p>
         <SiteMap className="mt-4" height={380} />
-        <a href={MAPS_LINK} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+        <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
           <MapPin className="h-4 w-4" /> Ouvrir dans Google Maps
         </a>
       </section>
