@@ -165,9 +165,22 @@ function Page() {
             <div><Label>Email</Label><Input value={core.email} onChange={(e) => setCore({ ...core, email: e.target.value })} /></div>
           </div>
           <div><Label>Adresse physique</Label><Input value={core.address} onChange={(e) => setCore({ ...core, address: e.target.value })} /></div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div><Label>Latitude</Label><Input value={core.map_lat} onChange={(e) => setCore({ ...core, map_lat: e.target.value })} /></div>
-            <div><Label>Longitude</Label><Input value={core.map_lng} onChange={(e) => setCore({ ...core, map_lng: e.target.value })} /></div>
+          <div>
+            <Label>Lien Google Maps</Label>
+            <Input
+              value={ex("map_url", "")}
+              onChange={(e) => {
+                const url = e.target.value;
+                setEx("map_url", url);
+                const c = parseMapsLink(url);
+                if (c) setCore((prev) => ({ ...prev, map_lat: String(c.lat), map_lng: String(c.lng) }));
+              }}
+              placeholder="https://www.google.com/maps/place/…"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Collez le lien de votre emplacement Google Maps. La carte du site l'utilisera après enregistrement.
+              {parseMapsLink(ex("map_url", "")) ? " ✓ Coordonnées détectées." : ex("map_url", "") ? " ⚠ Lien court non reconnu — utilisez le lien complet (avec @latitude,longitude)." : ""}
+            </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div><Label>Facebook</Label><Input value={ex("social_facebook", "")} onChange={(e) => setEx("social_facebook", e.target.value)} placeholder="https://facebook.com/…" /></div>
