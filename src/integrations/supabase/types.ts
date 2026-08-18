@@ -1638,6 +1638,42 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_operations: {
+        Row: {
+          client_op_id: string
+          created_at: string
+          id: string
+          kind: string
+          payload: Json
+          result: Json | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          client_op_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          payload?: Json
+          result?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          client_op_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          result?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       team_members: {
         Row: {
           bio: string | null
@@ -1853,6 +1889,10 @@ export type Database = {
         Returns: undefined
       }
       slugify: { Args: { "": string }; Returns: string }
+      sync_apply_operation: {
+        Args: { _client_op_id: string; _kind: string; _payload: Json }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:
