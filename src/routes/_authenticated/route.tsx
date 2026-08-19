@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/s
 import { AppSidebar } from "@/components/app-sidebar";
 import { UserMenu } from "@/components/user-menu";
 import { NotificationsCenter } from "@/components/admin/notifications-center";
+import { SyncStatus } from "@/components/admin/sync-status";
 import { useAllowedMenus, STAFF_ROLES } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 
@@ -57,6 +58,7 @@ function AuthenticatedLayout() {
           <SidebarTrigger />
           <div className="text-display text-sm font-semibold text-primary">CONETEC · Administration</div>
           <div className="ml-auto flex items-center gap-2">
+            <SyncStatus />
             <NotificationsCenter />
             <UserMenu />
           </div>

@@ -19,6 +19,7 @@ import { CustomerQuickAdd } from "@/components/customer-quick-add";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SalePreviewDialog } from "@/components/pos/sale-preview-dialog";
 import type { ReceiptData } from "@/lib/pdf";
+import { isOffline, queueOperation } from "@/lib/offline/sync";
 
 export const Route = createFileRoute("/_authenticated/admin/pos")({
   component: PosPage,
@@ -79,13 +80,25 @@ function PosPage() {
     mutationFn: async () => {
       if (cart.length === 0) throw new Error("Panier vide");
       if ((isCredit || remaining > 0.01) && !customerId) throw new Error("Un client est requis pour un paiement à crédit.");
-      const { data, error } = await supabase.rpc("create_pos_sale", {
+      const rpcArgs = {
         _customer_id: (customerId ?? null) as unknown as string,
         _items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty, unit_price_usd: l.unit_price_usd, discount_usd: l.discount_usd })),
         _payments: payments.filter((p) => p.amount > 0).map((p) => ({ method: p.method, amount: p.amount, currency: p.currency, reference: p.reference })),
         _discount_usd: discount,
         _note: note || undefined,
-      });
+      };
+      if (isOffline()) {
+        await queueOperation("pos_sale", `Vente ${formatMoney(total, currency, rate)}`, {
+          customer_id: rpcArgs._customer_id,
+          items: rpcArgs._items,
+          payments: rpcArgs._payments,
+          discount_usd: discount,
+          note: note || null,
+          due_date: isCredit && dueDate ? dueDate : null,
+        });
+        return null;
+      }
+      const { data, error } = await supabase.rpc("create_pos_sale", rpcArgs);
       if (error) throw error;
       const saleId = data as string;
       if (isCredit && dueDate) {
@@ -94,6 +107,11 @@ function PosPage() {
       return saleId;
     },
     onSuccess: async (saleId) => {
+      if (!saleId) {
+        toast.success("Vente enregistrée hors ligne — elle sera envoyée dès le retour du réseau.");
+        setCart([]); setDiscount(0); setNote(""); setPayments([{ method: "cash", amount: 0, currency }]); setCustomerId(null); setIsCredit(false); setDueDate(""); setDocumentType("Reçu");
+        return;
+      }
       await createNotification({
         title: "Nouvelle vente",
         message: `Une vente a été enregistrée pour ${cart.length} article${cart.length > 1 ? "s" : ""}.`,
