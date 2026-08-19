@@ -98,13 +98,7 @@ function PosPage() {
         });
         return null;
       }
-      const { data, error } = await supabase.rpc("create_pos_sale", {
-        _customer_id: (customerId ?? null) as unknown as string,
-        _items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty, unit_price_usd: l.unit_price_usd, discount_usd: l.discount_usd })),
-        _payments: payments.filter((p) => p.amount > 0).map((p) => ({ method: p.method, amount: p.amount, currency: p.currency, reference: p.reference })),
-        _discount_usd: discount,
-        _note: note || undefined,
-      });
+      const { data, error } = await supabase.rpc("create_pos_sale", rpcArgs);
       if (error) throw error;
       const saleId = data as string;
       if (isCredit && dueDate) {
