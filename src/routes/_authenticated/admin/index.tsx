@@ -9,6 +9,7 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar,
 } from "recharts";
 import { AlertTriangle, DollarSign, ShoppingCart, Package, Users, Banknote, HandCoins, ArrowRight, Store } from "lucide-react";
+import { WindowsAppCard } from "@/components/admin/windows-app-card";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: DashboardPage,
