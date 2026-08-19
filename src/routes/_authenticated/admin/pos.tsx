@@ -107,6 +107,11 @@ function PosPage() {
       return saleId;
     },
     onSuccess: async (saleId) => {
+      if (!saleId) {
+        toast.success("Vente enregistrée hors ligne — elle sera envoyée dès le retour du réseau.");
+        setCart([]); setDiscount(0); setNote(""); setPayments([{ method: "cash", amount: 0, currency }]); setCustomerId(null); setIsCredit(false); setDueDate(""); setDocumentType("Reçu");
+        return;
+      }
       await createNotification({
         title: "Nouvelle vente",
         message: `Une vente a été enregistrée pour ${cart.length} article${cart.length > 1 ? "s" : ""}.`,
