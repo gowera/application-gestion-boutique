@@ -98,5 +98,7 @@
   },
   "resolutions": {
     "js-yaml": "^4.3.0"
-  }
+  },
+  "main": "electron/main.cjs",
+  "version": "1.0.0"
 }
