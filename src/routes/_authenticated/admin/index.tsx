@@ -107,6 +107,8 @@ function DashboardPage() {
         </div>
       </div>
 
+      <WindowsAppCard />
+
       {/* À recouvrer — highlight */}
       <Card className="overflow-hidden rounded-2xl border-warning/40 bg-gradient-to-br from-warning/10 via-transparent to-transparent shadow-sm">
         <CardContent className="p-5 flex flex-wrap items-center gap-6">
