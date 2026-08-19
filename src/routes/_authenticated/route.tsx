@@ -58,6 +58,7 @@ function AuthenticatedLayout() {
           <SidebarTrigger />
           <div className="text-display text-sm font-semibold text-primary">CONETEC · Administration</div>
           <div className="ml-auto flex items-center gap-2">
+            <SyncStatus />
             <NotificationsCenter />
             <UserMenu />
           </div>
