@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>CONETEC — Hors ligne</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at 30% 20%, #0b2a63, #04122e 60%);
+        color: #eef3ff;
+        font-family: Segoe UI, system-ui, sans-serif;
+        text-align: center;
+      }
+      .box { max-width: 460px; padding: 32px; }
+      h1 { font-size: 24px; margin: 0 0 12px; }
+      p { color: #b9c6e6; line-height: 1.6; font-size: 14px; }
+      button {
+        margin-top: 20px;
+        padding: 12px 22px;
+        border: 0;
+        border-radius: 999px;
+        background: #ffb020;
+        color: #1a1200;
+        font-weight: 700;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>Connexion indisponible</h1>
+      <p>
+        CONETEC n'a pas pu joindre le serveur. Les opérations enregistrées hors ligne restent en attente et seront
+        envoyées automatiquement dès que la connexion revient.
+      </p>
+      <button onclick="location.reload()">Réessayer</button>
+    </div>
+  </body>
+</html>
