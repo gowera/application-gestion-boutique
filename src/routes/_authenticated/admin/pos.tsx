@@ -19,6 +19,7 @@ import { CustomerQuickAdd } from "@/components/customer-quick-add";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SalePreviewDialog } from "@/components/pos/sale-preview-dialog";
 import type { ReceiptData } from "@/lib/pdf";
+import { isOffline, queueOperation } from "@/lib/offline/sync";
 
 export const Route = createFileRoute("/_authenticated/admin/pos")({
   component: PosPage,
