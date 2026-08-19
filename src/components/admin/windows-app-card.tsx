@@ -27,11 +27,12 @@ export function WindowsAppCard() {
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Application Windows</div>
           <div className="text-display text-xl font-bold">CONETEC Admin pour PC</div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Fonctionne sans internet : les ventes, dépenses et clients saisis hors ligne sont envoyés au serveur dès que la
-            connexion revient.
+            Fichier .zip : décompressez-le puis lancez CONETEC.exe. Fonctionne sans internet : les ventes, dépenses et
+            clients saisis hors ligne sont envoyés au serveur dès que la connexion revient.
             {version && ` Version ${version}.`}
             {size && ` (${size})`}
           </p>
+
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
             <span className="inline-flex items-center gap-1 text-muted-foreground">
               {online ? <RefreshCw className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
