@@ -247,7 +247,25 @@ function CreditsTab() {
   const [grant, setGrant] = useState<Customer | null>(null);
   const [amount, setAmount] = useState(0);
   const [note, setNote] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const qc = useQueryClient();
+
+  const { data: dueDates } = useQuery({
+    queryKey: ["ledger-due-dates"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("customer_ledger")
+        .select("customer_id,due_date")
+        .gt("delta", 0)
+        .not("due_date", "is", null)
+        .order("due_date", { ascending: true });
+      const map: Record<string, string> = {};
+      for (const row of (data ?? []) as { customer_id: string; due_date: string }[]) {
+        if (!map[row.customer_id]) map[row.customer_id] = row.due_date;
+      }
+      return map;
+    },
+  });
 
   const { data: debtors } = useQuery({
     queryKey: ["debtors"],
@@ -275,7 +293,7 @@ function CreditsTab() {
     mutationFn: async () => {
       if (!grant || amount <= 0) throw new Error("Montant invalide");
       // Direct ledger entry + balance update
-      const { error: le } = await supabase.from("customer_ledger").insert({ customer_id: grant.id, delta: amount, reason: note || "octroi_credit" });
+      const { error: le } = await supabase.from("customer_ledger").insert({ customer_id: grant.id, delta: amount, reason: note || "octroi_credit", due_date: dueDate || null });
       if (le) throw le;
       const { error: ue } = await supabase.from("customers").update({ balance: Number(grant.balance) + amount }).eq("id", grant.id);
       if (ue) throw ue;
@@ -284,7 +302,8 @@ function CreditsTab() {
       toast.success("Crédit octroyé");
       qc.invalidateQueries({ queryKey: ["debtors"] });
       qc.invalidateQueries({ queryKey: ["customers"] });
-      setGrant(null); setAmount(0); setNote("");
+      qc.invalidateQueries({ queryKey: ["ledger-due-dates"] });
+      setGrant(null); setAmount(0); setNote(""); setDueDate("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -318,7 +337,8 @@ function CreditsTab() {
         <TableHeader><TableRow>
           <TableHead>Client</TableHead><TableHead>Contact</TableHead>
           <TableHead className="text-right">Limite</TableHead>
-          <TableHead className="text-right">Dette</TableHead><TableHead></TableHead>
+          <TableHead className="text-right">Dette</TableHead>
+          <TableHead className="text-right">Échéance</TableHead><TableHead></TableHead>
         </TableRow></TableHeader>
         <TableBody>
           {debtors?.map((c) => (
@@ -330,12 +350,13 @@ function CreditsTab() {
               </TableCell>
               <TableCell className="text-right text-sm">{formatMoney(Number(c.credit_limit), currency, rate)}</TableCell>
               <TableCell className="text-right font-semibold text-destructive">{formatMoney(Number(c.balance), currency, rate)}</TableCell>
+              <TableCell className="text-right text-sm">{dueDates?.[c.id] ? formatDate(dueDates[c.id]) : "—"}</TableCell>
               <TableCell className="text-right">
                 <Button size="sm" onClick={() => setPay(c)}><Wallet className="mr-1 h-3 w-3" />Encaisser</Button>
               </TableCell>
             </TableRow>
           ))}
-          {debtors?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucune dette ouverte 🎉</TableCell></TableRow>}
+          {debtors?.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucune dette ouverte 🎉</TableCell></TableRow>}
         </TableBody>
       </Table></CardContent></Card>
 
@@ -366,6 +387,7 @@ function CreditsTab() {
           <div className="space-y-3">
             <p className="text-sm">Solde actuel: <span className="font-semibold">{grant && formatMoney(Number(grant.balance), currency, rate)}</span></p>
             <div><Label>Montant (USD)</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(+e.target.value)} /></div>
+            <div><Label>Date d'échéance</Label><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></div>
             <div><Label>Motif</Label><Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="ex. avance sur matériel" /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setGrant(null)}>Annuler</Button><Button onClick={() => grantMut.mutate()} disabled={grantMut.isPending}>Enregistrer</Button></DialogFooter>
