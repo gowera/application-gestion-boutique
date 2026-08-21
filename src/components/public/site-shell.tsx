@@ -6,6 +6,7 @@ import { useCart } from "@/hooks/use-cart";
 import { useSettings } from "@/lib/currency";
 import { StorageImage } from "@/components/storage-image";
 import { SocialLinks } from "@/components/public/social-links";
+import { SiteMap, useMapConfig } from "@/components/public/site-map";
 import logo from "@/assets/brand/logo.png";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -85,6 +86,7 @@ function TopBar() {
   const phone = s?.phone || "+243 996 886 079";
   const email = s?.email || "oredymusanda@gmail.com";
   const wa = (s?.whatsapp || phone).replace(/\D/g, "");
+  const { link: mapLink } = useMapConfig();
   return (
     <div className="hidden md:block bg-primary text-primary-foreground/80 text-[11px]">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-1.5">
