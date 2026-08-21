@@ -206,6 +206,7 @@ export type Database = {
           created_at: string
           customer_id: string
           delta: number
+          due_date: string | null
           id: string
           reason: string
           ref_id: string | null
@@ -215,6 +216,7 @@ export type Database = {
           created_at?: string
           customer_id: string
           delta: number
+          due_date?: string | null
           id?: string
           reason: string
           ref_id?: string | null
@@ -224,6 +226,7 @@ export type Database = {
           created_at?: string
           customer_id?: string
           delta?: number
+          due_date?: string | null
           id?: string
           reason?: string
           ref_id?: string | null

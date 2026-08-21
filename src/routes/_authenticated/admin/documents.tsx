@@ -44,6 +44,12 @@ function Page() {
     queryFn: async () => ((await supabase.from("customers").select("id,name,phone,is_archived").eq("is_archived", false).order("name")).data ?? []) as Customer[],
   });
 
+  const { data: products = [] } = useQuery<{ id: string; name: string; sale_price: number }[]>({
+    queryKey: ["documents-products"],
+    queryFn: async () =>
+      ((await supabase.from("products").select("id,name,sale_price").eq("status", "active").is("deleted_at", null).order("name").limit(500)).data ?? []) as { id: string; name: string; sale_price: number }[],
+  });
+
   const subtotal = lines.reduce((a, l) => a + Number(l.qty || 0) * Number(l.unit || 0), 0);
 
   const createDocument = useMutation({
@@ -209,7 +215,19 @@ function Page() {
               <div className="space-y-2">
                 <Label>Lignes</Label>
                 {lines.map((line, i) => (
-                  <div key={i} className="grid grid-cols-2 gap-2 md:grid-cols-[2fr_80px_120px_auto]">
+                  <div key={i} className="grid grid-cols-2 gap-2 md:grid-cols-[1.2fr_2fr_80px_120px_auto]">
+                    <Select
+                      value=""
+                      onValueChange={(pid) => {
+                        const p = products.find((x) => x.id === pid);
+                        if (p) setLines(lines.map((l, ix) => ix === i ? { ...l, name: p.name, unit: Number(p.sale_price) } : l));
+                      }}
+                    >
+                      <SelectTrigger className="col-span-2 md:col-span-1"><SelectValue placeholder="Produit boutique…" /></SelectTrigger>
+                      <SelectContent>
+                        {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name} — ${Number(p.sale_price).toFixed(2)}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                     <Input className="col-span-2 md:col-span-1" placeholder="Désignation" value={line.name} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, name: e.target.value } : l))} />
                     <Input type="number" min="1" value={line.qty} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, qty: +e.target.value } : l))} />
                     <Input type="number" step="0.01" placeholder="P.U. USD" value={line.unit} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, unit: +e.target.value } : l))} />

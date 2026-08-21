@@ -6,6 +6,7 @@ import { useCart } from "@/hooks/use-cart";
 import { useSettings } from "@/lib/currency";
 import { StorageImage } from "@/components/storage-image";
 import { SocialLinks } from "@/components/public/social-links";
+import { SiteMap, useMapConfig } from "@/components/public/site-map";
 import logo from "@/assets/brand/logo.png";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -176,6 +177,7 @@ function SiteFooter() {
   const email = s?.email || "oredymusanda@gmail.com";
   const address = s?.address || "République Démocratique du Congo";
   const wa = (s?.whatsapp || phone).replace(/\D/g, "");
+  const { link: mapLink } = useMapConfig();
 
   return (
     <footer className="mt-20 bg-[#0a0a0a] text-neutral-300">
@@ -231,6 +233,12 @@ function SiteFooter() {
             </li>
             <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-energy" /> {address}</li>
           </ul>
+          <div className="mt-4">
+            <SiteMap height={160} className="border-white/10" />
+            <a href={mapLink} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 text-xs text-energy hover:underline">
+              <MapPin className="h-3.5 w-3.5" /> Voir sur Google Maps
+            </a>
+          </div>
         </div>
       </div>
       <div className="border-t border-white/5 py-5 text-center text-xs text-neutral-500">
