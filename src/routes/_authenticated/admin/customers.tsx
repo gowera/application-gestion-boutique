@@ -239,13 +239,35 @@ function CustomerHistoryDialog({ customer, onClose }: { customer: Customer | nul
 
 /* ---------------- Crédits ---------------- */
 
+type LedgerRow = {
+  id: string; customer_id: string; delta: number; reason: string;
+  created_at: string; due_date: string | null; method: string | null;
+};
+
+const METHODS: { value: string; label: string }[] = [
+  { value: "cash", label: "Espèces" },
+  { value: "mobile_money", label: "Mobile Money" },
+  { value: "card", label: "Carte" },
+  { value: "bank_transfer", label: "Virement bancaire" },
+];
+const methodLabel = (m: string | null) => METHODS.find((x) => x.value === m)?.label ?? "—";
+
+function debtStatus(balance: number, due: string | null): { label: string; className: string } {
+  if (balance <= 0) return { label: "Payé", className: "bg-emerald-600 text-white" };
+  if (due && new Date(due) < new Date(new Date().toDateString())) return { label: "En retard", className: "bg-destructive text-destructive-foreground" };
+  return { label: "En cours", className: "bg-amber-500 text-white" };
+}
+
 function CreditsTab() {
   const { data: settings } = useSettings();
   const currency = settings?.primary_currency ?? "USD";
   const rate = settings?.usd_to_cdf_rate ?? 2800;
   const [pay, setPay] = useState<Customer | null>(null);
   const [grant, setGrant] = useState<Customer | null>(null);
+  const [details, setDetails] = useState<Customer | null>(null);
+  const [newDebt, setNewDebt] = useState(false);
   const [amount, setAmount] = useState(0);
+  const [method, setMethod] = useState("cash");
   const [note, setNote] = useState("");
   const [dueDate, setDueDate] = useState("");
   const qc = useQueryClient();
@@ -277,14 +299,18 @@ function CreditsTab() {
   const payMut = useMutation({
     mutationFn: async () => {
       if (!pay || amount <= 0) throw new Error("Montant invalide");
-      const { error } = await supabase.rpc("record_customer_payment", { _customer_id: pay.id, _amount: amount, _note: note || "remboursement" });
+      const { error } = await supabase.rpc("record_customer_payment", {
+        _customer_id: pay.id, _amount: amount, _note: note || "remboursement",
+        _method: method as "cash",
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Paiement enregistré");
       qc.invalidateQueries({ queryKey: ["debtors"] });
       qc.invalidateQueries({ queryKey: ["customers"] });
-      setPay(null); setAmount(0); setNote("");
+      qc.invalidateQueries({ queryKey: ["debt-details"] });
+      setPay(null); setAmount(0); setNote(""); setMethod("cash");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -292,7 +318,6 @@ function CreditsTab() {
   const grantMut = useMutation({
     mutationFn: async () => {
       if (!grant || amount <= 0) throw new Error("Montant invalide");
-      // Direct ledger entry + balance update
       const { error: le } = await supabase.from("customer_ledger").insert({ customer_id: grant.id, delta: amount, reason: note || "octroi_credit", due_date: dueDate || null });
       if (le) throw le;
       const { error: ue } = await supabase.from("customers").update({ balance: Number(grant.balance) + amount }).eq("id", grant.id);
@@ -303,6 +328,7 @@ function CreditsTab() {
       qc.invalidateQueries({ queryKey: ["debtors"] });
       qc.invalidateQueries({ queryKey: ["customers"] });
       qc.invalidateQueries({ queryKey: ["ledger-due-dates"] });
+      qc.invalidateQueries({ queryKey: ["debt-details"] });
       setGrant(null); setAmount(0); setNote(""); setDueDate("");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -325,23 +351,29 @@ function CreditsTab() {
           <div className="text-2xl font-bold mt-1">{debtors?.length ?? 0}</div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex flex-col justify-between h-full gap-2">
-          <div className="text-xs uppercase text-muted-foreground">Octroi manuel</div>
-          <select className="text-sm border rounded p-1 bg-background" onChange={(e) => { const c = allCustomers?.find(x => x.id === e.target.value); if (c) setGrant(c); e.target.value = ""; }} value="">
-            <option value="">Choisir un client…</option>
-            {allCustomers?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <div className="text-xs uppercase text-muted-foreground">Octroyer une dette</div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => setNewDebt(true)}><Plus className="mr-1 h-3.5 w-3.5" />Nouvelle dette</Button>
+            <select className="text-sm border rounded p-1 bg-background flex-1 min-w-[140px]" onChange={(e) => { const c = allCustomers?.find(x => x.id === e.target.value); if (c) setGrant(c); e.target.value = ""; }} value="">
+              <option value="">Client existant…</option>
+              {allCustomers?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
         </CardContent></Card>
       </div>
 
-      <Card><CardContent className="p-0"><Table>
+      <Card><CardContent className="p-0 overflow-x-auto"><Table>
         <TableHeader><TableRow>
           <TableHead>Client</TableHead><TableHead>Contact</TableHead>
           <TableHead className="text-right">Limite</TableHead>
           <TableHead className="text-right">Dette</TableHead>
-          <TableHead className="text-right">Échéance</TableHead><TableHead></TableHead>
+          <TableHead className="text-right">Échéance</TableHead>
+          <TableHead>Statut</TableHead><TableHead></TableHead>
         </TableRow></TableHeader>
         <TableBody>
-          {debtors?.map((c) => (
+          {debtors?.map((c) => {
+            const st = debtStatus(Number(c.balance), dueDates?.[c.id] ?? null);
+            return (
             <TableRow key={c.id}>
               <TableCell className="font-medium">{c.name}</TableCell>
               <TableCell className="text-xs">
@@ -351,12 +383,16 @@ function CreditsTab() {
               <TableCell className="text-right text-sm">{formatMoney(Number(c.credit_limit), currency, rate)}</TableCell>
               <TableCell className="text-right font-semibold text-destructive">{formatMoney(Number(c.balance), currency, rate)}</TableCell>
               <TableCell className="text-right text-sm">{dueDates?.[c.id] ? formatDate(dueDates[c.id]) : "—"}</TableCell>
+              <TableCell><Badge className={st.className}>{st.label}</Badge></TableCell>
               <TableCell className="text-right">
-                <Button size="sm" onClick={() => setPay(c)}><Wallet className="mr-1 h-3 w-3" />Encaisser</Button>
+                <div className="flex gap-1 justify-end">
+                  <Button size="sm" onClick={() => setPay(c)}><Wallet className="mr-1 h-3 w-3" />Encaisser</Button>
+                  <Button size="sm" variant="outline" onClick={() => setDetails(c)}><Eye className="mr-1 h-3 w-3" />Plus</Button>
+                </div>
               </TableCell>
             </TableRow>
-          ))}
-          {debtors?.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucune dette ouverte 🎉</TableCell></TableRow>}
+          );})}
+          {debtors?.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune dette ouverte 🎉</TableCell></TableRow>}
         </TableBody>
       </Table></CardContent></Card>
 
@@ -370,6 +406,12 @@ function CreditsTab() {
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => pay && setAmount(Number(pay.balance))}>Solde intégral</Button>
               <Button size="sm" variant="outline" onClick={() => pay && setAmount(Number(pay.balance) / 2)}>Moitié</Button>
+            </div>
+            <div>
+              <Label>Moyen de paiement</Label>
+              <select className="w-full border rounded-md h-9 px-2 bg-background text-sm" value={method} onChange={(e) => setMethod(e.target.value)}>
+                {METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+              </select>
             </div>
             <div><Label>Note</Label><Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="ex. cash reçu au comptoir" /></div>
             {pay && amount > 0 && amount < Number(pay.balance) && (
@@ -393,6 +435,161 @@ function CreditsTab() {
           <DialogFooter><Button variant="outline" onClick={() => setGrant(null)}>Annuler</Button><Button onClick={() => grantMut.mutate()} disabled={grantMut.isPending}>Enregistrer</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <NewDebtDialog open={newDebt} onClose={() => setNewDebt(false)} />
+      <DebtDetailsDialog customer={details} onClose={() => setDetails(null)} onPay={(c) => { setDetails(null); setPay(c); }} />
     </div>
   );
 }
+
+/* ---------------- Nouvelle dette (personne hors base) ---------------- */
+
+function NewDebtDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [f, setF] = useState({ name: "", phone: "", amount: 0, dueDate: "", note: "" });
+
+  const m = useMutation({
+    mutationFn: async () => {
+      if (!f.name.trim()) throw new Error("Nom requis");
+      if (f.amount <= 0) throw new Error("Montant invalide");
+      const { data: created, error: ce } = await supabase.from("customers")
+        .insert({ name: f.name.trim(), phone: f.phone || null, balance: f.amount })
+        .select("id").single();
+      if (ce) throw ce;
+      const { error: le } = await supabase.from("customer_ledger").insert({
+        customer_id: created.id, delta: f.amount, reason: f.note || "octroi_credit", due_date: f.dueDate || null,
+      });
+      if (le) throw le;
+    },
+    onSuccess: () => {
+      toast.success("Dette enregistrée");
+      qc.invalidateQueries({ queryKey: ["debtors"] });
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      qc.invalidateQueries({ queryKey: ["customers-all"] });
+      qc.invalidateQueries({ queryKey: ["ledger-due-dates"] });
+      setF({ name: "", phone: "", amount: 0, dueDate: "", note: "" });
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Nouvelle dette — personne hors base</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">La personne sera automatiquement ajoutée au carnet clients.</p>
+          <div><Label>Nom *</Label><Input autoFocus value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
+          <div><Label>Téléphone</Label><Input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
+          <div><Label>Montant de la dette (USD) *</Label><Input type="number" step="0.01" value={f.amount} onChange={(e) => setF({ ...f, amount: +e.target.value })} /></div>
+          <div><Label>Date d'échéance</Label><Input type="date" value={f.dueDate} onChange={(e) => setF({ ...f, dueDate: e.target.value })} /></div>
+          <div><Label>Motif</Label><Input value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} placeholder="ex. matériel emporté" /></div>
+        </div>
+        <DialogFooter><Button variant="outline" onClick={onClose}>Annuler</Button><Button onClick={() => m.mutate()} disabled={m.isPending}>Enregistrer</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ---------------- Détails de la dette ---------------- */
+
+function DebtDetailsDialog({ customer, onClose, onPay }: { customer: Customer | null; onClose: () => void; onPay: (c: Customer) => void }) {
+  const { data: settings } = useSettings();
+  const currency = settings?.primary_currency ?? "USD";
+  const rate = settings?.usd_to_cdf_rate ?? 2800;
+
+  const { data: rows } = useQuery({
+    queryKey: ["debt-details", customer?.id],
+    enabled: !!customer,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("customer_ledger").select("*")
+        .eq("customer_id", customer!.id).order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as LedgerRow[];
+    },
+  });
+
+  const timeline = useMemo(() => {
+    let running = 0;
+    return (rows ?? []).map((r) => {
+      running += Number(r.delta);
+      return { ...r, running };
+    }).reverse();
+  }, [rows]);
+
+  const credits = (rows ?? []).filter((r) => Number(r.delta) > 0);
+  const payments = (rows ?? []).filter((r) => Number(r.delta) < 0);
+  const totalPaid = payments.reduce((s, r) => s + Math.abs(Number(r.delta)), 0);
+  const totalCredit = credits.reduce((s, r) => s + Number(r.delta), 0);
+  const firstDue = credits.find((r) => r.due_date)?.due_date ?? null;
+  const balance = Number(customer?.balance ?? 0);
+  const st = debtStatus(balance, firstDue);
+
+  return (
+    <Dialog open={!!customer} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader><DialogTitle>Dette — {customer?.name}</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-md border p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Total octroyé</div>
+              <div className="font-semibold">{formatMoney(totalCredit, currency, rate)}</div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Total payé</div>
+              <div className="font-semibold text-emerald-600">{formatMoney(totalPaid, currency, rate)}</div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Restant</div>
+              <div className="font-semibold text-destructive">{formatMoney(balance, currency, rate)}</div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Échéance</div>
+              <div className="font-semibold">{firstDue ? formatDate(firstDue) : "—"}</div>
+              <Badge className={`${st.className} mt-1`}>{st.label}</Badge>
+            </div>
+          </div>
+
+          <div className="max-h-[380px] overflow-auto overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>Date & heure</TableHead>
+                <TableHead>Opération</TableHead>
+                <TableHead>Moyen</TableHead>
+                <TableHead className="text-right">Montant</TableHead>
+                <TableHead className="text-right">Restant</TableHead>
+                <TableHead className="text-right">Échéance</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {timeline.map((r) => {
+                  const isPayment = Number(r.delta) < 0;
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-sm whitespace-nowrap">{formatDate(r.created_at, true)}</TableCell>
+                      <TableCell className="text-sm">
+                        <Badge variant={isPayment ? "secondary" : "outline"} className="mr-2">{isPayment ? "Paiement" : "Dette octroyée"}</Badge>
+                        <span className="text-muted-foreground">{r.reason}</span>
+                      </TableCell>
+                      <TableCell className="text-sm">{isPayment ? methodLabel(r.method) : "—"}</TableCell>
+                      <TableCell className={`text-right font-medium ${isPayment ? "text-emerald-600" : "text-destructive"}`}>
+                        {isPayment ? "-" : "+"}{formatMoney(Math.abs(Number(r.delta)), currency, rate)}
+                      </TableCell>
+                      <TableCell className="text-right">{formatMoney(r.running, currency, rate)}</TableCell>
+                      <TableCell className="text-right text-sm">{r.due_date ? formatDate(r.due_date) : "—"}</TableCell>
+                    </TableRow>
+                  );
+                })}
+                {timeline.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun mouvement</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Fermer</Button>
+          {customer && balance > 0 && <Button onClick={() => onPay(customer)}><Wallet className="mr-1 h-4 w-4" />Encaisser</Button>}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
