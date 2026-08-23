@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useSettings, formatMoney } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
-import { Plus, Wallet, Pencil, Archive, History, MessageCircle, Mail, Phone } from "lucide-react";
+import { Plus, Wallet, Pencil, Archive, History, MessageCircle, Mail, Phone, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 
