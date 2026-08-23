@@ -169,20 +169,23 @@ function PosPage() {
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un produit…" className="pl-9 h-11" />
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((p) => (
+          {filtered.map((p) => {
+            const selected = cart.some((l) => l.product_id === p.id);
+            return (
             <button key={p.id} onClick={() => addToCart(p)} className="text-left group">
-              <Card className="transition-all group-hover:border-primary group-hover:shadow-md">
+              <Card className={`transition-all group-hover:shadow-md ${selected ? "border-primary ring-1 ring-primary bg-primary/5" : "group-hover:border-primary"}`}>
                 <CardContent className="p-4">
-                  <div className="font-medium line-clamp-2">{p.name}</div>
-                  <div className="text-xs text-muted-foreground">{p.sku ?? "—"}</div>
+                  <div className={`font-medium line-clamp-2 ${selected ? "text-primary font-semibold" : ""}`}>{p.name}</div>
+                  <div className={`text-xs ${selected ? "text-primary/70" : "text-muted-foreground"}`}>{p.sku ?? "—"}</div>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-display font-bold text-primary">{formatMoney(Number(p.sale_price), currency, rate)}</span>
-                    <span className={`text-xs ${p.stock <= 0 ? "text-destructive" : "text-muted-foreground"}`}>Stock: {p.stock}</span>
+                    <span className={`text-xs ${p.stock <= 0 ? "text-destructive" : selected ? "text-primary/70" : "text-muted-foreground"}`}>Stock: {p.stock}</span>
                   </div>
                 </CardContent>
               </Card>
             </button>
-          ))}
+          );})}
+
           {filtered.length === 0 && <p className="text-sm text-muted-foreground col-span-full py-8 text-center">Aucun produit.</p>}
         </div>
       </div>
