@@ -208,6 +208,7 @@ export type Database = {
           delta: number
           due_date: string | null
           id: string
+          method: Database["public"]["Enums"]["payment_method"] | null
           reason: string
           ref_id: string | null
           user_id: string | null
@@ -218,6 +219,7 @@ export type Database = {
           delta: number
           due_date?: string | null
           id?: string
+          method?: Database["public"]["Enums"]["payment_method"] | null
           reason: string
           ref_id?: string | null
           user_id?: string | null
@@ -228,6 +230,7 @@ export type Database = {
           delta?: number
           due_date?: string | null
           id?: string
+          method?: Database["public"]["Enums"]["payment_method"] | null
           reason?: string
           ref_id?: string | null
           user_id?: string | null
@@ -1848,10 +1851,20 @@ export type Database = {
       next_sale_code: { Args: never; Returns: string }
       purge_trash_item: { Args: { _id: string }; Returns: undefined }
       receive_purchase: { Args: { _purchase_id: string }; Returns: undefined }
-      record_customer_payment: {
-        Args: { _amount: number; _customer_id: string; _note?: string }
-        Returns: string
-      }
+      record_customer_payment:
+        | {
+            Args: { _amount: number; _customer_id: string; _note?: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              _amount: number
+              _customer_id: string
+              _method?: Database["public"]["Enums"]["payment_method"]
+              _note?: string
+            }
+            Returns: string
+          }
       restore_trash_item: { Args: { _id: string }; Returns: undefined }
       shwary_apply_status: {
         Args: {
