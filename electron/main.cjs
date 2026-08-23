@@ -1,8 +1,8 @@
 const { app, BrowserWindow, shell, Menu } = require("electron");
 const path = require("path");
 
-const PRIMARY_URL = "https://project--265340c6-f4cb-4a09-8b9b-e443b084fee4-dev.lovable.app/admin";
-const FALLBACK_URL = "https://project--265340c6-f4cb-4a09-8b9b-e443b084fee4.lovable.app/admin";
+const PRIMARY_URL = "https://project--265340c6-f4cb-4a09-8b9b-e443b084fee4.lovable.app/admin";
+const FALLBACK_URL = "https://project--265340c6-f4cb-4a09-8b9b-e443b084fee4-dev.lovable.app/admin";
 const OFFLINE_PAGE = path.join(__dirname, "offline.html");
 
 let win = null;
