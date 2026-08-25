@@ -261,7 +261,7 @@ function Page() {
                 <Label>Note</Label>
                 <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Détails ou conditions" />
               </div>
-              <Button className="w-full" onClick={() => createDocument.mutate()} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
+              <Button className="w-full" onClick={() => { console.log("[DOC] click", navigator.onLine); createDocument.mutate(); }} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
               <p className="text-xs text-muted-foreground">Le document est numéroté automatiquement (séquentiel, sans doublon) et utilise le modèle actif.</p>
             </CardContent>
           </Card>
