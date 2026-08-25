@@ -11,10 +11,24 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
-    const list = (roles ?? []).map((r) => r.role as string);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user = sessionData.session?.user;
+    if (!user) throw redirect({ to: "/auth" });
+    const roleCacheKey = `conetec:roles:${user.id}`;
+    let list: string[] = [];
+    try {
+      const { data: roles, error } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+      if (error) throw error;
+      list = (roles ?? []).map((r) => r.role as string);
+      localStorage.setItem(roleCacheKey, JSON.stringify(list));
+    } catch {
+      try {
+        const cached = JSON.parse(localStorage.getItem(roleCacheKey) ?? "[]");
+        list = Array.isArray(cached) ? cached.filter((role): role is string => typeof role === "string") : [];
+      } catch {
+        list = [];
+      }
+    }
     const isStaff = list.some((r) => (STAFF_ROLES as string[]).includes(r));
     if (!isStaff) {
       await supabase.rpc("log_auth_event", {
@@ -23,7 +37,7 @@ export const Route = createFileRoute("/_authenticated")({
       }).then(() => {}, () => {});
       throw redirect({ to: "/mon-compte" });
     }
-    return { user: data.user };
+    return { user };
   },
   component: AuthenticatedLayout,
 });

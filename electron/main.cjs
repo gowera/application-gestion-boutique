@@ -1,11 +1,68 @@
 const { app, BrowserWindow, shell, Menu } = require("electron");
+const { spawn } = require("child_process");
 const path = require("path");
+const http = require("http");
 
-const PRIMARY_URL = "https://www.conetec.net/admin";
-const FALLBACK_URL = "https://project--265340c6-f4cb-4a09-8b9b-e443b084fee4.lovable.app/admin";
+const LOCAL_PORT = 41731;
+const LOCAL_URL = `http://127.0.0.1:${LOCAL_PORT}/admin`;
 const OFFLINE_PAGE = path.join(__dirname, "offline.html");
+const SERVER_ENTRY = path.join(__dirname, "local-server.mjs");
 
 let win = null;
+let localServer = null;
+
+function handleSquirrelEvent() {
+  const event = process.argv[1];
+  if (!event || !event.startsWith("--squirrel-")) return false;
+  const updateExe = path.resolve(path.dirname(process.execPath), "..", "Update.exe");
+  const exeName = path.basename(process.execPath);
+  const shortcutAction = event === "--squirrel-uninstall" ? "--removeShortcut" : "--createShortcut";
+
+  if (["--squirrel-install", "--squirrel-updated", "--squirrel-uninstall"].includes(event)) {
+    try {
+      spawn(updateExe, [shortcutAction, exeName], { detached: true });
+    } catch {
+      // L'installation reste utilisable même si Windows refuse la création du raccourci.
+    }
+    setTimeout(() => app.quit(), 1000);
+    return true;
+  }
+  if (event === "--squirrel-obsolete") {
+    app.quit();
+    return true;
+  }
+  return false;
+}
+
+if (handleSquirrelEvent()) return;
+
+function startLocalServer() {
+  localServer = spawn(process.execPath, [SERVER_ENTRY], {
+    env: {
+      ...process.env,
+      ELECTRON_RUN_AS_NODE: "1",
+      HOST: "127.0.0.1",
+      PORT: String(LOCAL_PORT),
+      NITRO_HOST: "127.0.0.1",
+      NITRO_PORT: String(LOCAL_PORT),
+    },
+    stdio: "ignore",
+    windowsHide: true,
+  });
+}
+
+function waitForLocalServer(attempt = 0) {
+  if (!win) return;
+  const request = http.get(`http://127.0.0.1:${LOCAL_PORT}/`, (response) => {
+    response.resume();
+    win.loadURL(LOCAL_URL).catch(() => win && win.loadFile(OFFLINE_PAGE));
+  });
+  request.on("error", () => {
+    if (attempt < 50) setTimeout(() => waitForLocalServer(attempt + 1), 200);
+    else if (win) win.loadFile(OFFLINE_PAGE);
+  });
+  request.setTimeout(1000, () => request.destroy());
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -26,7 +83,7 @@ function createWindow() {
       {
         label: "CONETEC",
         submenu: [
-          { label: "Recharger", accelerator: "F5", click: () => load(PRIMARY_URL) },
+          { label: "Recharger", accelerator: "F5", click: () => win && win.loadURL(LOCAL_URL) },
           { role: "toggleDevTools", label: "Outils de développement" },
           { type: "separator" },
           { role: "quit", label: "Quitter" },
@@ -52,32 +109,21 @@ function createWindow() {
     return { action: "deny" };
   });
 
-  load(PRIMARY_URL);
-}
-
-function load(url, isFallback) {
-  if (!win) return;
-  win.loadURL(url).catch(() => {
-    if (!isFallback) load(FALLBACK_URL, true);
-    else win.loadFile(OFFLINE_PAGE);
-  });
+  waitForLocalServer();
 }
 
 app.whenReady().then(() => {
+  startLocalServer();
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
-app.on("web-contents-created", (_e, contents) => {
-  contents.on("did-fail-load", (_evt, code, _desc, failedUrl, isMainFrame) => {
-    if (!isMainFrame || code === -3) return;
-    if (failedUrl.startsWith(PRIMARY_URL)) load(FALLBACK_URL, true);
-    else if (win) win.loadFile(OFFLINE_PAGE);
-  });
-});
-
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
+});
+
+app.on("before-quit", () => {
+  if (localServer && !localServer.killed) localServer.kill();
 });

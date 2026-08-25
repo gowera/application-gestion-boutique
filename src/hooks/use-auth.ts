@@ -27,9 +27,23 @@ export function useMyRoles() {
     queryKey: ["auth", "roles", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", user!.id);
-      if (error) throw error;
-      return (data ?? []).map((r) => r.role as AppRole);
+      if (!user) return [];
+      const cacheKey = `conetec:roles:${user.id}`;
+      try {
+        const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+        if (error) throw error;
+        const roles = (data ?? []).map((r) => r.role as AppRole);
+        localStorage.setItem(cacheKey, JSON.stringify(roles));
+        return roles;
+      } catch (error) {
+        try {
+          const cached = JSON.parse(localStorage.getItem(cacheKey) ?? "[]");
+          if (Array.isArray(cached)) return cached as AppRole[];
+        } catch {
+          // Sans cache local, l'erreur réseau d'origine reste la plus utile.
+        }
+        throw error;
+      }
     },
     staleTime: 60_000,
   });

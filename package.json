@@ -9,7 +9,10 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "electron:build": "vite build",
+    "electron:package:win": "electron-packager . CONETEC --platform=win32 --arch=x64 --out=/tmp/conetec-electron-release --overwrite --icon=electron/icon.ico --app-version=1.2.0 --ignore='^/node_modules' --ignore='^/src' --ignore='^/public' --ignore='^/electron-release' --ignore='^/electron-installer' --ignore='^/supabase'",
+    "electron:installer:win": "makensis -DAPP_DIR=/tmp/conetec-electron-release/CONETEC-win32-x64 -DICON_FILE=electron/icon.ico -DOUTPUT_FILE=/mnt/documents/CONETEC-Setup-1.2.0.exe electron/installer.nsi"
   },
   "dependencies": {
     "@fontsource/hanken-grotesk": "^5.3.0",
@@ -75,12 +78,15 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@electron/packager": "^20.3.0",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.13.1",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^43.4.1",
+    "electron-winstaller": "^5.4.4",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
@@ -100,6 +106,9 @@
     "js-yaml": "^4.3.0"
   },
   "main": "electron/main.cjs",
-  "version": "1.0.0",
-  "author": "CONETEC"
+  "version": "1.2.0",
+  "author": "CONETEC",
+  "config": {
+    "forge": {}
+  }
 }
