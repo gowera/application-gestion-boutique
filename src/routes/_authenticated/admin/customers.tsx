@@ -16,6 +16,7 @@ import { formatDate } from "@/lib/format";
 import { Plus, Wallet, Pencil, Archive, History, MessageCircle, Mail, Phone, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
+import { CreditProductPicker, creditLinesTotal, applyCreditStock, type CreditLine } from "@/components/credit-products";
 
 export const Route = createFileRoute("/_authenticated/admin/customers")({ component: Page });
 
