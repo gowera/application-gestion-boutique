@@ -43,7 +43,7 @@ export function WindowsAppCard() {
         </div>
         {url ? (
           <Button asChild size="lg" className="gap-2">
-            <a href={url} download>
+            <a href={url} target="_blank" rel="noreferrer">
               <Download className="h-4 w-4" />
               Télécharger pour Windows
             </a>
