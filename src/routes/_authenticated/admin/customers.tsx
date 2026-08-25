@@ -318,10 +318,19 @@ function CreditsTab() {
 
   const grantMut = useMutation({
     mutationFn: async () => {
-      if (!grant || amount <= 0) throw new Error("Montant invalide");
-      const { error: le } = await supabase.from("customer_ledger").insert({ customer_id: grant.id, delta: amount, reason: note || "octroi_credit", due_date: dueDate || null });
+      if (!grant) throw new Error("Client requis");
+      const productsTotal = creditLinesTotal(grantLines);
+      const finalAmount = Number((productsTotal > 0 ? productsTotal + amount : amount).toFixed(2));
+      if (finalAmount <= 0) throw new Error("Montant invalide");
+      if (grantLines.length > 0) {
+        await applyCreditStock(grantLines, grant.name);
+      }
+      const reason = note || (grantLines.length > 0
+        ? `Crédit: ${grantLines.map((l) => `${l.name} ×${l.qty}`).join(", ")}`
+        : "octroi_credit");
+      const { error: le } = await supabase.from("customer_ledger").insert({ customer_id: grant.id, delta: finalAmount, reason, due_date: dueDate || null });
       if (le) throw le;
-      const { error: ue } = await supabase.from("customers").update({ balance: Number(grant.balance) + amount }).eq("id", grant.id);
+      const { error: ue } = await supabase.from("customers").update({ balance: Number(grant.balance) + finalAmount }).eq("id", grant.id);
       if (ue) throw ue;
     },
     onSuccess: () => {
@@ -330,10 +339,12 @@ function CreditsTab() {
       qc.invalidateQueries({ queryKey: ["customers"] });
       qc.invalidateQueries({ queryKey: ["ledger-due-dates"] });
       qc.invalidateQueries({ queryKey: ["debt-details"] });
-      setGrant(null); setAmount(0); setNote(""); setDueDate("");
+      qc.invalidateQueries({ queryKey: ["credit-products"] });
+      setGrant(null); setAmount(0); setNote(""); setDueDate(""); setGrantLines([]);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const { data: allCustomers } = useQuery({
     queryKey: ["customers-all"],
