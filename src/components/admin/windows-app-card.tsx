@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useSettings } from "@/lib/currency";
 import { useSync } from "@/hooks/use-sync";
-import windowsAppAsset from "@/assets/conetec-windows-1.2.0.tar.gz.asset.json";
+import windowsAppAsset from "@/assets/conetec-setup-1.2.0.exe.asset.json";
 
 function extra(settings: unknown, key: string): string {
   const extras = (settings as { extras?: Record<string, unknown> } | null)?.extras;
@@ -80,7 +80,7 @@ export function WindowsAppCard() {
       const blobUrl = URL.createObjectURL(new Blob(blobParts, { type: contentType }));
       const anchor = document.createElement("a");
       anchor.href = blobUrl;
-      anchor.download = `CONETEC-Windows-${version}.tar.gz`;
+      anchor.download = `CONETEC-Setup-${version}.exe`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -110,7 +110,8 @@ export function WindowsAppCard() {
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Application Windows</div>
           <div className="text-display text-xl font-bold">CONETEC Admin pour PC</div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Archive Windows : décompressez-la puis lancez CONETEC.exe. Fonctionne sans internet : les ventes, dépenses et
+            Installeur Windows : lancez le fichier téléchargé. Un raccourci CONETEC sera créé sur le Bureau et dans le menu
+            Démarrer. L’application fonctionne sans internet : les ventes, dépenses et
             clients saisis hors ligne sont envoyés au serveur dès que la connexion revient.
             {version && ` Version ${version}.`}
             {size && ` (${size})`}
