@@ -270,6 +270,7 @@ function CreditsTab() {
   const [method, setMethod] = useState("cash");
   const [note, setNote] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [grantLines, setGrantLines] = useState<CreditLine[]>([]);
   const qc = useQueryClient();
 
   const { data: dueDates } = useQuery({
