@@ -103,6 +103,10 @@ function PosPage() {
       const saleId = data as string;
       if (isCredit && dueDate) {
         await supabase.from("sales").update({ due_date: dueDate }).eq("id", saleId);
+        // Répercute l'échéance sur la dette client (page Crédits & dettes)
+        if (customerId) {
+          await supabase.from("customer_ledger").update({ due_date: dueDate }).eq("ref_id", saleId).gt("delta", 0);
+        }
       }
       return saleId;
     },
