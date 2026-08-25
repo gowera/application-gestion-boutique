@@ -464,17 +464,24 @@ function CreditsTab() {
 function NewDebtDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
   const [f, setF] = useState({ name: "", phone: "", amount: 0, dueDate: "", note: "" });
+  const [lines, setLines] = useState<CreditLine[]>([]);
+  const productsTotal = creditLinesTotal(lines);
+  const totalDebt = Number((productsTotal + f.amount).toFixed(2));
 
   const m = useMutation({
     mutationFn: async () => {
       if (!f.name.trim()) throw new Error("Nom requis");
-      if (f.amount <= 0) throw new Error("Montant invalide");
+      if (totalDebt <= 0) throw new Error("Montant invalide");
+      if (lines.length > 0) await applyCreditStock(lines, f.name.trim());
       const { data: created, error: ce } = await supabase.from("customers")
-        .insert({ name: f.name.trim(), phone: f.phone || null, balance: f.amount })
+        .insert({ name: f.name.trim(), phone: f.phone || null, balance: totalDebt })
         .select("id").single();
       if (ce) throw ce;
+      const reason = f.note || (lines.length > 0
+        ? `Crédit: ${lines.map((l) => `${l.name} ×${l.qty}`).join(", ")}`
+        : "octroi_credit");
       const { error: le } = await supabase.from("customer_ledger").insert({
-        customer_id: created.id, delta: f.amount, reason: f.note || "octroi_credit", due_date: f.dueDate || null,
+        customer_id: created.id, delta: totalDebt, reason, due_date: f.dueDate || null,
       });
       if (le) throw le;
     },
@@ -484,7 +491,9 @@ function NewDebtDialog({ open, onClose }: { open: boolean; onClose: () => void }
       qc.invalidateQueries({ queryKey: ["customers"] });
       qc.invalidateQueries({ queryKey: ["customers-all"] });
       qc.invalidateQueries({ queryKey: ["ledger-due-dates"] });
+      qc.invalidateQueries({ queryKey: ["credit-products"] });
       setF({ name: "", phone: "", amount: 0, dueDate: "", note: "" });
+      setLines([]);
       onClose();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -492,16 +501,19 @@ function NewDebtDialog({ open, onClose }: { open: boolean; onClose: () => void }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Nouvelle dette — personne hors base</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">La personne sera automatiquement ajoutée au carnet clients.</p>
           <div><Label>Nom *</Label><Input autoFocus value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
           <div><Label>Téléphone</Label><Input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
-          <div><Label>Montant de la dette (USD) *</Label><Input type="number" step="0.01" value={f.amount} onChange={(e) => setF({ ...f, amount: +e.target.value })} /></div>
+          <CreditProductPicker lines={lines} onChange={setLines} />
+          <div><Label>{lines.length > 0 ? "Montant supplémentaire (USD)" : "Montant de la dette (USD) *"}</Label><Input type="number" step="0.01" value={f.amount} onChange={(e) => setF({ ...f, amount: +e.target.value })} /></div>
+          {lines.length > 0 && <p className="text-sm font-semibold">Dette totale: {totalDebt.toFixed(2)} $</p>}
           <div><Label>Date d'échéance</Label><Input type="date" value={f.dueDate} onChange={(e) => setF({ ...f, dueDate: e.target.value })} /></div>
           <div><Label>Motif</Label><Input value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} placeholder="ex. matériel emporté" /></div>
         </div>
+
         <DialogFooter><Button variant="outline" onClick={onClose}>Annuler</Button><Button onClick={() => m.mutate()} disabled={m.isPending}>Enregistrer</Button></DialogFooter>
       </DialogContent>
     </Dialog>
