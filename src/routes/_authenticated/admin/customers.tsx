@@ -436,15 +436,20 @@ function CreditsTab() {
 
       {/* Octroi */}
       <Dialog open={!!grant} onOpenChange={(v) => !v && setGrant(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Octroyer un crédit — {grant?.name}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-sm">Solde actuel: <span className="font-semibold">{grant && formatMoney(Number(grant.balance), currency, rate)}</span></p>
-            <div><Label>Montant (USD)</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(+e.target.value)} /></div>
+            <CreditProductPicker lines={grantLines} onChange={setGrantLines} />
+            <div><Label>{grantLines.length > 0 ? "Montant supplémentaire (USD)" : "Montant (USD)"}</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(+e.target.value)} /></div>
+            {grantLines.length > 0 && (
+              <p className="text-sm font-semibold">Dette totale: {formatMoney(creditLinesTotal(grantLines) + amount, currency, rate)}</p>
+            )}
             <div><Label>Date d'échéance</Label><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></div>
             <div><Label>Motif</Label><Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="ex. avance sur matériel" /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setGrant(null)}>Annuler</Button><Button onClick={() => grantMut.mutate()} disabled={grantMut.isPending}>Enregistrer</Button></DialogFooter>
+
         </DialogContent>
       </Dialog>
 
