@@ -239,7 +239,7 @@ function PosPage() {
           <div className="border-t pt-3 space-y-2">
             <div className="flex justify-between text-sm"><span>Sous-total</span><span>{formatMoney(subtotal, currency, rate)}</span></div>
             <div className="flex items-center justify-between text-sm">
-              <span>Accorder un crédit</span>
+              <span>Remise</span>
               <Input type="number" step="0.01" className="w-24 h-8" value={discount} onChange={(e) => setDiscount(+e.target.value)} />
             </div>
             <div className="flex justify-between text-lg font-bold text-display"><span>Total</span><span>{formatMoney(total, currency, rate)}</span></div>
