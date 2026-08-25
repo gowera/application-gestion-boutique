@@ -5,7 +5,7 @@ const store = typeof indexedDB !== "undefined" ? createStore("conetec-offline", 
 
 export type OutboxOp = {
   id: string;
-  kind: "pos_sale" | "expense" | "customer" | "stock_adjust";
+  kind: "pos_sale" | "expense" | "customer" | "stock_adjust" | "customer_ledger" | "document";
   label: string;
   payload: Record<string, unknown>;
   createdAt: string;

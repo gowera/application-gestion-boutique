@@ -18,6 +18,8 @@ import { EditorCanvas } from "@/components/documents/editor-canvas";
 import { useSettings } from "@/lib/currency";
 import { issueDocumentNumber, labelToDocType } from "@/lib/documents";
 import { CustomerQuickAdd } from "@/components/customer-quick-add";
+import { runOrQueue } from "@/lib/offline/ops";
+import { OfflineBanner } from "@/components/admin/offline-banner";
 
 export const Route = createFileRoute("/_authenticated/admin/documents")({ component: Page });
 
@@ -54,17 +56,23 @@ function Page() {
 
   const createDocument = useMutation({
     mutationFn: async () => {
+      console.log("[DOC] start");
       if (!lines.some((l) => l.name.trim())) throw new Error("Ajoutez au moins une ligne");
       let customerName: string;
       if (manualMode) {
         if (!manualCustomer.name.trim()) throw new Error("Le nom du client est requis");
         customerName = manualCustomer.name.trim();
         if (saveManual) {
-          await supabase.from("customers").insert({
+          const payload = {
             name: customerName,
             phone: manualCustomer.phone || null,
             address: manualCustomer.address || null,
+          };
+          await runOrQueue("customer", `Client ${customerName}`, payload, async () => {
+            const { error } = await supabase.from("customers").insert(payload);
+            if (error) throw error;
           });
+          console.log("[DOC] customer done");
           qc.invalidateQueries({ queryKey: ["documents-customers"] });
         }
       } else {
@@ -74,12 +82,21 @@ function Page() {
       const items = lines.filter((l) => l.name.trim()).map((l) => ({ name: l.name, qty: Number(l.qty || 0), unit: Number(l.unit || 0), total: Number(l.qty || 0) * Number(l.unit || 0) }));
       const total = items.reduce((a, i) => a + i.total, 0);
       let docCode = "";
+      let queued = false;
+      const docType = labelToDocType(documentType);
       try {
-        const issued = await issueDocumentNumber({ docType: labelToDocType(documentType), customerName, totalUsd: total });
-        docCode = issued.code;
+        const res = await runOrQueue(
+          "document",
+          `${documentType} — ${customerName}`,
+          { doc_type: docType, customer_name: customerName, total_usd: total },
+          () => issueDocumentNumber({ docType, customerName, totalUsd: total }),
+        );
+        queued = res.queued;
+        docCode = res.data?.code ?? `LOC-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
       } catch {
         docCode = `DOC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
       }
+      console.log("[DOC] code", docCode, queued);
       downloadReceipt({
         logoDataUrl,
         shopName: settings?.shop_name ?? "CONETEC",
@@ -89,10 +106,11 @@ function Page() {
         currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
         documentType, template, note: note || undefined,
       });
-      return { code: docCode };
+      return { code: docCode, queued };
     },
-    onSuccess: () => {
-      toast.success("Document généré");
+    onSuccess: (res) => {
+      if (res.queued) toast.warning(`Document ${res.code} créé hors ligne — numéro définitif attribué à la synchronisation.`);
+      else toast.success("Document généré");
       qc.invalidateQueries({ queryKey: ["document-history"] });
       setLines([{ name: "", qty: 1, unit: 0 }]); setNote("");
     },
@@ -103,6 +121,7 @@ function Page() {
 
   return (
     <div className="min-w-0 space-y-6 overflow-x-hidden">
+      <OfflineBanner scope="factures" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-display text-2xl font-bold">Documents</h1>

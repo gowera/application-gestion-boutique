@@ -34,7 +34,8 @@ export function getSyncState(): SyncState {
 }
 
 export function isOffline(): boolean {
-  return typeof navigator !== "undefined" && !navigator.onLine;
+  if (typeof navigator !== "undefined" && !navigator.onLine) return true;
+  return state.online === false;
 }
 
 async function refreshPending() {
