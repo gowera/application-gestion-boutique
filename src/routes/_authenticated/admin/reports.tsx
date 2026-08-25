@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatMoney, useSettings } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
+import { isCountedOrder } from "@/lib/order-status";
 import { exportToXlsx } from "@/lib/xlsx-export";
 import { downloadTablePdf } from "@/lib/pdf-table";
 import { downloadReportPdf } from "@/lib/pdf";
@@ -37,7 +38,9 @@ function Page() {
   const { data: rentUnpaid = [] } = useQuery({ queryKey: ["report-rent-unpaid"], queryFn: async () => (await supabase.from("rent_payments").select("id,amount_usd,period_start,period_end,paid").eq("paid", false)).data ?? [] });
 
   const totalSales = sales.filter((s) => s.status === "completed").reduce((a, s) => a + Number(s.total_usd), 0);
-  const totalOrders = orders.reduce((a, o) => a + Number(o.total_usd), 0);
+  // Seules les commandes confirmées comptent (en attente / annulées / remboursées exclues)
+  const countedOrders = orders.filter((o) => isCountedOrder(o.status));
+  const totalOrders = countedOrders.reduce((a, o) => a + Number(o.total_usd), 0);
   const totalExp = exp.reduce((a, e) => a + Number(e.amount_usd), 0);
   const creditARecouvrer = sales.reduce((a, s) => a + Number(s.credit_usd ?? 0), 0);
   const profit = totalSales + totalOrders - totalExp;
@@ -64,7 +67,7 @@ function Page() {
     ],
     sections: [
       { title: "Ventes directes (POS)", rows: sales.slice(0, 8).map((s) => ({ label: s.code, value: formatMoney(Number(s.total_usd), cur, rate) })) },
-      { title: "Commandes en ligne", rows: orders.slice(0, 8).map((o) => ({ label: o.code, value: formatMoney(Number(o.total_usd), cur, rate) })) },
+      { title: "Commandes en ligne", rows: countedOrders.slice(0, 8).map((o) => ({ label: o.code, value: formatMoney(Number(o.total_usd), cur, rate) })) },
     ],
   });
 

@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useSettings, formatMoney, convertToUsd, type Currency } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
+import { isCountedOrder } from "@/lib/order-status";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -102,7 +103,7 @@ function Page() {
   // Les commandes en ligne ne comptent qu'une fois confirmées (pending / cancelled / refunded exclus)
   const totalRevenue = [
     ...(sales ?? []).filter((s) => s.status === "completed"),
-    ...(orders ?? []).filter((o) => COUNTED_ORDER_STATUSES.includes(o.status)),
+    ...(orders ?? []).filter((o) => isCountedOrder(o.status)),
   ].reduce((sum, entry) => sum + Number(entry.total_usd ?? 0), 0);
 
   const save = useMutation({
