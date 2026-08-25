@@ -103,6 +103,10 @@ function PosPage() {
       const saleId = data as string;
       if (isCredit && dueDate) {
         await supabase.from("sales").update({ due_date: dueDate }).eq("id", saleId);
+        // Répercute l'échéance sur la dette client (page Crédits & dettes)
+        if (customerId) {
+          await supabase.from("customer_ledger").update({ due_date: dueDate }).eq("ref_id", saleId).gt("delta", 0);
+        }
       }
       return saleId;
     },
@@ -235,7 +239,7 @@ function PosPage() {
           <div className="border-t pt-3 space-y-2">
             <div className="flex justify-between text-sm"><span>Sous-total</span><span>{formatMoney(subtotal, currency, rate)}</span></div>
             <div className="flex items-center justify-between text-sm">
-              <span>Accorder un crédit</span>
+              <span>Remise</span>
               <Input type="number" step="0.01" className="w-24 h-8" value={discount} onChange={(e) => setDiscount(+e.target.value)} />
             </div>
             <div className="flex justify-between text-lg font-bold text-display"><span>Total</span><span>{formatMoney(total, currency, rate)}</span></div>
