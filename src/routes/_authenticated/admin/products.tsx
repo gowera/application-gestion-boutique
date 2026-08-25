@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { isOffline, queueOperation } from "@/lib/offline/sync";
+import { OfflineBanner } from "@/components/admin/offline-banner";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,6 +92,7 @@ function ProductsPage() {
 
   return (
     <div className="space-y-6">
+      <OfflineBanner scope="stock" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-display text-2xl md:text-3xl font-bold">Produits & stock</h1>
@@ -423,6 +426,12 @@ function StockAdjustDialog({ product, onOpenChange, onSaved }: { product: Produc
     mutationFn: async () => {
       if (!product || !delta) throw new Error("Quantité requise");
       const signed = reason === "manual_out" ? -Math.abs(delta) : reason === "manual_in" || reason === "return" ? Math.abs(delta) : delta;
+      if (isOffline()) {
+        await queueOperation("stock_adjust", `Stock ${product.name} ${signed > 0 ? "+" : ""}${signed}`, {
+          product_id: product.id, delta: signed, reason, note: note || null,
+        });
+        return;
+      }
       const { error } = await supabase.rpc("adjust_stock", { _product_id: product.id, _delta: signed, _reason: reason, _note: note || undefined });
       if (error) throw error;
     },

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { OfflineBanner } from "@/components/admin/offline-banner";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -165,6 +166,8 @@ function PosPage() {
   const filtered = useMemo(() => products ?? [], [products]);
 
   return (
+    <div className="space-y-3">
+    <OfflineBanner scope="caisse" />
     <div className="grid gap-4 lg:grid-cols-[1fr_400px]">
       {/* Products */}
       <div className="space-y-4">
@@ -317,6 +320,7 @@ function PosPage() {
           </Button>
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }

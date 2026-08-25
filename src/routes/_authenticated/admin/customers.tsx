@@ -16,6 +16,8 @@ import { formatDate } from "@/lib/format";
 import { Plus, Wallet, Pencil, Archive, History, MessageCircle, Mail, Phone, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
+import { isOffline, queueOperation } from "@/lib/offline/sync";
+import { OfflineBanner } from "@/components/admin/offline-banner";
 import { CreditProductPicker, creditLinesTotal, applyCreditStock, type CreditLine } from "@/components/credit-products";
 
 export const Route = createFileRoute("/_authenticated/admin/customers")({ component: Page });
@@ -323,19 +325,31 @@ function CreditsTab() {
       const productsTotal = creditLinesTotal(grantLines);
       const finalAmount = Number((productsTotal > 0 ? productsTotal + amount : amount).toFixed(2));
       if (finalAmount <= 0) throw new Error("Montant invalide");
-      if (grantLines.length > 0) {
-        await applyCreditStock(grantLines, grant.name);
-      }
       const reason = note || (grantLines.length > 0
         ? `Crédit: ${grantLines.map((l) => `${l.name} ×${l.qty}`).join(", ")}`
         : "octroi_credit");
+      if (isOffline()) {
+        for (const l of grantLines) {
+          await queueOperation("stock_adjust", `Stock ${l.name} ×${l.qty}`, {
+            product_id: l.product_id, delta: -l.qty, reason: "manual_out", note: `Crédit — ${grant.name}`,
+          });
+        }
+        await queueOperation("customer_ledger", `Crédit ${grant.name}`, {
+          customer_id: grant.id, delta: finalAmount, reason, due_date: dueDate || null,
+        });
+        return { queued: true };
+      }
+      if (grantLines.length > 0) {
+        await applyCreditStock(grantLines, grant.name);
+      }
       const { error: le } = await supabase.from("customer_ledger").insert({ customer_id: grant.id, delta: finalAmount, reason, due_date: dueDate || null });
       if (le) throw le;
       const { error: ue } = await supabase.from("customers").update({ balance: Number(grant.balance) + finalAmount }).eq("id", grant.id);
       if (ue) throw ue;
+      return { queued: false };
     },
-    onSuccess: () => {
-      toast.success("Crédit octroyé");
+    onSuccess: (res) => {
+      toast.success(res?.queued ? "Crédit enregistré localement — synchronisation au retour du réseau" : "Crédit octroyé");
       qc.invalidateQueries({ queryKey: ["debtors"] });
       qc.invalidateQueries({ queryKey: ["customers"] });
       qc.invalidateQueries({ queryKey: ["ledger-due-dates"] });
@@ -354,6 +368,7 @@ function CreditsTab() {
 
   return (
     <div className="space-y-4">
+      <OfflineBanner scope="dettes" />
       <div className="grid gap-3 md:grid-cols-3">
         <Card><CardContent className="p-4">
           <div className="text-xs uppercase text-muted-foreground">Total à recouvrer</div>
@@ -473,21 +488,34 @@ function NewDebtDialog({ open, onClose }: { open: boolean; onClose: () => void }
     mutationFn: async () => {
       if (!f.name.trim()) throw new Error("Nom requis");
       if (totalDebt <= 0) throw new Error("Montant invalide");
+      const reason = f.note || (lines.length > 0
+        ? `Crédit: ${lines.map((l) => `${l.name} ×${l.qty}`).join(", ")}`
+        : "octroi_credit");
+      if (isOffline()) {
+        for (const l of lines) {
+          await queueOperation("stock_adjust", `Stock ${l.name} ×${l.qty}`, {
+            product_id: l.product_id, delta: -l.qty, reason: "manual_out", note: `Crédit — ${f.name.trim()}`,
+          });
+        }
+        await queueOperation("customer_ledger", `Dette ${f.name.trim()}`, {
+          customer_name: f.name.trim(), customer_phone: f.phone || null,
+          delta: totalDebt, reason, due_date: f.dueDate || null,
+        });
+        return { queued: true };
+      }
       if (lines.length > 0) await applyCreditStock(lines, f.name.trim());
       const { data: created, error: ce } = await supabase.from("customers")
         .insert({ name: f.name.trim(), phone: f.phone || null, balance: totalDebt })
         .select("id").single();
       if (ce) throw ce;
-      const reason = f.note || (lines.length > 0
-        ? `Crédit: ${lines.map((l) => `${l.name} ×${l.qty}`).join(", ")}`
-        : "octroi_credit");
       const { error: le } = await supabase.from("customer_ledger").insert({
         customer_id: created.id, delta: totalDebt, reason, due_date: f.dueDate || null,
       });
       if (le) throw le;
+      return { queued: false };
     },
-    onSuccess: () => {
-      toast.success("Dette enregistrée");
+    onSuccess: (res) => {
+      toast.success(res?.queued ? "Dette enregistrée localement — synchronisation au retour du réseau" : "Dette enregistrée");
       qc.invalidateQueries({ queryKey: ["debtors"] });
       qc.invalidateQueries({ queryKey: ["customers"] });
       qc.invalidateQueries({ queryKey: ["customers-all"] });

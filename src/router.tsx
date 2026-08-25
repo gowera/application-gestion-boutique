@@ -3,7 +3,14 @@ import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
-  const queryClient = new QueryClient();
+  // networkMode "always" : on ne laisse pas React Query mettre en pause les
+  // requêtes/mutations hors ligne — la file d'attente locale s'en charge.
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { networkMode: "always" },
+      mutations: { networkMode: "always" },
+    },
+  });
 
   const router = createRouter({
     routeTree,
