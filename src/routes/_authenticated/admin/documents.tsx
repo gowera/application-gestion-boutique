@@ -56,7 +56,6 @@ function Page() {
 
   const createDocument = useMutation({
     mutationFn: async () => {
-      console.log("[DOC] start");
       if (!lines.some((l) => l.name.trim())) throw new Error("Ajoutez au moins une ligne");
       let customerName: string;
       if (manualMode) {
@@ -72,7 +71,6 @@ function Page() {
             const { error } = await supabase.from("customers").insert(payload);
             if (error) throw error;
           });
-          console.log("[DOC] customer done");
           qc.invalidateQueries({ queryKey: ["documents-customers"] });
         }
       } else {
@@ -96,7 +94,6 @@ function Page() {
       } catch {
         docCode = `DOC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
       }
-      console.log("[DOC] code", docCode, queued);
       downloadReceipt({
         logoDataUrl,
         shopName: settings?.shop_name ?? "CONETEC",
@@ -261,7 +258,7 @@ function Page() {
                 <Label>Note</Label>
                 <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Détails ou conditions" />
               </div>
-              <Button className="w-full" onClick={() => { console.log("[DOC] click", navigator.onLine); createDocument.mutate(); }} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
+              <Button className="w-full" onClick={() => createDocument.mutate()} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
               <p className="text-xs text-muted-foreground">Le document est numéroté automatiquement (séquentiel, sans doublon) et utilise le modèle actif.</p>
             </CardContent>
           </Card>
