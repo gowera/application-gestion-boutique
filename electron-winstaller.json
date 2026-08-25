@@ -1,0 +1,13 @@
+{
+  "appDirectory": "/tmp/conetec-electron-release/CONETEC-win32-x64",
+  "outputDirectory": "/mnt/documents/CONETEC-Windows-Installer-1.2.0",
+  "authors": "CONETEC",
+  "exe": "CONETEC.exe",
+  "title": "CONETEC Admin",
+  "description": "Application de gestion commerciale CONETEC",
+  "setupExe": "CONETEC-Setup-1.2.0.exe",
+  "setupIcon": "electron/icon.ico",
+  "iconUrl": "https://www.conetec.net/favicon.ico",
+  "noMsi": true,
+  "setupMsi": "CONETEC-1.2.0.msi"
+}
