@@ -99,7 +99,11 @@ function Page() {
   }), [aggregatedRows, categoryFilter, from, to]);
 
   const totalExpenses = filteredRows.reduce((sum, row) => sum + row.amount_usd, 0);
-  const totalRevenue = [...(sales ?? []), ...(orders ?? [])].filter((entry) => entry.status === "completed" || entry.status === "confirmed").reduce((sum, entry) => sum + Number(entry.total_usd ?? 0), 0);
+  // Les commandes en ligne ne comptent qu'une fois confirmées (pending / cancelled / refunded exclus)
+  const totalRevenue = [
+    ...(sales ?? []).filter((s) => s.status === "completed"),
+    ...(orders ?? []).filter((o) => COUNTED_ORDER_STATUSES.includes(o.status)),
+  ].reduce((sum, entry) => sum + Number(entry.total_usd ?? 0), 0);
 
   const save = useMutation({
     mutationFn: async () => {
