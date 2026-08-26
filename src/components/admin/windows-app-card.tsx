@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useSettings } from "@/lib/currency";
 import { useSync } from "@/hooks/use-sync";
-import windowsAppAsset from "@/assets/conetec-setup-1.2.0.exe.asset.json";
+import windowsAppAsset from "@/assets/conetec-setup-1.3.0.exe.asset.json";
 
 function extra(settings: unknown, key: string): string {
   const extras = (settings as { extras?: Record<string, unknown> } | null)?.extras;
@@ -34,7 +34,7 @@ export function WindowsAppCard() {
   const { pending, online } = useSync();
   const configuredUrl = extra(settings, "win_app_url");
   const url = windowsAppAsset.url || configuredUrl;
-  const version = "1.2.0";
+  const version = "1.3.0";
   const size = formatBytes(windowsAppAsset.size);
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
