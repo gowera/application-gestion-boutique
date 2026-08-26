@@ -33,7 +33,10 @@ export function WindowsAppCard() {
   const { data: settings } = useSettings();
   const { pending, online } = useSync();
   const configuredUrl = extra(settings, "win_app_url");
-  const url = windowsAppAsset.url || configuredUrl;
+  const assetUrl = windowsAppAsset.url.startsWith("/")
+    ? `https://project--${windowsAppAsset.project_id}-dev.lovable.app${windowsAppAsset.url}`
+    : windowsAppAsset.url;
+  const url = assetUrl || configuredUrl;
   const version = "1.3.0";
   const size = formatBytes(windowsAppAsset.size);
   const [downloading, setDownloading] = useState(false);
