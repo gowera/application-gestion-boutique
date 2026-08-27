@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 export type Currency = "USD" | "CDF";
 
@@ -32,11 +33,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
 export function useSettings() {
   return useQuery({
     queryKey: ["settings"],
-    queryFn: async (): Promise<AppSettings> => {
+    queryFn: offlineQueryFn("query:settings", async (): Promise<AppSettings> => {
       const { data, error } = await supabase.from("settings").select("*").eq("id", 1).maybeSingle();
       if (error) throw error;
       return { ...DEFAULT_SETTINGS, ...(data ?? {}) } as AppSettings;
-    },
+    }),
     staleTime: 5 * 60_000,
   });
 }

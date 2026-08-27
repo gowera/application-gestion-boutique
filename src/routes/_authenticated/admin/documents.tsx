@@ -51,13 +51,13 @@ function Page() {
 
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["documents-customers"],
-    queryFn: offlineQueryFn("table:customers", async () => ((await supabase.from("customers").select("id,name,phone,is_archived").eq("is_archived", false).order("name")).data ?? []) as Customer[]),
+    queryFn: offlineQueryFn("query:documents-customers", async () => ((await supabase.from("customers").select("id,name,phone,is_archived").eq("is_archived", false).order("name")).data ?? []) as Customer[], "table:customers"),
   });
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["documents-products"],
-    queryFn: offlineQueryFn("table:products", async () =>
-      ((await supabase.from("products").select("id,name,sale_price,stock").eq("status", "active").is("deleted_at", null).order("name").limit(500)).data ?? []) as Product[]),
+    queryFn: offlineQueryFn("query:documents-products", async () =>
+      ((await supabase.from("products").select("id,name,sale_price,stock").eq("status", "active").is("deleted_at", null).order("name").limit(500)).data ?? []) as Product[], "table:products"),
   });
 
   const subtotal = lines.reduce((a, l) => a + Number(l.qty || 0) * Number(l.unit || 0), 0);
@@ -117,9 +117,13 @@ function Page() {
         queued = res.queued;
         docCode = res.data?.result?.code ?? res.data?.code ?? `LOC-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
         if (queued && stockItems.length > 0) {
-          await cacheUpdate<Product[]>("table:products", (current) => (current ?? products).map((product) => {
+          await cacheUpdate<Product[]>("query:documents-products", (current) => (current ?? products).map((product) => {
             const qty = stockItems.filter((item) => item.product_id === product.id).reduce((sum, item) => sum + item.qty, 0);
             return qty > 0 ? { ...product, stock: Math.max(0, product.stock - qty) } : product;
+          }));
+          await cacheUpdate<Array<Product & Record<string, unknown>>>("table:products", (current) => (current ?? []).map((product) => {
+            const qty = stockItems.filter((item) => item.product_id === product.id).reduce((sum, item) => sum + item.qty, 0);
+            return qty > 0 ? { ...product, stock: Math.max(0, Number(product.stock) - qty) } : product;
           }));
         }
       } catch {

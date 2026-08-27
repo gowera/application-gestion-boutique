@@ -60,7 +60,7 @@ export function OfflineSetup() {
           <div className="space-y-3">
             <div><Label>PIN (4 à 8 chiffres)</Label><Input type="password" inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 8))} /></div>
             <div><Label>Confirmer le PIN</Label><Input type="password" inputMode="numeric" value={confirmPin} onChange={(event) => setConfirmPin(event.target.value.replace(/\D/g, "").slice(0, 8))} /></div>
-            <Button className="w-full" onClick={savePin} disabled={saving || state.running || roles.length === 0}>{saving ? "Sécurisation…" : state.running ? "Préparation des données…" : "Activer sur cet appareil"}</Button>
+            <Button className="w-full" onClick={savePin} disabled={saving || state.running || !state.ready || roles.length === 0}>{saving ? "Sécurisation…" : state.running ? "Préparation des données…" : !state.ready ? "Données locales incomplètes" : "Activer sur cet appareil"}</Button>
           </div>
         </DialogContent>
       </Dialog>

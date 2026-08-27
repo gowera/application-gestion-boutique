@@ -21,6 +21,7 @@ async function landingFor(userId: string): Promise<"/admin" | "/mon-compte"> {
 export const Route = createFileRoute("/auth")({
   ssr: false,
   beforeLoad: async () => {
+    if (typeof window !== "undefined" && window.conetecDesktop && !navigator.onLine) return;
     const { data } = await supabase.auth.getUser();
     if (data.user) throw redirect({ to: await landingFor(data.user.id) });
   },
