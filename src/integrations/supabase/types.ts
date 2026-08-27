@@ -1832,16 +1832,6 @@ export type Database = {
         }
         Returns: Json
       }
-      issue_document_with_stock: {
-        Args: {
-          _customer_name?: string
-          _doc_type: string
-          _sale_id?: string
-          _stock_items?: Json
-          _total_usd?: number
-        }
-        Returns: Json
-      }
       list_trash_items: {
         Args: never
         Returns: {
