@@ -18,6 +18,7 @@ import { Plus, Pencil, Search, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 import { StorageImage } from "@/components/storage-image";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 export const Route = createFileRoute("/_authenticated/admin/products")({
   component: ProductsPage,
@@ -71,24 +72,23 @@ function ProductsPage() {
 
   const { data: cats } = useQuery({
     queryKey: ["categories"],
-    queryFn: async () => (await supabase.from("categories").select("*").order("name")).data ?? [],
+    queryFn: offlineQueryFn("query:categories", async () => (await supabase.from("categories").select("*").order("name")).data ?? [], "table:categories"),
   });
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ["suppliers-list"],
-    queryFn: async () => (await supabase.from("suppliers").select("id,name").order("name")).data ?? [],
+    queryFn: offlineQueryFn("query:suppliers-list", async () => (await supabase.from("suppliers").select("id,name").order("name")).data ?? [], "table:suppliers"),
   });
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products", q],
-    queryFn: async () => {
-      let query = supabase.from("products").select("*").order("name");
-      if (q) query = query.ilike("name", `%${q}%`);
-      const { data, error } = await query;
+    queryKey: ["products"],
+    queryFn: offlineQueryFn("query:products", async () => {
+      const { data, error } = await supabase.from("products").select("*").order("name");
       if (error) throw error;
       return data as Product[];
-    },
+    }, "table:products"),
   });
+  const visibleProducts = (products ?? []).filter((product) => !q || product.name.toLowerCase().includes(q.toLowerCase()) || (product.sku ?? "").toLowerCase().includes(q.toLowerCase()));
 
   return (
     <div className="space-y-6">
@@ -123,10 +123,10 @@ function ProductsPage() {
             </TableHeader>
             <TableBody>
               {isLoading && <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">Chargement…</TableCell></TableRow>}
-              {!isLoading && products?.length === 0 && (
+              {!isLoading && visibleProducts.length === 0 && (
                 <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">Aucun produit. Ajoutez-en un.</TableCell></TableRow>
               )}
-              {products?.map((p) => {
+              {visibleProducts.map((p) => {
                 const low = p.stock <= (p.low_stock_threshold ?? settings?.low_stock_threshold ?? 5);
                 return (
                   <TableRow key={p.id}>

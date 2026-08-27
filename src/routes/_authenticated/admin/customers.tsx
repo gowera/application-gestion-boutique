@@ -19,6 +19,7 @@ import { createNotification } from "@/lib/notifications";
 import { isOffline, queueOperation } from "@/lib/offline/sync";
 import { OfflineBanner } from "@/components/admin/offline-banner";
 import { CreditProductPicker, creditLinesTotal, applyCreditStock, type CreditLine } from "@/components/credit-products";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 export const Route = createFileRoute("/_authenticated/admin/customers")({ component: Page });
 
@@ -60,22 +61,22 @@ function CustomersTab() {
   const qc = useQueryClient();
 
   const { data: customers } = useQuery({
-    queryKey: ["customers", showArchived],
-    queryFn: async () => {
-      const q = supabase.from("customers").select("*").order("name");
-      const { data, error } = showArchived ? await q : await q.eq("is_archived", false);
+    queryKey: ["customers"],
+    queryFn: offlineQueryFn("query:customers", async () => {
+      const { data, error } = await supabase.from("customers").select("*").order("name");
       if (error) throw error;
       return (data ?? []) as Customer[];
-    },
+    }, "table:customers"),
   });
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return customers ?? [];
+    const available = (customers ?? []).filter((customer) => showArchived || !customer.is_archived);
+    if (!query.trim()) return available;
     const q = query.toLowerCase();
-    return (customers ?? []).filter((c) =>
+    return available.filter((c) =>
       c.name.toLowerCase().includes(q) || (c.phone ?? "").includes(q) || (c.email ?? "").toLowerCase().includes(q)
     );
-  }, [customers, query]);
+  }, [customers, query, showArchived]);
 
   const save = useMutation({
     mutationFn: async (c: Partial<Customer>) => {
