@@ -13,12 +13,40 @@ export type OutboxOp = {
   error?: string | null;
 };
 
+export type SyncedOp = OutboxOp & { syncedAt: string };
+
 const OUTBOX_KEY = "outbox";
+const SYNCED_KEY = "synced-operations";
+let localUserId = "anonymous";
+
+export function setLocalUser(userId: string): void {
+  localUserId = userId || "anonymous";
+}
+
+function scoped(key: string): string {
+  return `user:${localUserId}:${key}`;
+}
+
+async function encode(value: unknown): Promise<unknown> {
+  if (typeof window !== "undefined" && window.conetecDesktop) {
+    return { encrypted: true, value: await window.conetecDesktop.protectLocalData(JSON.stringify(value)) };
+  }
+  return value;
+}
+
+async function decode<T>(value: unknown): Promise<T> {
+  const wrapped = value as { encrypted?: boolean; value?: string } | null;
+  if (wrapped?.encrypted && wrapped.value && typeof window !== "undefined" && window.conetecDesktop) {
+    return JSON.parse(await window.conetecDesktop.unprotectLocalData(wrapped.value)) as T;
+  }
+  return value as T;
+}
 
 async function read<T>(key: string): Promise<T | undefined> {
   if (!store) return undefined;
   try {
-    return (await get<T>(key, store)) ?? undefined;
+    const value = await get<unknown>(scoped(key), store);
+    return value == null ? undefined : await decode<T>(value);
   } catch {
     return undefined;
   }
@@ -27,7 +55,7 @@ async function read<T>(key: string): Promise<T | undefined> {
 async function write<T>(key: string, value: T): Promise<void> {
   if (!store) return;
   try {
-    await set(key, value, store);
+    await set(scoped(key), await encode(value), store);
   } catch {
     /* quota ou mode privé : on ignore */
   }
@@ -44,10 +72,17 @@ export async function cacheSet<T>(key: string, data: T): Promise<void> {
   await write(`cache:${key}`, { data, at: new Date().toISOString() });
 }
 
+export async function cacheUpdate<T>(key: string, update: (current: T | undefined) => T): Promise<T> {
+  const current = await cacheGet<T>(key);
+  const next = update(current);
+  await cacheSet(key, next);
+  return next;
+}
+
 export async function cacheClear(key: string): Promise<void> {
   if (!store) return;
   try {
-    await del(`cache:${key}`, store);
+    await del(scoped(`cache:${key}`), store);
   } catch {
     /* ignore */
   }
@@ -65,16 +100,22 @@ export async function outboxSave(ops: OutboxOp[]): Promise<void> {
 
 export async function outboxAdd(
   op: Omit<OutboxOp, "id" | "createdAt" | "tries">,
+  id: string = crypto.randomUUID(),
 ): Promise<OutboxOp> {
   const full: OutboxOp = {
     ...op,
-    id: crypto.randomUUID(),
+    id,
     createdAt: new Date().toISOString(),
     tries: 0,
   };
   const list = await outboxList();
   await outboxSave([...list, full]);
   return full;
+}
+
+export async function archiveSynced(op: OutboxOp): Promise<void> {
+  const history = (await read<SyncedOp[]>(SYNCED_KEY)) ?? [];
+  await write(SYNCED_KEY, [...history.slice(-499), { ...op, error: null, syncedAt: new Date().toISOString() }]);
 }
 
 export async function outboxRemove(id: string): Promise<void> {

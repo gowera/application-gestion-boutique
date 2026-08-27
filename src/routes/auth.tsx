@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useLogoUrl } from "@/lib/logo";
 import { STAFF_ROLES } from "@/lib/permissions";
+import { setOfflineUnlocked } from "@/lib/offline/auth";
+import { setLocalUser } from "@/lib/offline/store";
 
 async function landingFor(userId: string): Promise<"/admin" | "/mon-compte"> {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
@@ -19,6 +21,7 @@ async function landingFor(userId: string): Promise<"/admin" | "/mon-compte"> {
 export const Route = createFileRoute("/auth")({
   ssr: false,
   beforeLoad: async () => {
+    if (typeof window !== "undefined" && window.conetecDesktop && !navigator.onLine) return;
     const { data } = await supabase.auth.getUser();
     if (data.user) throw redirect({ to: await landingFor(data.user.id) });
   },
@@ -34,6 +37,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [offlinePin, setOfflinePin] = useState("");
+  const desktopOffline = typeof window !== "undefined" && Boolean(window.conetecDesktop) && !navigator.onLine;
 
   useEffect(() => {
     const sub = supabase.auth.onAuthStateChange((_e, session) => {
@@ -66,6 +71,18 @@ function AuthPage() {
     }
   }
 
+  async function unlockOffline() {
+    if (!window.conetecDesktop) return;
+    setLoading(true);
+    const result = await window.conetecDesktop.unlockOffline(offlinePin);
+    setLoading(false);
+    if (!result.ok || !result.profile) return toast.error(result.error ?? "Déverrouillage impossible");
+    setOfflineUnlocked(result.profile);
+    setLocalUser(result.profile.userId);
+    toast.success("Données locales déverrouillées");
+    navigate({ to: "/admin", replace: true });
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-hero-gradient px-4">
       <div className="w-full max-w-md">
@@ -82,7 +99,13 @@ function AuthPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               {mode === "login" ? "Accédez à votre espace client ou d'administration." : "Ouvrez votre compte client CONETEC."}
             </p>
-            <form className="mt-6 space-y-4" onSubmit={submit}>
+            {desktopOffline ? (
+              <div className="mt-6 space-y-4">
+                <div><Label>PIN de cet appareil</Label><Input type="password" inputMode="numeric" value={offlinePin} onChange={(event) => setOfflinePin(event.target.value.replace(/\D/g, "").slice(0, 8))} /></div>
+                <Button type="button" className="w-full" size="lg" disabled={loading || offlinePin.length < 4} onClick={unlockOffline}>{loading ? "Vérification…" : "Déverrouiller hors ligne"}</Button>
+                <p className="text-center text-xs text-muted-foreground">Connexion Internet absente. Le PIN ouvre uniquement les données déjà téléchargées sur cet ordinateur.</p>
+              </div>
+            ) : <form className="mt-6 space-y-4" onSubmit={submit}>
               {mode === "signup" && (
                 <div>
                   <Label>Nom complet</Label>
@@ -100,14 +123,14 @@ function AuthPage() {
               <Button type="submit" className="w-full" size="lg" disabled={loading}>
                 {loading ? "Patientez..." : mode === "login" ? "Se connecter" : "Créer le compte"}
               </Button>
-            </form>
-            <button
+            </form>}
+            {!desktopOffline && <button
               type="button"
               onClick={() => setMode(mode === "login" ? "signup" : "login")}
               className="mt-4 w-full text-center text-sm text-muted-foreground hover:text-foreground"
             >
               {mode === "login" ? "Pas encore de compte ? Créer un compte" : "J'ai déjà un compte — Se connecter"}
-            </button>
+            </button>}
             <Link to="/" className="mt-6 block text-center text-xs text-muted-foreground hover:text-foreground">
               ← Retour au site public
             </Link>

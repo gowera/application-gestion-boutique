@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowDownCircle, ArrowUpCircle, Download, PackageSearch } from "lucide-react";
 import { exportToXlsx } from "@/lib/xlsx-export";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 export const Route = createFileRoute("/_authenticated/admin/stock")({ component: StockPage });
 
@@ -48,7 +49,7 @@ function StockPage() {
 
   const { data: products = [] } = useQuery({
     queryKey: ["stock-products"],
-    queryFn: async () => (await supabase.from("products").select("id,name,sku,stock,low_stock_threshold").order("name")).data ?? [],
+    queryFn: offlineQueryFn("query:stock-products", async () => (await supabase.from("products").select("id,name,sku,stock,low_stock_threshold").order("name")).data ?? [], "table:products"),
   });
 
   const { data: movements = [], isLoading } = useQuery({

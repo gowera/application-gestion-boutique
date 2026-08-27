@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SalePreviewDialog } from "@/components/pos/sale-preview-dialog";
 import type { ReceiptData } from "@/lib/pdf";
 import { isOffline, queueOperation } from "@/lib/offline/sync";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 export const Route = createFileRoute("/_authenticated/admin/pos")({
   component: PosPage,
@@ -46,18 +47,15 @@ function PosPage() {
   const [documentType, setDocumentType] = useState<"Facture" | "Reçu" | "Aucun">("Reçu");
   const qc = useQueryClient();
 
-  const { data: products } = useQuery({
-    queryKey: ["pos-products", q],
-    queryFn: async () => {
-      let query = supabase.from("products").select("id,name,sku,sale_price,stock,status").eq("status", "active").order("name").limit(30);
-      if (q) query = query.ilike("name", `%${q}%`);
-      return ((await query).data ?? []) as Product[];
-    },
+  const { data: allProducts } = useQuery({
+    queryKey: ["pos-products"],
+    queryFn: offlineQueryFn("query:pos-products", async () => ((await supabase.from("products").select("id,name,sku,sale_price,stock,status").eq("status", "active").order("name").limit(500)).data ?? []) as Product[], "table:products"),
   });
+  const products = (allProducts ?? []).filter((product) => product.status === "active" && (!q || product.name.toLowerCase().includes(q.toLowerCase()) || (product.sku ?? "").toLowerCase().includes(q.toLowerCase()))).slice(0, 30);
 
   const { data: customers } = useQuery({
     queryKey: ["pos-customers"],
-    queryFn: async () => (await supabase.from("customers").select("id,name,phone").eq("is_archived", false).order("name")).data ?? [],
+    queryFn: offlineQueryFn("query:pos-customers", async () => (await supabase.from("customers").select("id,name,phone,is_archived").eq("is_archived", false).order("name")).data ?? [], "table:customers"),
   });
 
   const subtotal = cart.reduce((a, l) => a + l.qty * l.unit_price_usd - l.discount_usd, 0);

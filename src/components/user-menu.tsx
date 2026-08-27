@@ -5,6 +5,7 @@ import { useCurrentUser, useMyRoles } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LogOut, User } from "lucide-react";
+import { clearOfflineUnlocked } from "@/lib/offline/auth";
 
 export function UserMenu() {
   const { user } = useCurrentUser();
@@ -16,7 +17,8 @@ export function UserMenu() {
     await supabase.rpc("log_auth_event", { _action: "auth.signout", _metadata: {} }).then(() => {}, () => {});
     await qc.cancelQueries();
     qc.clear();
-    await supabase.auth.signOut();
+    clearOfflineUnlocked();
+    if (navigator.onLine) await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
 

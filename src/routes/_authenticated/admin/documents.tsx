@@ -16,15 +16,22 @@ import { downloadReceipt } from "@/lib/pdf";
 import { useLogoDataUrl } from "@/lib/logo";
 import { EditorCanvas } from "@/components/documents/editor-canvas";
 import { useSettings } from "@/lib/currency";
-import { issueDocumentNumber, labelToDocType } from "@/lib/documents";
+import { labelToDocType } from "@/lib/documents";
 import { CustomerQuickAdd } from "@/components/customer-quick-add";
 import { runOrQueue } from "@/lib/offline/ops";
 import { OfflineBanner } from "@/components/admin/offline-banner";
+import { offlineQueryFn } from "@/lib/offline/query";
+import { cacheUpdate } from "@/lib/offline/store";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/documents")({ component: Page });
 
 type Customer = { id: string; name: string; phone?: string | null; is_archived?: boolean };
-type LineItem = { name: string; qty: number; unit: number };
+type LineItem = { productId?: string; name: string; qty: number; unit: number };
+type Product = { id: string; name: string; sale_price: number; stock: number };
 
 function Page() {
   const qc = useQueryClient();
@@ -39,23 +46,24 @@ function Page() {
   const [saveManual, setSaveManual] = useState(false);
   const [note, setNote] = useState("");
   const [lines, setLines] = useState<LineItem[]>([{ name: "", qty: 1, unit: 0 }]);
+  const [confirmStock, setConfirmStock] = useState(false);
 
 
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["documents-customers"],
-    queryFn: async () => ((await supabase.from("customers").select("id,name,phone,is_archived").eq("is_archived", false).order("name")).data ?? []) as Customer[],
+    queryFn: offlineQueryFn("query:documents-customers", async () => ((await supabase.from("customers").select("id,name,phone,is_archived").eq("is_archived", false).order("name")).data ?? []) as Customer[], "table:customers"),
   });
 
-  const { data: products = [] } = useQuery<{ id: string; name: string; sale_price: number }[]>({
+  const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["documents-products"],
-    queryFn: async () =>
-      ((await supabase.from("products").select("id,name,sale_price").eq("status", "active").is("deleted_at", null).order("name").limit(500)).data ?? []) as { id: string; name: string; sale_price: number }[],
+    queryFn: offlineQueryFn("query:documents-products", async () =>
+      ((await supabase.from("products").select("id,name,sale_price,stock").eq("status", "active").is("deleted_at", null).order("name").limit(500)).data ?? []) as Product[], "table:products"),
   });
 
   const subtotal = lines.reduce((a, l) => a + Number(l.qty || 0) * Number(l.unit || 0), 0);
 
   const createDocument = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (decrementStock: boolean) => {
       if (!lines.some((l) => l.name.trim())) throw new Error("Ajoutez au moins une ligne");
       let customerName: string;
       if (manualMode) {
@@ -79,18 +87,45 @@ function Page() {
       }
       const items = lines.filter((l) => l.name.trim()).map((l) => ({ name: l.name, qty: Number(l.qty || 0), unit: Number(l.unit || 0), total: Number(l.qty || 0) * Number(l.unit || 0) }));
       const total = items.reduce((a, i) => a + i.total, 0);
+      const stockItems = decrementStock
+        ? lines.filter((line) => line.productId && line.name.trim()).map((line) => ({ product_id: line.productId, qty: Number(line.qty || 0) }))
+        : [];
+      for (const item of stockItems) {
+        const product = products.find((candidate) => candidate.id === item.product_id);
+        if (!product || item.qty <= 0) throw new Error("Quantité de produit invalide");
+        if (item.qty > product.stock) throw new Error(`Stock insuffisant : ${product.name} (${product.stock} disponible(s))`);
+      }
       let docCode = "";
       let queued = false;
       const docType = labelToDocType(documentType);
       try {
-        const res = await runOrQueue(
+        const operationId = crypto.randomUUID();
+        const payload = { doc_type: docType, customer_name: customerName, total_usd: total, stock_items: stockItems };
+        const res = await runOrQueue<{ code?: string; result?: { code?: string } }>(
           "document",
           `${documentType} — ${customerName}`,
-          { doc_type: docType, customer_name: customerName, total_usd: total },
-          () => issueDocumentNumber({ docType, customerName, totalUsd: total }),
+          payload,
+          async () => {
+            const { data, error } = await supabase.rpc("sync_apply_operation", {
+              _client_op_id: operationId, _kind: "document", _payload: payload,
+            });
+            if (error) throw error;
+            return data as { result?: { code?: string } };
+          },
+          operationId,
         );
         queued = res.queued;
-        docCode = res.data?.code ?? `LOC-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+        docCode = res.data?.result?.code ?? res.data?.code ?? `LOC-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+        if (queued && stockItems.length > 0) {
+          await cacheUpdate<Product[]>("query:documents-products", (current) => (current ?? products).map((product) => {
+            const qty = stockItems.filter((item) => item.product_id === product.id).reduce((sum, item) => sum + item.qty, 0);
+            return qty > 0 ? { ...product, stock: Math.max(0, product.stock - qty) } : product;
+          }));
+          await cacheUpdate<Array<Product & Record<string, unknown>>>("table:products", (current) => (current ?? []).map((product) => {
+            const qty = stockItems.filter((item) => item.product_id === product.id).reduce((sum, item) => sum + item.qty, 0);
+            return qty > 0 ? { ...product, stock: Math.max(0, Number(product.stock) - qty) } : product;
+          }));
+        }
       } catch {
         docCode = `DOC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
       }
@@ -103,12 +138,15 @@ function Page() {
         currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
         documentType, template, note: note || undefined,
       });
-      return { code: docCode, queued };
+      return { code: docCode, queued, stockApplied: stockItems.length > 0 };
     },
     onSuccess: (res) => {
       if (res.queued) toast.warning(`Document ${res.code} créé hors ligne — numéro définitif attribué à la synchronisation.`);
-      else toast.success("Document généré");
+      else toast.success(res.stockApplied ? "Document généré et stock mis à jour" : "Document généré sans modifier le stock");
       qc.invalidateQueries({ queryKey: ["document-history"] });
+      qc.invalidateQueries({ queryKey: ["documents-products"] });
+      qc.invalidateQueries({ queryKey: ["stock-products"] });
+      qc.invalidateQueries({ queryKey: ["stock-movements"] });
       setLines([{ name: "", qty: 1, unit: 0 }]); setNote("");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -236,15 +274,15 @@ function Page() {
                       value=""
                       onValueChange={(pid) => {
                         const p = products.find((x) => x.id === pid);
-                        if (p) setLines(lines.map((l, ix) => ix === i ? { ...l, name: p.name, unit: Number(p.sale_price) } : l));
+                        if (p) setLines(lines.map((l, ix) => ix === i ? { ...l, productId: p.id, name: p.name, unit: Number(p.sale_price) } : l));
                       }}
                     >
                       <SelectTrigger className="col-span-2 md:col-span-1"><SelectValue placeholder="Produit boutique…" /></SelectTrigger>
                       <SelectContent>
-                        {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name} — ${Number(p.sale_price).toFixed(2)}</SelectItem>)}
+                        {products.map((p) => <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>{p.name} — ${Number(p.sale_price).toFixed(2)} · Stock {p.stock}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <Input className="col-span-2 md:col-span-1" placeholder="Désignation" value={line.name} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, name: e.target.value } : l))} />
+                    <Input className="col-span-2 md:col-span-1" placeholder="Désignation" value={line.name} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, productId: undefined, name: e.target.value } : l))} />
                     <Input type="number" min="1" value={line.qty} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, qty: +e.target.value } : l))} />
                     <Input type="number" step="0.01" placeholder="P.U. USD" value={line.unit} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, unit: +e.target.value } : l))} />
                     <Button variant="outline" className="col-span-2 md:col-span-1" onClick={() => setLines(lines.filter((_, ix) => ix !== i))} disabled={lines.length === 1}>Retirer</Button>
@@ -258,12 +296,29 @@ function Page() {
                 <Label>Note</Label>
                 <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Détails ou conditions" />
               </div>
-              <Button className="w-full" onClick={() => createDocument.mutate()} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
+              <Button className="w-full" onClick={() => setConfirmStock(true)} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
               <p className="text-xs text-muted-foreground">Le document est numéroté automatiquement (séquentiel, sans doublon) et utilise le modèle actif.</p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+      <AlertDialog open={confirmStock} onOpenChange={setConfirmStock}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retirer les produits du stock ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {lines.filter((line) => line.productId).length > 0
+                ? "Les produits du catalogue présents dans ce document peuvent être retranchés du stock. Les lignes saisies manuellement ne modifient jamais le stock."
+                : "Aucune ligne n’est liée à un produit du catalogue. Vous pouvez générer le PDF sans modifier le stock."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction className="bg-secondary text-secondary-foreground hover:bg-secondary/80" onClick={() => createDocument.mutate(false)}>Non, PDF uniquement</AlertDialogAction>
+            <AlertDialogAction disabled={!lines.some((line) => line.productId)} onClick={() => createDocument.mutate(true)}>Oui, retirer du stock</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

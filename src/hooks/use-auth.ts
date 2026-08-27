@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { getOfflineProfile } from "@/lib/offline/auth";
 
 export type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -18,7 +19,9 @@ export function useSession() {
 
 export function useCurrentUser() {
   const { data: session, isLoading } = useSession();
-  return { user: session?.user ?? null, isLoading };
+  const offline = typeof window !== "undefined" ? getOfflineProfile() : null;
+  const localUser = offline ? { id: offline.userId, email: offline.email } : null;
+  return { user: session?.user ?? localUser, isLoading };
 }
 
 export function useMyRoles() {
