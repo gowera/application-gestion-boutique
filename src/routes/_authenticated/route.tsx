@@ -14,6 +14,14 @@ import { setLocalUser } from "@/lib/offline/store";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
+    if (typeof window !== "undefined" && window.conetecDesktop && !navigator.onLine) {
+      const offlineProfile = getOfflineProfile();
+      if (!offlineProfile) throw redirect({ to: "/auth" });
+      setLocalUser(offlineProfile.userId);
+      const isStaff = offlineProfile.roles.some((role) => (STAFF_ROLES as string[]).includes(role));
+      if (!isStaff) throw redirect({ to: "/auth" });
+      return { user: { id: offlineProfile.userId, email: offlineProfile.email } };
+    }
     const { data: sessionData } = await supabase.auth.getSession();
     const user = sessionData.session?.user;
     if (!user) {

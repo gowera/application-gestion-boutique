@@ -10,6 +10,8 @@ import {
 } from "recharts";
 import { AlertTriangle, DollarSign, ShoppingCart, Package, Users, Banknote, HandCoins, ArrowRight, Store } from "lucide-react";
 import { WindowsAppCard } from "@/components/admin/windows-app-card";
+import { cacheGet } from "@/lib/offline/store";
+import { isOffline } from "@/lib/offline/sync";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: DashboardPage,
@@ -27,6 +29,22 @@ function DashboardPage() {
       const startDay = new Date(now); startDay.setHours(0, 0, 0, 0);
       const startWeek = new Date(now); startWeek.setDate(now.getDate() - 7);
       const startMonth = new Date(now); startMonth.setDate(1); startMonth.setHours(0, 0, 0, 0);
+
+      if (isOffline()) {
+        const [sales = [], products = [], customers = []] = await Promise.all([
+          cacheGet<Array<{ total_usd: number; status: string; created_at: string }>>("table:sales"),
+          cacheGet<Array<{ id: string; name: string; stock: number; low_stock_threshold: number | null }>>("table:products"),
+          cacheGet<Array<{ id: string; name: string; balance: number }>>("table:customers"),
+        ]);
+        const completed = sales.filter((sale) => sale.status === "completed");
+        const totalSince = (date: Date) => completed.filter((sale) => new Date(sale.created_at) >= date).reduce((sum, sale) => sum + Number(sale.total_usd || 0), 0);
+        return {
+          today: totalSince(startDay), todayCount: completed.filter((sale) => new Date(sale.created_at) >= startDay).length,
+          week: totalSince(startWeek), month: totalSince(startMonth),
+          low: products.filter((product) => product.stock <= (product.low_stock_threshold ?? 5)),
+          debts: customers.filter((customer) => Number(customer.balance) > 0),
+        };
+      }
 
       const [dayRes, weekRes, monthRes, lowStockRes, customersRes] = await Promise.all([
         supabase.from("sales").select("total_usd").eq("status", "completed").gte("created_at", startDay.toISOString()),
@@ -50,7 +68,9 @@ function DashboardPage() {
     queryKey: ["dashboard-30d"],
     queryFn: async () => {
       const start = new Date(); start.setDate(start.getDate() - 29); start.setHours(0, 0, 0, 0);
-      const { data } = await supabase.from("sales").select("created_at,total_usd").eq("status", "completed").gte("created_at", start.toISOString());
+      const data = isOffline()
+        ? ((await cacheGet<Array<{ created_at: string; total_usd: number; status: string }>>("table:sales")) ?? []).filter((sale) => sale.status === "completed" && new Date(sale.created_at) >= start)
+        : (await supabase.from("sales").select("created_at,total_usd").eq("status", "completed").gte("created_at", start.toISOString())).data;
       const map = new Map<string, number>();
       for (let i = 0; i < 30; i++) {
         const d = new Date(start); d.setDate(start.getDate() + i);
@@ -68,8 +88,10 @@ function DashboardPage() {
     queryKey: ["dashboard-top-products"],
     queryFn: async () => {
       const start = new Date(); start.setDate(start.getDate() - 30);
-      const { data } = await supabase.from("sale_items").select("product_name,qty,line_total_usd,sales!inner(created_at,status)")
-        .gte("sales.created_at", start.toISOString()).eq("sales.status", "completed");
+      const data = isOffline()
+        ? ((await cacheGet<Array<{ product_name: string; qty: number }>>("table:sale_items")) ?? [])
+        : (await supabase.from("sale_items").select("product_name,qty,line_total_usd,sales!inner(created_at,status)")
+          .gte("sales.created_at", start.toISOString()).eq("sales.status", "completed")).data;
       const agg = new Map<string, number>();
       (data ?? []).forEach((r) => agg.set(r.product_name, (agg.get(r.product_name) ?? 0) + Number(r.qty)));
       return Array.from(agg.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, qty]) => ({ name, qty }));
@@ -79,6 +101,7 @@ function DashboardPage() {
   const { data: recentActivity } = useQuery({
     queryKey: ["recent-activity"],
     queryFn: async () => {
+      if (isOffline()) return ((await cacheGet<Array<Record<string, unknown>>>("table:activity_log")) ?? []).slice(0, 8);
       const { data } = await supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(8);
       return data ?? [];
     },
