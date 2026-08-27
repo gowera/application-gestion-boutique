@@ -15,6 +15,7 @@ import { Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 import { downloadPurchasePdf } from "@/lib/pdf";
 import { downloadTablePdf } from "@/lib/pdf-table";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 type PurchaseRow = { id: string; code: string; total_usd: number; status: string; created_at: string; suppliers?: { name?: string } | null };
 
@@ -28,9 +29,9 @@ export function PurchasesSection() {
   const [deliveredAt, setDeliveredAt] = useState("");
   const [status, setStatus] = useState("draft");
   const [lines, setLines] = useState([{ name: "", qty: "1", cost: "0" }]);
-  const { data = [] } = useQuery<PurchaseRow[]>({ queryKey: ["purchases"], queryFn: async () => (await supabase.from("purchases").select("*, suppliers(name)").order("created_at", { ascending: false })).data as PurchaseRow[] ?? [] });
-  const { data: suppliers = [] } = useQuery<Array<{ id: string; name: string }>>({ queryKey: ["suppliers-list"], queryFn: async () => (await supabase.from("suppliers").select("id,name").order("name")).data ?? [] });
-  const { data: products = [] } = useQuery<Array<{ id: string; name: string }>>({ queryKey: ["products-purchase"], queryFn: async () => (await supabase.from("products").select("id,name").order("name")).data ?? [] });
+  const { data = [] } = useQuery<PurchaseRow[]>({ queryKey: ["purchases"], queryFn: offlineQueryFn("query:purchases", async () => (await supabase.from("purchases").select("*, suppliers(name)").order("created_at", { ascending: false })).data as PurchaseRow[] ?? [], "table:purchases") });
+  const { data: suppliers = [] } = useQuery<Array<{ id: string; name: string }>>({ queryKey: ["suppliers-list"], queryFn: offlineQueryFn("query:suppliers-list", async () => (await supabase.from("suppliers").select("id,name").order("name")).data ?? [], "table:suppliers") });
+  const { data: products = [] } = useQuery<Array<{ id: string; name: string }>>({ queryKey: ["products-purchase"], queryFn: offlineQueryFn("query:products-purchase", async () => (await supabase.from("products").select("id,name").order("name")).data ?? [], "table:products") });
 
   const createPurchase = useMutation({
     mutationFn: async () => {

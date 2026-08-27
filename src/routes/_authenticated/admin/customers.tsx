@@ -20,6 +20,8 @@ import { isOffline, queueOperation } from "@/lib/offline/sync";
 import { OfflineBanner } from "@/components/admin/offline-banner";
 import { CreditProductPicker, creditLinesTotal, applyCreditStock, type CreditLine } from "@/components/credit-products";
 import { offlineQueryFn } from "@/lib/offline/query";
+import { cacheGet } from "@/lib/offline/store";
+import { isOffline as offlineNow } from "@/lib/offline/sync";
 
 export const Route = createFileRoute("/_authenticated/admin/customers")({ component: Page });
 
@@ -188,12 +190,16 @@ function CustomerHistoryDialog({ customer, onClose }: { customer: Customer | nul
   const { data: sales } = useQuery({
     queryKey: ["customer-sales", customer?.id],
     enabled: !!customer,
-    queryFn: async () => (await supabase.from("sales").select("id,code,total_usd,paid_usd,credit_usd,status,created_at,due_date").eq("customer_id", customer!.id).order("created_at", { ascending: false }).limit(50)).data ?? [],
+    queryFn: async () => offlineNow()
+      ? ((await cacheGet<Array<{ id: string; customer_id: string; code: string; total_usd: number; paid_usd: number; credit_usd: number; status: string; created_at: string; due_date: string | null }>>("table:sales")) ?? []).filter((row) => row.customer_id === customer?.id).slice(0, 50)
+      : (await supabase.from("sales").select("id,code,total_usd,paid_usd,credit_usd,status,created_at,due_date").eq("customer_id", customer?.id ?? "").order("created_at", { ascending: false }).limit(50)).data ?? [],
   });
   const { data: ledger } = useQuery({
     queryKey: ["customer-ledger", customer?.id],
     enabled: !!customer,
-    queryFn: async () => (await supabase.from("customer_ledger").select("*").eq("customer_id", customer!.id).order("created_at", { ascending: false }).limit(50)).data ?? [],
+    queryFn: async () => offlineNow()
+      ? ((await cacheGet<Array<{ customer_id: string; [key: string]: unknown }>>("table:customer_ledger")) ?? []).filter((row) => row.customer_id === customer?.id).slice(0, 50)
+      : (await supabase.from("customer_ledger").select("*").eq("customer_id", customer?.id ?? "").order("created_at", { ascending: false }).limit(50)).data ?? [],
   });
 
   return (
@@ -280,12 +286,14 @@ function CreditsTab() {
   const { data: dueDates } = useQuery({
     queryKey: ["ledger-due-dates"],
     queryFn: async () => {
-      const { data } = await supabase
+      const data = offlineNow()
+        ? ((await cacheGet<Array<{ customer_id: string; due_date: string | null; delta: number }>>("table:customer_ledger")) ?? []).filter((row) => row.delta > 0 && row.due_date)
+        : (await supabase
         .from("customer_ledger")
         .select("customer_id,due_date")
         .gt("delta", 0)
         .not("due_date", "is", null)
-        .order("due_date", { ascending: true });
+        .order("due_date", { ascending: true })).data;
       const map: Record<string, string> = {};
       for (const row of (data ?? []) as { customer_id: string; due_date: string }[]) {
         if (!map[row.customer_id]) map[row.customer_id] = row.due_date;
@@ -296,10 +304,11 @@ function CreditsTab() {
 
   const { data: debtors } = useQuery({
     queryKey: ["debtors"],
-    queryFn: async () => ((await supabase.from("customers").select("*").gt("balance", 0).order("balance", { ascending: false })).data ?? []) as Customer[],
+    queryFn: offlineQueryFn("query:debtors", async () => ((await supabase.from("customers").select("*").gt("balance", 0).order("balance", { ascending: false })).data ?? []) as Customer[], "table:customers"),
   });
 
-  const totalDebt = (debtors ?? []).reduce((s, c) => s + Number(c.balance), 0);
+  const visibleDebtors = (debtors ?? []).filter((customer) => Number(customer.balance) > 0).sort((a, b) => Number(b.balance) - Number(a.balance));
+  const totalDebt = visibleDebtors.reduce((s, c) => s + Number(c.balance), 0);
 
   const payMut = useMutation({
     mutationFn: async () => {
