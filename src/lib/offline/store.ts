@@ -100,7 +100,7 @@ export async function outboxSave(ops: OutboxOp[]): Promise<void> {
 
 export async function outboxAdd(
   op: Omit<OutboxOp, "id" | "createdAt" | "tries">,
-  id = crypto.randomUUID(),
+  id: string = crypto.randomUUID(),
 ): Promise<OutboxOp> {
   const full: OutboxOp = {
     ...op,

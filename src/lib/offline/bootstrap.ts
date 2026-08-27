@@ -48,7 +48,6 @@ export async function bootstrapOfflineData(userId: string): Promise<void> {
       const table = DATASETS[index];
       emit({ current: table, completed: index });
       // The signed-in user's RLS policies decide which rows may be copied locally.
-      // @ts-expect-error Dataset names are deliberately enumerated above.
       const { data, error } = await supabase.from(table).select("*").limit(5000);
       if (error) throw new Error(`${table}: ${error.message}`);
       await cacheSet(`table:${table}`, data ?? []);

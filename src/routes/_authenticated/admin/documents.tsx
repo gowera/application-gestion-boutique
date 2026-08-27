@@ -16,7 +16,7 @@ import { downloadReceipt } from "@/lib/pdf";
 import { useLogoDataUrl } from "@/lib/logo";
 import { EditorCanvas } from "@/components/documents/editor-canvas";
 import { useSettings } from "@/lib/currency";
-import { issueDocumentNumber, labelToDocType } from "@/lib/documents";
+import { labelToDocType } from "@/lib/documents";
 import { CustomerQuickAdd } from "@/components/customer-quick-add";
 import { runOrQueue } from "@/lib/offline/ops";
 import { OfflineBanner } from "@/components/admin/offline-banner";
