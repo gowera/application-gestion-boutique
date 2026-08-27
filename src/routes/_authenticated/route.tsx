@@ -7,13 +7,24 @@ import { NotificationsCenter } from "@/components/admin/notifications-center";
 import { SyncStatus } from "@/components/admin/sync-status";
 import { useAllowedMenus, STAFF_ROLES } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
+import { OfflineSetup } from "@/components/admin/offline-setup";
+import { getOfflineProfile } from "@/lib/offline/auth";
+import { setLocalUser } from "@/lib/offline/store";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const user = sessionData.session?.user;
-    if (!user) throw redirect({ to: "/auth" });
+    if (!user) {
+      const offlineProfile = getOfflineProfile();
+      if (!offlineProfile || navigator.onLine) throw redirect({ to: "/auth" });
+      setLocalUser(offlineProfile.userId);
+      const isStaff = offlineProfile.roles.some((role) => (STAFF_ROLES as string[]).includes(role));
+      if (!isStaff) throw redirect({ to: "/auth" });
+      return { user: { id: offlineProfile.userId, email: offlineProfile.email } };
+    }
+    setLocalUser(user.id);
     const roleCacheKey = `conetec:roles:${user.id}`;
     let list: string[] = [];
     try {
@@ -68,6 +79,7 @@ function AuthenticatedLayout() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
+        <OfflineSetup />
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur">
           <SidebarTrigger />
           <div className="text-display text-sm font-semibold text-primary">CONETEC · Administration</div>

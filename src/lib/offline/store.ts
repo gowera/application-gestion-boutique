@@ -72,6 +72,13 @@ export async function cacheSet<T>(key: string, data: T): Promise<void> {
   await write(`cache:${key}`, { data, at: new Date().toISOString() });
 }
 
+export async function cacheUpdate<T>(key: string, update: (current: T | undefined) => T): Promise<T> {
+  const current = await cacheGet<T>(key);
+  const next = update(current);
+  await cacheSet(key, next);
+  return next;
+}
+
 export async function cacheClear(key: string): Promise<void> {
   if (!store) return;
   try {
