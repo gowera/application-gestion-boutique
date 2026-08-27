@@ -87,9 +87,15 @@ function Page() {
       }
       const items = lines.filter((l) => l.name.trim()).map((l) => ({ name: l.name, qty: Number(l.qty || 0), unit: Number(l.unit || 0), total: Number(l.qty || 0) * Number(l.unit || 0) }));
       const total = items.reduce((a, i) => a + i.total, 0);
-      const stockItems = decrementStock
-        ? lines.filter((line) => line.productId && line.name.trim()).map((line) => ({ product_id: line.productId, qty: Number(line.qty || 0) }))
-        : [];
+      const groupedStock = new Map<string, number>();
+      if (decrementStock) {
+        for (const line of lines.filter((candidate) => candidate.productId && candidate.name.trim())) {
+          const productId = line.productId;
+          if (!productId) continue;
+          groupedStock.set(productId, (groupedStock.get(productId) ?? 0) + Number(line.qty || 0));
+        }
+      }
+      const stockItems = Array.from(groupedStock, ([product_id, qty]) => ({ product_id, qty }));
       for (const item of stockItems) {
         const product = products.find((candidate) => candidate.id === item.product_id);
         if (!product || item.qty <= 0) throw new Error("Quantité de produit invalide");

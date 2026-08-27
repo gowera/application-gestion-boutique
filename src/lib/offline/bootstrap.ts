@@ -44,17 +44,31 @@ export async function bootstrapOfflineData(userId: string): Promise<void> {
   setLocalUser(userId);
   emit({ running: true, completed: 0, current: null, error: null });
   try {
+    const skipped: string[] = [];
     for (let index = 0; index < DATASETS.length; index += 1) {
       const table = DATASETS[index];
       emit({ current: table, completed: index });
       // The signed-in user's RLS policies decide which rows may be copied locally.
-      const { data, error } = await supabase.from(table).select("*").limit(5000);
-      if (error) throw new Error(`${table}: ${error.message}`);
-      await cacheSet(`table:${table}`, data ?? []);
+      const rows: unknown[] = [];
+      let offset = 0;
+      let failed = false;
+      while (true) {
+        const { data, error } = await supabase.from(table).select("*").range(offset, offset + 999);
+        if (error) {
+          skipped.push(table);
+          failed = true;
+          break;
+        }
+        const page = (data ?? []) as unknown[];
+        rows.push(...page);
+        if (page.length < 1000) break;
+        offset += 1000;
+      }
+      if (!failed) await cacheSet(`table:${table}`, rows);
     }
     const at = new Date().toISOString();
     await cacheSet("bootstrap:meta", { ready: true, at, version: 1 });
-    emit({ running: false, completed: DATASETS.length, current: null, ready: true, lastBootstrapAt: at });
+    emit({ running: false, completed: DATASETS.length, current: null, ready: true, lastBootstrapAt: at, error: skipped.length ? `${skipped.length} jeu(x) non autorisé(s) ignoré(s)` : null });
   } catch (error) {
     emit({ running: false, current: null, error: error instanceof Error ? error.message : String(error) });
   }
