@@ -30,7 +30,6 @@ type Customer = {
   address: string | null; credit_limit: number; balance: number; notes: string | null;
   is_archived: boolean; created_at: string;
 };
-type LedgerRow = { id: string; customer_id: string; delta: number; reason: string; created_at: string; due_date?: string | null; method?: string | null };
 
 function Page() {
   return (
