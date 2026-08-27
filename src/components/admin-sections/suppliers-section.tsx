@@ -12,13 +12,14 @@ import { Mail, Phone, MessageCircleMore, Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 import { downloadSupplierPurchasesReportPdf } from "@/lib/pdf";
 import { downloadTablePdf } from "@/lib/pdf-table";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 export function SuppliersSection() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ name: "", phone: "", email: "", address: "", notes: "" });
   const { data = [] } = useQuery<Array<{ id: string; name: string; phone?: string | null; email?: string | null; address?: string | null; balance_usd: number }>>({
-    queryKey: ["suppliers"], queryFn: async () => (await supabase.from("suppliers").select("*").order("name")).data ?? [],
+    queryKey: ["suppliers"], queryFn: offlineQueryFn("query:suppliers", async () => (await supabase.from("suppliers").select("*").order("name")).data ?? [], "table:suppliers"),
   });
 
   const exportSupplierReport = async (supplier: { id: string; name: string }) => {

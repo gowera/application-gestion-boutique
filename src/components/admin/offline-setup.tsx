@@ -51,6 +51,9 @@ export function OfflineSetup() {
           </div>
         </div>
       )}
+      {!state.running && state.error && state.ready && (
+        <div className="border-b bg-warning/10 px-4 py-2 text-center text-xs text-warning-foreground">Préparation hors ligne terminée avec restrictions : {state.error}.</div>
+      )}
       <Dialog open={needsPin} onOpenChange={() => {}}>
         <DialogContent onEscapeKeyDown={(event) => event.preventDefault()} onPointerDownOutside={(event) => event.preventDefault()}>
           <DialogHeader>

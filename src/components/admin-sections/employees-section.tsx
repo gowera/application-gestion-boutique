@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 import { downloadTablePdf } from "@/lib/pdf-table";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 type EmployeeRow = {
   id: string; full_name: string; phone?: string | null; email?: string | null;
@@ -30,7 +31,7 @@ export function EmployeesSection() {
   const [terminationReason, setTerminationReason] = useState("");
   const [terminationDate, setTerminationDate] = useState(new Date().toISOString().slice(0, 10));
   const [f, setF] = useState({ full_name: "", phone: "", email: "", position: "", monthly_salary_usd: 0 });
-  const { data: employees = [] } = useQuery<EmployeeRow[]>({ queryKey: ["employees"], queryFn: async () => (await supabase.from("employees").select("*").order("full_name")).data as EmployeeRow[] ?? [] });
+  const { data: employees = [] } = useQuery<EmployeeRow[]>({ queryKey: ["employees"], queryFn: offlineQueryFn("query:employees", async () => (await supabase.from("employees").select("*").order("full_name")).data as EmployeeRow[] ?? [], "table:employees") });
 
   const filteredEmployees = useMemo(() => employees.filter((e) => {
     if (filter === "active") return !e.is_terminated && e.active !== false;

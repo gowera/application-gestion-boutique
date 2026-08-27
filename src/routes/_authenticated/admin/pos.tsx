@@ -53,10 +53,11 @@ function PosPage() {
   });
   const products = (allProducts ?? []).filter((product) => product.status === "active" && (!q || product.name.toLowerCase().includes(q.toLowerCase()) || (product.sku ?? "").toLowerCase().includes(q.toLowerCase()))).slice(0, 30);
 
-  const { data: customers } = useQuery({
+  const { data: allCustomers } = useQuery({
     queryKey: ["pos-customers"],
     queryFn: offlineQueryFn("query:pos-customers", async () => (await supabase.from("customers").select("id,name,phone,is_archived").eq("is_archived", false).order("name")).data ?? [], "table:customers"),
   });
+  const customers = (allCustomers ?? []).filter((customer) => !("is_archived" in customer) || !customer.is_archived);
 
   const subtotal = cart.reduce((a, l) => a + l.qty * l.unit_price_usd - l.discount_usd, 0);
   const total = Math.max(subtotal - discount, 0);
