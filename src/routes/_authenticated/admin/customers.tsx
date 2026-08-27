@@ -30,6 +30,7 @@ type Customer = {
   address: string | null; credit_limit: number; balance: number; notes: string | null;
   is_archived: boolean; created_at: string;
 };
+type LedgerRow = { id: string; customer_id: string; delta: number; reason: string; created_at: string; due_date?: string | null; method?: string | null };
 
 function Page() {
   return (
@@ -198,7 +199,7 @@ function CustomerHistoryDialog({ customer, onClose }: { customer: Customer | nul
     queryKey: ["customer-ledger", customer?.id],
     enabled: !!customer,
     queryFn: async () => offlineNow()
-      ? ((await cacheGet<Array<{ customer_id: string; [key: string]: unknown }>>("table:customer_ledger")) ?? []).filter((row) => row.customer_id === customer?.id).slice(0, 50)
+      ? ((await cacheGet<LedgerRow[]>("table:customer_ledger")) ?? []).filter((row) => row.customer_id === customer?.id).slice(0, 50)
       : (await supabase.from("customer_ledger").select("*").eq("customer_id", customer?.id ?? "").order("created_at", { ascending: false }).limit(50)).data ?? [],
   });
 
@@ -386,7 +387,7 @@ function CreditsTab() {
         </CardContent></Card>
         <Card><CardContent className="p-4">
           <div className="text-xs uppercase text-muted-foreground">Débiteurs actifs</div>
-          <div className="text-2xl font-bold mt-1">{debtors?.length ?? 0}</div>
+          <div className="text-2xl font-bold mt-1">{visibleDebtors.length}</div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex flex-col justify-between h-full gap-2">
           <div className="text-xs uppercase text-muted-foreground">Octroyer une dette</div>
@@ -409,7 +410,7 @@ function CreditsTab() {
           <TableHead>Statut</TableHead><TableHead></TableHead>
         </TableRow></TableHeader>
         <TableBody>
-          {debtors?.map((c) => {
+          {visibleDebtors.map((c) => {
             const st = debtStatus(Number(c.balance), dueDates?.[c.id] ?? null);
             return (
             <TableRow key={c.id}>
@@ -430,7 +431,7 @@ function CreditsTab() {
               </TableCell>
             </TableRow>
           );})}
-          {debtors?.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune dette ouverte 🎉</TableCell></TableRow>}
+          {visibleDebtors.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune dette ouverte 🎉</TableCell></TableRow>}
         </TableBody>
       </Table></CardContent></Card>
 

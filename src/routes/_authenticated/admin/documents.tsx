@@ -104,10 +104,9 @@ function Page() {
       let docCode = "";
       let queued = false;
       const docType = labelToDocType(documentType);
-      try {
-        const operationId = crypto.randomUUID();
-        const payload = { doc_type: docType, customer_name: customerName, total_usd: total, stock_items: stockItems };
-        const res = await runOrQueue<{ code?: string; result?: { code?: string } }>(
+      const operationId = crypto.randomUUID();
+      const payload = { doc_type: docType, customer_name: customerName, total_usd: total, stock_items: stockItems };
+      const res = await runOrQueue<{ code?: string; result?: { code?: string } }>(
           "document",
           `${documentType} — ${customerName}`,
           payload,
@@ -119,10 +118,10 @@ function Page() {
             return data as { result?: { code?: string } };
           },
           operationId,
-        );
-        queued = res.queued;
-        docCode = res.data?.result?.code ?? res.data?.code ?? `LOC-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-        if (queued && stockItems.length > 0) {
+      );
+      queued = res.queued;
+      docCode = res.data?.result?.code ?? res.data?.code ?? `LOC-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+      if (queued && stockItems.length > 0) {
           await cacheUpdate<Product[]>("query:documents-products", (current) => (current ?? products).map((product) => {
             const qty = stockItems.filter((item) => item.product_id === product.id).reduce((sum, item) => sum + item.qty, 0);
             return qty > 0 ? { ...product, stock: Math.max(0, product.stock - qty) } : product;
@@ -131,9 +130,6 @@ function Page() {
             const qty = stockItems.filter((item) => item.product_id === product.id).reduce((sum, item) => sum + item.qty, 0);
             return qty > 0 ? { ...product, stock: Math.max(0, Number(product.stock) - qty) } : product;
           }));
-        }
-      } catch {
-        docCode = `DOC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
       }
       downloadReceipt({
         logoDataUrl,
