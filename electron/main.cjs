@@ -1,7 +1,9 @@
-const { app, BrowserWindow, shell, Menu } = require("electron");
+const { app, BrowserWindow, shell, Menu, ipcMain, safeStorage } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const http = require("http");
+const fs = require("fs");
+const crypto = require("crypto");
 
 const LOCAL_PORT = 41731;
 const LOCAL_URL = `http://127.0.0.1:${LOCAL_PORT}/admin`;
@@ -10,6 +12,59 @@ const SERVER_ENTRY = path.join(__dirname, "local-server.mjs");
 
 let win = null;
 let localServer = null;
+
+function offlineAuthFile() {
+  return path.join(app.getPath("userData"), "offline-auth.json");
+}
+
+function readOfflineAuth() {
+  try { return JSON.parse(fs.readFileSync(offlineAuthFile(), "utf8")); } catch { return null; }
+}
+
+function hashPin(pin, salt) {
+  return crypto.scryptSync(pin, salt, 32).toString("base64");
+}
+
+ipcMain.handle("offline-auth:has-pin", () => Boolean(readOfflineAuth()));
+ipcMain.handle("offline-auth:configure", (_event, { pin, profile }) => {
+  if (!safeStorage.isEncryptionAvailable()) return { ok: false, error: "Le stockage sécurisé Windows n’est pas disponible." };
+  if (!/^\d{4,8}$/.test(pin)) return { ok: false, error: "PIN invalide." };
+  const salt = crypto.randomBytes(16).toString("base64");
+  const record = {
+    salt,
+    pinHash: hashPin(pin, salt),
+    profile: safeStorage.encryptString(JSON.stringify({ ...profile, validatedAt: new Date().toISOString() })).toString("base64"),
+    attempts: 0,
+    lockedUntil: 0,
+  };
+  fs.writeFileSync(offlineAuthFile(), JSON.stringify(record), { mode: 0o600 });
+  return { ok: true };
+});
+ipcMain.handle("offline-auth:unlock", (_event, { pin }) => {
+  const record = readOfflineAuth();
+  if (!record) return { ok: false, error: "Cet appareil n’a pas encore été préparé en ligne." };
+  if (Date.now() < Number(record.lockedUntil || 0)) return { ok: false, error: "Trop d’essais. Réessayez plus tard.", retryAfter: Number(record.lockedUntil) };
+  if (hashPin(String(pin), record.salt) !== record.pinHash) {
+    record.attempts = Number(record.attempts || 0) + 1;
+    if (record.attempts >= 5) { record.lockedUntil = Date.now() + 5 * 60_000; record.attempts = 0; }
+    fs.writeFileSync(offlineAuthFile(), JSON.stringify(record), { mode: 0o600 });
+    return { ok: false, error: "PIN incorrect." };
+  }
+  const profile = JSON.parse(safeStorage.decryptString(Buffer.from(record.profile, "base64")));
+  const age = Date.now() - new Date(profile.validatedAt).getTime();
+  if (age > 7 * 24 * 60 * 60_000) return { ok: false, error: "Une connexion Internet est requise pour renouveler les droits de cet appareil." };
+  record.attempts = 0; record.lockedUntil = 0;
+  fs.writeFileSync(offlineAuthFile(), JSON.stringify(record), { mode: 0o600 });
+  return { ok: true, profile };
+});
+ipcMain.handle("local-data:protect", (_event, value) => {
+  if (!safeStorage.isEncryptionAvailable()) throw new Error("Stockage sécurisé indisponible");
+  return safeStorage.encryptString(String(value)).toString("base64");
+});
+ipcMain.handle("local-data:unprotect", (_event, value) => {
+  if (!safeStorage.isEncryptionAvailable()) throw new Error("Stockage sécurisé indisponible");
+  return safeStorage.decryptString(Buffer.from(String(value), "base64"));
+});
 
 function handleSquirrelEvent() {
   const event = process.argv[1];
@@ -75,6 +130,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       partition: "persist:conetec",
+      preload: path.join(__dirname, "preload.cjs"),
     },
   });
 

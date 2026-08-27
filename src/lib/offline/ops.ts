@@ -24,9 +24,10 @@ export async function runOrQueue<T>(
   label: string,
   payload: Record<string, unknown>,
   online: () => Promise<T>,
+  operationId?: string,
 ): Promise<RunResult<T>> {
   if (isOffline() || !getSyncState().online) {
-    await queueOperation(kind, label, payload);
+    await queueOperation(kind, label, payload, operationId);
     return { queued: true };
   }
   try {
@@ -34,7 +35,7 @@ export async function runOrQueue<T>(
   } catch (err) {
     const msg = (err as Error)?.message ?? "";
     if (/network-timeout|fetch|network|Failed to fetch|NetworkError|timeout|offline/i.test(msg)) {
-      await queueOperation(kind, label, payload);
+      await queueOperation(kind, label, payload, operationId);
       return { queued: true };
     }
     throw err;

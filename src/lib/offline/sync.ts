@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import { outboxAdd, outboxList, outboxRemove, outboxUpdate, type OutboxOp } from "./store";
+import { archiveSynced, outboxAdd, outboxList, outboxRemove, outboxUpdate, type OutboxOp } from "./store";
+import { bootstrapOfflineData } from "./bootstrap";
 
 export type SyncState = {
   online: boolean;
@@ -48,8 +49,9 @@ export async function queueOperation(
   kind: OutboxOp["kind"],
   label: string,
   payload: Record<string, unknown>,
+  id?: string,
 ): Promise<OutboxOp> {
-  const op = await outboxAdd({ kind, label, payload });
+  const op = await outboxAdd({ kind, label, payload }, id);
   await refreshPending();
   void syncNow();
   return op;
@@ -66,6 +68,7 @@ async function pushOne(op: OutboxOp): Promise<boolean> {
     await outboxUpdate(op.id, { tries: op.tries + 1, error: error.message });
     return false;
   }
+  await archiveSynced(op);
   await outboxRemove(op.id);
   return true;
 }
@@ -110,6 +113,8 @@ export async function syncNow(): Promise<{ sent: number; failed: number }> {
       lastSyncAt: new Date().toISOString(),
       lastError: failed > 0 ? `${failed} opération(s) en échec` : null,
     });
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.user.id) void bootstrapOfflineData(data.session.user.id);
   }
   return { sent, failed };
 }
