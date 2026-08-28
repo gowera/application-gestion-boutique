@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt, Users, Wallet, Settings as SettingsIcon,
-  Inbox, UserCog, Zap, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, Activity, FileText, Users2, History,
+  Inbox, UserCog, Zap, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, Activity, FileText, Users2, History, RefreshCw,
 } from "lucide-react";
 import logo from "@/assets/brand/logo.png";
 import { useAllowedMenus } from "@/lib/permissions";
@@ -53,6 +53,7 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
       { title: "Espace équipe", url: "/admin/team", icon: Users2 },
       { title: "Rôles utilisateurs", url: "/admin/users", icon: UserCog },
       { title: "Historique & audit", url: "/admin/history", icon: History },
+      { title: "Synchronisation", url: "/admin/sync", icon: RefreshCw },
       { title: "Paramètres", url: "/admin/settings", icon: SettingsIcon },
     ],
   },

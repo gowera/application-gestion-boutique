@@ -153,6 +153,12 @@ export async function archiveSynced(op: OutboxOp): Promise<void> {
   await write(SYNCED_KEY, [...history.slice(-499), { ...op, error: null, syncedAt: new Date().toISOString() }]);
 }
 
+/** Historique des opérations envoyées avec succès (les plus récentes en dernier). */
+export async function syncedList(): Promise<SyncedOp[]> {
+  return (await read<SyncedOp[]>(SYNCED_KEY)) ?? [];
+}
+
+
 export async function outboxRemove(id: string): Promise<void> {
   const list = await outboxList();
   await outboxSave(list.filter((o) => o.id !== id));

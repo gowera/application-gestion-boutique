@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { cacheSet, setLocalUser } from "./store";
+import { resolveTableRows } from "./conflict";
+
 
 export type BootstrapProgress = {
   running: boolean;
@@ -74,7 +76,7 @@ export async function bootstrapOfflineData(userId: string, force = false): Promi
         if (page.length < 1000) break;
         offset += 1000;
       }
-      if (!failed) await cacheSet(`table:${table}`, rows);
+      if (!failed) await cacheSet(`table:${table}`, await resolveTableRows(table, rows));
     }
     const at = new Date().toISOString();
     await cacheSet("bootstrap:meta", { ready: true, at, version: 1 });

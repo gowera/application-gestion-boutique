@@ -22,6 +22,7 @@ import { runOrQueue } from "@/lib/offline/ops";
 import { OfflineBanner } from "@/components/admin/offline-banner";
 import { offlineQueryFn } from "@/lib/offline/query";
 import { cacheUpdate } from "@/lib/offline/store";
+import { markLocalChange } from "@/lib/offline/conflict";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -145,6 +146,11 @@ function Page() {
             const qty = stockItems.filter((item) => item.product_id === product.id).reduce((sum, item) => sum + item.qty, 0);
             return qty > 0 ? { ...product, stock: Math.max(0, Number(product.stock) - qty) } : product;
           }));
+          for (const item of stockItems) {
+            const product = products.find((candidate) => candidate.id === item.product_id);
+            if (product) await markLocalChange("products", product.id, { stock: Math.max(0, product.stock - item.qty) });
+          }
+
           const createdAt = new Date().toISOString();
           await cacheUpdate<Array<Record<string, unknown>>>("table:stock_movements", (current) => [
             ...stockItems.map((item) => {

@@ -119,9 +119,54 @@ export async function syncNow(): Promise<{ sent: number; failed: number }> {
   return { sent, failed };
 }
 
+/** Réessaie immédiatement une opération précise de la file d'attente. */
+export async function retryOperation(id: string): Promise<boolean> {
+  const list = await outboxList();
+  const op = list.find((o) => o.id === id);
+  if (!op) return false;
+  if (isOffline()) return false;
+  emit({ syncing: true });
+  try {
+    return await pushOne(op);
+  } catch (e) {
+    await outboxUpdate(op.id, { tries: op.tries + 1, error: (e as Error).message });
+    return false;
+  } finally {
+    await refreshPending();
+    emit({ syncing: false, lastSyncAt: new Date().toISOString() });
+  }
+}
+
+/** Abandonne définitivement une opération en échec. */
+export async function discardOperation(id: string): Promise<void> {
+  await outboxRemove(id);
+  await refreshPending();
+}
+
 let started = false;
 
-/** Démarre la surveillance réseau + la synchronisation périodique (client uniquement). */
+/** Vérifie réellement la disponibilité du serveur (navigator.onLine ment souvent). */
+async function probeConnectivity(): Promise<boolean> {
+  if (typeof navigator !== "undefined" && !navigator.onLine) return false;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    await fetch(`${window.location.origin}/favicon.ico?ping=${Date.now()}`, {
+      method: "HEAD",
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Démarre la surveillance réseau et la synchronisation automatique en arrière-plan
+ * (montée une seule fois au niveau de l'application, quelle que soit la page ouverte).
+ */
 export function startSyncEngine(): () => void {
   if (typeof window === "undefined" || started) return () => {};
   started = true;
@@ -131,18 +176,30 @@ export function startSyncEngine(): () => void {
     void syncNow();
   };
   const onOffline = () => emit({ online: false });
+  const onWake = () => { if (!document.hidden) void tick(); };
+
+  async function tick() {
+    const reachable = await probeConnectivity();
+    if (reachable !== state.online) emit({ online: reachable });
+    if (reachable) await syncNow();
+  }
 
   window.addEventListener("online", onOnline);
   window.addEventListener("offline", onOffline);
-  const timer = window.setInterval(() => void syncNow(), 60_000);
+  window.addEventListener("focus", onWake);
+  document.addEventListener("visibilitychange", onWake);
+  const timer = window.setInterval(() => void tick(), 30_000);
 
   void refreshPending();
-  void syncNow();
+  void tick();
 
   return () => {
     window.removeEventListener("online", onOnline);
     window.removeEventListener("offline", onOffline);
+    window.removeEventListener("focus", onWake);
+    document.removeEventListener("visibilitychange", onWake);
     window.clearInterval(timer);
     started = false;
   };
 }
+

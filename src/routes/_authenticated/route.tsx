@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { OfflineSetup } from "@/components/admin/offline-setup";
 import { getOfflineProfile } from "@/lib/offline/auth";
 import { setLocalUser } from "@/lib/offline/store";
+import { useSync } from "@/hooks/use-sync";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -83,6 +84,9 @@ function Guarded() {
 }
 
 function AuthenticatedLayout() {
+  // Moteur de synchronisation lancé pour toute l'administration : il tourne en
+  // arrière-plan quelle que soit la page ouverte et repart dès le retour du réseau.
+  useSync();
   return (
     <SidebarProvider>
       <AppSidebar />
