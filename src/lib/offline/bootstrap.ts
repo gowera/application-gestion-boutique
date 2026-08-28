@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { cacheSet, setLocalUser } from "./store";
+import { resolveTableRows } from "./conflict";
+
 
 export type BootstrapProgress = {
   running: boolean;
