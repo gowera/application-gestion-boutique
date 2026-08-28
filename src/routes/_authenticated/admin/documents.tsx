@@ -22,6 +22,7 @@ import { runOrQueue } from "@/lib/offline/ops";
 import { OfflineBanner } from "@/components/admin/offline-banner";
 import { offlineQueryFn } from "@/lib/offline/query";
 import { cacheUpdate } from "@/lib/offline/store";
+import { markLocalChange } from "@/lib/offline/conflict";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,

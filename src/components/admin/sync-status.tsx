@@ -56,7 +56,7 @@ export function SyncStatus() {
           <div>{online ? "Connecté au serveur" : "Mode local : les données sont enregistrées sur cet ordinateur"}</div>
           <div>{pending} opération(s) en attente</div>
           {lastSyncAt && <div>Dernière synchro : {new Date(lastSyncAt).toLocaleTimeString("fr-FR")}</div>}
-          <div className="mt-1 opacity-70">Cliquer pour synchroniser maintenant</div>
+          <div className="mt-1 opacity-70">Cliquer pour synchroniser · voir la page Synchronisation</div>
         </div>
       </TooltipContent>
     </Tooltip>

@@ -3,6 +3,7 @@ import { useSync } from "@/hooks/use-sync";
 import { Button } from "@/components/ui/button";
 import { syncNow } from "@/lib/offline/sync";
 import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 
 /**
  * Bandeau affiché en haut des écrans qui écrivent des données
@@ -33,6 +34,9 @@ export function OfflineBanner({ scope }: { scope?: string }) {
           {lastSyncAt && ` Dernière synchro : ${new Date(lastSyncAt).toLocaleTimeString("fr-FR")}.`}
         </div>
       </div>
+      <Button size="sm" variant="ghost" asChild>
+        <Link to="/admin/sync">Détails</Link>
+      </Button>
       <Button
         size="sm"
         variant="outline"
