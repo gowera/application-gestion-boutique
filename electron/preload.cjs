@@ -7,4 +7,8 @@ contextBridge.exposeInMainWorld("conetecDesktop", {
   unlockOffline: (pin) => ipcRenderer.invoke("offline-auth:unlock", { pin }),
   protectLocalData: (value) => ipcRenderer.invoke("local-data:protect", value),
   unprotectLocalData: (value) => ipcRenderer.invoke("local-data:unprotect", value),
+  dbGet: (key) => ipcRenderer.invoke("local-db:get", key),
+  dbSet: (key, value) => ipcRenderer.invoke("local-db:set", { key, value }),
+  dbDel: (key) => ipcRenderer.invoke("local-db:del", key),
+  dbKeys: () => ipcRenderer.invoke("local-db:keys"),
 });

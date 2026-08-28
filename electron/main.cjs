@@ -57,6 +57,75 @@ ipcMain.handle("offline-auth:unlock", (_event, { pin }) => {
   fs.writeFileSync(offlineAuthFile(), JSON.stringify(record), { mode: 0o600 });
   return { ok: true, profile };
 });
+/* ---------- Base de données locale (fichiers JSON persistants) ---------- */
+
+function localDbDir() {
+  const dir = path.join(app.getPath("userData"), "local-db");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  return dir;
+}
+
+function localDbFile(key) {
+  const safe = crypto.createHash("sha256").update(String(key)).digest("hex");
+  return path.join(localDbDir(), `${safe}.json`);
+}
+
+function encodeRecord(key, value) {
+  const payload = JSON.stringify({ key, value, at: new Date().toISOString() });
+  if (safeStorage.isEncryptionAvailable()) {
+    return JSON.stringify({ enc: true, data: safeStorage.encryptString(payload).toString("base64") });
+  }
+  return JSON.stringify({ enc: false, data: payload });
+}
+
+function decodeRecord(raw) {
+  const wrapper = JSON.parse(raw);
+  const payload = wrapper.enc
+    ? safeStorage.decryptString(Buffer.from(wrapper.data, "base64"))
+    : wrapper.data;
+  return JSON.parse(payload);
+}
+
+ipcMain.handle("local-db:get", (_event, key) => {
+  try {
+    const file = localDbFile(key);
+    if (!fs.existsSync(file)) return null;
+    return decodeRecord(fs.readFileSync(file, "utf8")).value ?? null;
+  } catch {
+    return null;
+  }
+});
+
+ipcMain.handle("local-db:set", (_event, { key, value }) => {
+  try {
+    const file = localDbFile(key);
+    const tmp = `${file}.tmp`;
+    fs.writeFileSync(tmp, encodeRecord(key, value), { mode: 0o600 });
+    fs.renameSync(tmp, file);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+});
+
+ipcMain.handle("local-db:del", (_event, key) => {
+  try { fs.rmSync(localDbFile(key), { force: true }); } catch { /* ignore */ }
+  return { ok: true };
+});
+
+ipcMain.handle("local-db:keys", () => {
+  try {
+    return fs.readdirSync(localDbDir())
+      .filter((name) => name.endsWith(".json"))
+      .map((name) => {
+        try { return decodeRecord(fs.readFileSync(path.join(localDbDir(), name), "utf8")).key; } catch { return null; }
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+});
+
 ipcMain.handle("local-data:protect", (_event, value) => {
   if (!safeStorage.isEncryptionAvailable()) throw new Error("Stockage sécurisé indisponible");
   return safeStorage.encryptString(String(value)).toString("base64");
@@ -110,7 +179,11 @@ function waitForLocalServer(attempt = 0) {
   if (!win) return;
   const request = http.get(`http://127.0.0.1:${LOCAL_PORT}/`, (response) => {
     response.resume();
-    win.loadURL(LOCAL_URL).catch(() => win && win.loadFile(OFFLINE_PAGE));
+    // L'application est servie localement : aucune connexion Internet requise.
+    win.loadURL(LOCAL_URL).catch(() => {
+      if (attempt < 50) setTimeout(() => waitForLocalServer(attempt + 1), 300);
+      else if (win) win.loadFile(OFFLINE_PAGE);
+    });
   });
   request.on("error", () => {
     if (attempt < 50) setTimeout(() => waitForLocalServer(attempt + 1), 200);

@@ -27,6 +27,19 @@ function scoped(key: string): string {
   return `user:${localUserId}:${key}`;
 }
 
+/**
+ * Base de données locale durable : dans l'application Windows, les données sont
+ * écrites en fichiers JSON chiffrés sur le disque (dossier utilisateur), donc
+ * vider le cache du navigateur ne les efface pas. Dans un navigateur classique,
+ * on retombe sur IndexedDB.
+ */
+function fileDb() {
+  if (typeof window === "undefined") return undefined;
+  const bridge = window.conetecDesktop;
+  if (bridge?.dbGet && bridge.dbSet && bridge.dbDel) return bridge;
+  return undefined;
+}
+
 async function encode(value: unknown): Promise<unknown> {
   if (typeof window !== "undefined" && window.conetecDesktop) {
     return { encrypted: true, value: await window.conetecDesktop.protectLocalData(JSON.stringify(value)) };
@@ -43,6 +56,15 @@ async function decode<T>(value: unknown): Promise<T> {
 }
 
 async function read<T>(key: string): Promise<T | undefined> {
+  const db = fileDb();
+  if (db) {
+    try {
+      const value = await db.dbGet!(scoped(key));
+      if (value != null) return value as T;
+    } catch {
+      /* on tente IndexedDB en secours */
+    }
+  }
   if (!store) return undefined;
   try {
     const value = await get<unknown>(scoped(key), store);
@@ -53,6 +75,15 @@ async function read<T>(key: string): Promise<T | undefined> {
 }
 
 async function write<T>(key: string, value: T): Promise<void> {
+  const db = fileDb();
+  if (db) {
+    try {
+      const result = await db.dbSet!(scoped(key), value);
+      if (result?.ok) return;
+    } catch {
+      /* on tente IndexedDB en secours */
+    }
+  }
   if (!store) return;
   try {
     await set(scoped(key), await encode(value), store);
@@ -80,6 +111,10 @@ export async function cacheUpdate<T>(key: string, update: (current: T | undefine
 }
 
 export async function cacheClear(key: string): Promise<void> {
+  const db = fileDb();
+  if (db) {
+    try { await db.dbDel!(scoped(`cache:${key}`)); } catch { /* ignore */ }
+  }
   if (!store) return;
   try {
     await del(scoped(`cache:${key}`), store);

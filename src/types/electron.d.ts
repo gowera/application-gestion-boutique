@@ -9,6 +9,10 @@ declare global {
       unlockOffline(pin: string): Promise<{ ok: boolean; profile?: { userId: string; email: string; roles: string[] }; error?: string; retryAfter?: number }>;
       protectLocalData(value: string): Promise<string>;
       unprotectLocalData(value: string): Promise<string>;
+      dbGet?(key: string): Promise<unknown>;
+      dbSet?(key: string, value: unknown): Promise<{ ok: boolean; error?: string }>;
+      dbDel?(key: string): Promise<{ ok: boolean }>;
+      dbKeys?(): Promise<string[]>;
     };
   }
 }

@@ -39,8 +39,18 @@ export function getBootstrapProgress() {
   return progress;
 }
 
-export async function bootstrapOfflineData(userId: string): Promise<void> {
+const REFRESH_INTERVAL_MS = 10 * 60_000;
+let lastRunAt = 0;
+
+/**
+ * Télécharge (ou rafraîchit) toutes les données autorisées dans la base locale.
+ * Rappelée à chaque retour de connexion ; limitée à un rafraîchissement toutes
+ * les 10 minutes sauf demande explicite (`force`).
+ */
+export async function bootstrapOfflineData(userId: string, force = false): Promise<void> {
   if (progress.running || typeof navigator === "undefined" || !navigator.onLine) return;
+  if (!force && progress.ready && Date.now() - lastRunAt < REFRESH_INTERVAL_MS) return;
+  lastRunAt = Date.now();
   setLocalUser(userId);
   emit({ running: true, completed: 0, current: null, error: null });
   try {
