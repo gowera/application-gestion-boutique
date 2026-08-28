@@ -17,10 +17,15 @@ import { reprintSaleDocument } from "@/lib/reprint";
 import { offlineQueryFn } from "@/lib/offline/query";
 import { cacheGet } from "@/lib/offline/store";
 import { isOffline } from "@/lib/offline/sync";
+import type { Database } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/admin/sales")({
   component: SalesPage,
 });
+
+type SaleRecord = Database["public"]["Tables"]["sales"]["Row"] & { customers?: { id?: string; name?: string; phone?: string | null } | null };
+type SaleItemRecord = Database["public"]["Tables"]["sale_items"]["Row"];
+type PaymentRecord = Database["public"]["Tables"]["payments"]["Row"];
 
 function SalesPage() {
   const { data: settings } = useSettings();
@@ -126,15 +131,15 @@ function SaleDetail({ id, onClose }: { id: string | null; onClose: () => void })
   const { data: settings } = useSettings();
   const currency = settings?.primary_currency ?? "USD";
   const rate = settings?.usd_to_cdf_rate ?? 2800;
-  const { data } = useQuery({
+  const { data } = useQuery<{ sale: SaleRecord | null; items: SaleItemRecord[]; payments: PaymentRecord[] }>({
     queryKey: ["sale-detail", id],
     enabled: !!id,
     queryFn: async () => {
       if (isOffline()) {
         const [sales, items, payments, customers] = await Promise.all([
-          cacheGet<Array<Record<string, unknown>>>("table:sales"),
-          cacheGet<Array<Record<string, unknown>>>("table:sale_items"),
-          cacheGet<Array<Record<string, unknown>>>("table:payments"),
+          cacheGet<SaleRecord[]>("table:sales"),
+          cacheGet<SaleItemRecord[]>("table:sale_items"),
+          cacheGet<PaymentRecord[]>("table:payments"),
           cacheGet<Array<{ id: string; name: string; phone?: string | null }>>("table:customers"),
         ]);
         const sale = (sales ?? []).find((row) => row.id === id);
@@ -146,7 +151,7 @@ function SaleDetail({ id, onClose }: { id: string | null; onClose: () => void })
         supabase.from("sale_items").select("*").eq("sale_id", id!),
         supabase.from("payments").select("*").eq("sale_id", id!),
       ]);
-      return { sale, items: items ?? [], payments: payments ?? [] };
+      return { sale: sale as SaleRecord | null, items: (items ?? []) as SaleItemRecord[], payments: (payments ?? []) as PaymentRecord[] };
     },
   });
 
