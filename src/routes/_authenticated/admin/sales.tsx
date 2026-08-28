@@ -14,10 +14,18 @@ import { XCircle, Eye, FileDown, Printer } from "lucide-react";
 import { exportToXlsx } from "@/lib/xlsx-export";
 import { downloadTablePdf } from "@/lib/pdf-table";
 import { reprintSaleDocument } from "@/lib/reprint";
+import { offlineQueryFn } from "@/lib/offline/query";
+import { cacheGet } from "@/lib/offline/store";
+import { isOffline } from "@/lib/offline/sync";
+import type { Database } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/admin/sales")({
   component: SalesPage,
 });
+
+type SaleRecord = Database["public"]["Tables"]["sales"]["Row"] & { customers?: { id?: string; name?: string; phone?: string | null } | null };
+type SaleItemRecord = Database["public"]["Tables"]["sale_items"]["Row"];
+type PaymentRecord = Database["public"]["Tables"]["payments"]["Row"];
 
 function SalesPage() {
   const { data: settings } = useSettings();
@@ -28,11 +36,11 @@ function SalesPage() {
 
   const { data: sales, isLoading } = useQuery({
     queryKey: ["sales-list"],
-    queryFn: async () => {
+    queryFn: offlineQueryFn("query:sales-list", async () => {
       const { data, error } = await supabase.from("sales").select("*, customers(name)").order("created_at", { ascending: false }).limit(200);
       if (error) throw error;
       return data;
-    },
+    }, "table:sales"),
   });
 
   const cancel = useMutation({
@@ -123,16 +131,27 @@ function SaleDetail({ id, onClose }: { id: string | null; onClose: () => void })
   const { data: settings } = useSettings();
   const currency = settings?.primary_currency ?? "USD";
   const rate = settings?.usd_to_cdf_rate ?? 2800;
-  const { data } = useQuery({
+  const { data } = useQuery<{ sale: SaleRecord | null; items: SaleItemRecord[]; payments: PaymentRecord[] }>({
     queryKey: ["sale-detail", id],
     enabled: !!id,
     queryFn: async () => {
+      if (isOffline()) {
+        const [sales, items, payments, customers] = await Promise.all([
+          cacheGet<SaleRecord[]>("table:sales"),
+          cacheGet<SaleItemRecord[]>("table:sale_items"),
+          cacheGet<PaymentRecord[]>("table:payments"),
+          cacheGet<Array<{ id: string; name: string; phone?: string | null }>>("table:customers"),
+        ]);
+        const sale = (sales ?? []).find((row) => row.id === id);
+        const customer = customers?.find((row) => row.id === sale?.customer_id);
+        return { sale: sale ? { ...sale, customers: customer ?? null } : null, items: (items ?? []).filter((row) => row.sale_id === id), payments: (payments ?? []).filter((row) => row.sale_id === id) };
+      }
       const [{ data: sale }, { data: items }, { data: payments }] = await Promise.all([
         supabase.from("sales").select("*, customers(name,phone)").eq("id", id!).maybeSingle(),
         supabase.from("sale_items").select("*").eq("sale_id", id!),
         supabase.from("payments").select("*").eq("sale_id", id!),
       ]);
-      return { sale, items: items ?? [], payments: payments ?? [] };
+      return { sale: sale as SaleRecord | null, items: (items ?? []) as SaleItemRecord[], payments: (payments ?? []) as PaymentRecord[] };
     },
   });
 

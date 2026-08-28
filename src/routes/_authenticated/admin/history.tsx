@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/format";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 const ACTION_LABELS: Record<string, string> = {
   "role.grant": "Rôle attribué",
@@ -41,7 +42,7 @@ function Page() {
 
   const { data: rows = [] } = useQuery<ActivityLogRow[]>({
     queryKey: ["activity-log"],
-    queryFn: async () => (await supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(200)).data as ActivityLogRow[] ?? [],
+    queryFn: offlineQueryFn("query:activity-log", async () => (await supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(200)).data as ActivityLogRow[] ?? [], "table:activity_log"),
   });
 
   const filteredRows = useMemo(() => rows.filter((row) => {

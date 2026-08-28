@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 export const Route = createFileRoute("/_authenticated/admin/categories")({ component: Page });
 
@@ -20,8 +21,8 @@ function Page() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [migrationCategory, setMigrationCategory] = useState<string>("");
   const [form, setForm] = useState({ name: "", slug: "" });
-  const { data: cats = [] } = useQuery({ queryKey: ["admin-cats"], queryFn: async () => (await supabase.from("categories").select("*, products(id)").order("name")).data ?? [] });
-  const { data: allCategories = [] } = useQuery({ queryKey: ["all-categories"], queryFn: async () => (await supabase.from("categories").select("id,name").order("name")).data ?? [] });
+  const { data: cats = [] } = useQuery({ queryKey: ["admin-cats"], queryFn: offlineQueryFn("query:admin-cats", async () => (await supabase.from("categories").select("*, products(id)").order("name")).data ?? [], "table:categories") });
+  const { data: allCategories = [] } = useQuery({ queryKey: ["all-categories"], queryFn: offlineQueryFn("query:all-categories", async () => (await supabase.from("categories").select("id,name").order("name")).data ?? [], "table:categories") });
   const save = useMutation({
     mutationFn: async () => { const { error } = await supabase.from("categories").insert({ name: form.name, slug: form.slug || null }); if (error) throw error; },
     onSuccess: () => { toast.success("Catégorie créée"); qc.invalidateQueries({ queryKey: ["admin-cats"] }); setOpen(false); setForm({ name: "", slug: "" }); },

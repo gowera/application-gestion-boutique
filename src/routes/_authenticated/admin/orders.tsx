@@ -10,6 +10,7 @@ import { formatMoney, useSettings } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 export const Route = createFileRoute("/_authenticated/admin/orders")({ component: Page });
 
@@ -35,7 +36,7 @@ function Page() {
   const rate = settings?.usd_to_cdf_rate ?? 2800;
   const cur = settings?.primary_currency ?? "USD";
   const qc = useQueryClient();
-  const { data: orders } = useQuery({ queryKey: ["admin-orders"], queryFn: async () => (await supabase.from("online_orders").select("*").order("created_at", { ascending: false })).data ?? [] });
+  const { data: orders } = useQuery({ queryKey: ["admin-orders"], queryFn: offlineQueryFn("query:admin-orders", async () => (await supabase.from("online_orders").select("*").order("created_at", { ascending: false })).data ?? [], "table:online_orders") });
   const upd = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => { const { error } = await supabase.from("online_orders").update({ status: status as "pending" }).eq("id", id); if (error) throw error; },
     onSuccess: async (_data, variables) => {
