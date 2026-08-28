@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
 import { downloadSalaryPdf } from "@/lib/pdf";
 import { downloadTablePdf } from "@/lib/pdf-table";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 type SalaryRow = { id: string; amount_usd: number; period_start: string; period_end: string; paid_at: string; advance: boolean; status?: string | null; payment_method?: string | null; employees?: { full_name?: string | null } | null };
 const paymentMethodLabel: Record<string, string> = { cash: "Espèces", mobile_money: "Mobile Money", bank_transfer: "Virement" };
@@ -24,8 +25,8 @@ export function SalariesSection() {
   const defaultMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
   const [month, setMonth] = useState(defaultMonth);
   const [f, setF] = useState({ employee_id: "", amount_usd: 0, advance: false, note: "", payment_method: "cash" as "cash" | "mobile_money" | "bank_transfer" });
-  const { data: emps = [] } = useQuery<Array<{ id: string; full_name: string }>>({ queryKey: ["employees"], queryFn: async () => (await supabase.from("employees").select("id, full_name").order("full_name")).data as Array<{ id: string; full_name: string }> ?? [] });
-  const { data: salaryRows = [] } = useQuery<SalaryRow[]>({ queryKey: ["salaries"], queryFn: async () => (await supabase.from("salary_payments").select("*, employees(full_name)").order("paid_at", { ascending: false })).data as SalaryRow[] ?? [] });
+  const { data: emps = [] } = useQuery<Array<{ id: string; full_name: string }>>({ queryKey: ["employees"], queryFn: offlineQueryFn("query:employees", async () => (await supabase.from("employees").select("id, full_name").order("full_name")).data as Array<{ id: string; full_name: string }> ?? [], "table:employees") });
+  const { data: salaryRows = [] } = useQuery<SalaryRow[]>({ queryKey: ["salaries"], queryFn: offlineQueryFn("query:salaries", async () => (await supabase.from("salary_payments").select("*, employees(full_name)").order("paid_at", { ascending: false })).data as SalaryRow[] ?? [], "table:salary_payments") });
 
   const save = useMutation({
     mutationFn: async () => {

@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 export const Route = createFileRoute("/_authenticated/admin/interventions")({ component: Page });
 
@@ -23,7 +24,7 @@ function Page() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ customer_name: "", customer_phone: "", customer_address: "", service_type: "Installation électrique", description: "" });
-  const { data } = useQuery({ queryKey: ["interventions"], queryFn: async () => (await supabase.from("interventions").select("*").order("created_at", { ascending: false })).data ?? [] });
+  const { data } = useQuery({ queryKey: ["interventions"], queryFn: offlineQueryFn("query:interventions", async () => (await supabase.from("interventions").select("*").order("created_at", { ascending: false })).data ?? [], "table:interventions") });
   const save = useMutation({
     mutationFn: async () => {
       const { data: code } = await supabase.rpc("next_intervention_code");

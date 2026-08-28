@@ -8,7 +8,7 @@ import { getBootstrapProgress, subscribeBootstrap, bootstrapOfflineData, provisi
 import { useCurrentUser, useMyRoles } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
-const serverProgress = { running: false, completed: 0, total: 28, current: null, ready: false, lastBootstrapAt: null, error: null };
+const serverProgress = { running: false, completed: 0, total: 29, current: null, ready: false, lastBootstrapAt: null, error: null };
 
 export function OfflineSetup() {
   const { user } = useCurrentUser();

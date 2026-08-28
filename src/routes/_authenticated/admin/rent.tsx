@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Check } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 export const Route = createFileRoute("/_authenticated/admin/rent")({ component: Page });
 
@@ -19,7 +20,7 @@ function Page() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ period_start: "", period_end: "", amount_usd: 0, note: "" });
-  const { data } = useQuery({ queryKey: ["rent"], queryFn: async () => (await supabase.from("rent_payments").select("*").order("period_start", { ascending: false })).data ?? [] });
+  const { data } = useQuery({ queryKey: ["rent"], queryFn: offlineQueryFn("query:rent", async () => (await supabase.from("rent_payments").select("*").order("period_start", { ascending: false })).data ?? [], "table:rent_payments") });
   const save = useMutation({
     mutationFn: async () => { const { error } = await supabase.from("rent_payments").insert(f); if (error) throw error; },
     onSuccess: () => { toast.success("Loyer enregistré"); qc.invalidateQueries({ queryKey: ["rent"] }); setOpen(false); },

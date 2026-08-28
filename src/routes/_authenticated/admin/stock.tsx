@@ -60,10 +60,6 @@ function StockPage() {
         .select("*, products(id,name,sku,stock)")
         .order("created_at", { ascending: false })
         .limit(500);
-      if (productId !== "all") query = query.eq("product_id", productId);
-      if (reason !== "all") query = query.eq("reason", reason as Reason);
-      if (from) query = query.gte("created_at", from);
-      if (to) query = query.lte("created_at", to + "T23:59:59");
       const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as Movement[];
@@ -77,10 +73,11 @@ function StockPage() {
       const matchesReason = reason === "all" || m.reason === reason;
       const matchesFrom = !from || m.created_at >= from;
       const matchesTo = !to || m.created_at <= `${to}T23:59:59`;
-      const matchesText = !needle || (m.products?.name ?? "").toLowerCase().includes(needle) || (m.products?.sku ?? "").toLowerCase().includes(needle);
+      const product = products.find((candidate) => candidate.id === m.product_id);
+      const matchesText = !needle || (m.products?.name ?? product?.name ?? "").toLowerCase().includes(needle) || (m.products?.sku ?? product?.sku ?? "").toLowerCase().includes(needle);
       return matchesProduct && matchesReason && matchesFrom && matchesTo && matchesText;
     });
-  }, [movements, q, productId, reason, from, to]);
+  }, [movements, products, q, productId, reason, from, to]);
 
   const totals = useMemo(() => {
     let inQty = 0;
@@ -105,8 +102,8 @@ function StockPage() {
       `mouvements-stock-${new Date().toISOString().slice(0, 10)}.xlsx`,
       filtered.map((m) => ({
         Date: new Date(m.created_at).toLocaleString("fr-FR"),
-        Produit: m.products?.name ?? "—",
-        SKU: m.products?.sku ?? "",
+         Produit: m.products?.name ?? (products as { id: string; name: string }[]).find((product) => product.id === m.product_id)?.name ?? "—",
+         SKU: m.products?.sku ?? (products as { id: string; sku?: string | null }[]).find((product) => product.id === m.product_id)?.sku ?? "",
         Motif: REASON_LABELS[m.reason],
         Quantité: m.delta,
         Référence: m.ref_type ? `${m.ref_type}:${m.ref_id ?? ""}` : "",

@@ -49,10 +49,6 @@ function HistoryPage() {
         .select("id, code, doc_type, doc_number, sale_id, customer_name, total_usd, created_at")
         .order("created_at", { ascending: false })
         .limit(500);
-      if (type !== "all") query = query.eq("doc_type", type);
-      if (from) query = query.gte("created_at", `${from}T00:00:00`);
-      if (to) query = query.lte("created_at", `${to}T23:59:59`);
-      if (q) query = query.or(`code.ilike.%${q}%,customer_name.ilike.%${q}%`);
       const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as Row[];
