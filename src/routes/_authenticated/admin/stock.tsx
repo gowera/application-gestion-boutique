@@ -54,7 +54,7 @@ function StockPage() {
 
   const { data: movements = [], isLoading } = useQuery({
     queryKey: ["stock-movements", productId, reason, from, to],
-    queryFn: async () => {
+    queryFn: offlineQueryFn("query:stock-movements", async () => {
       let query = supabase
         .from("stock_movements")
         .select("*, products(id,name,sku,stock)")
@@ -67,14 +67,20 @@ function StockPage() {
       const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as Movement[];
-    },
+    }, "table:stock_movements"),
   });
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return movements;
-    return movements.filter((m) => (m.products?.name ?? "").toLowerCase().includes(needle) || (m.products?.sku ?? "").toLowerCase().includes(needle));
-  }, [movements, q]);
+    return movements.filter((m) => {
+      const matchesProduct = productId === "all" || m.product_id === productId;
+      const matchesReason = reason === "all" || m.reason === reason;
+      const matchesFrom = !from || m.created_at >= from;
+      const matchesTo = !to || m.created_at <= `${to}T23:59:59`;
+      const matchesText = !needle || (m.products?.name ?? "").toLowerCase().includes(needle) || (m.products?.sku ?? "").toLowerCase().includes(needle);
+      return matchesProduct && matchesReason && matchesFrom && matchesTo && matchesText;
+    });
+  }, [movements, q, productId, reason, from, to]);
 
   const totals = useMemo(() => {
     let inQty = 0;

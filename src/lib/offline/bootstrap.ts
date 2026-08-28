@@ -12,7 +12,7 @@ export type BootstrapProgress = {
 };
 
 const DATASETS = [
-  "settings", "user_roles", "products", "categories", "product_images", "customers",
+  "settings", "user_roles", "products", "categories", "product_images", "product_suppliers", "customers",
   "customer_ledger", "sales", "sale_items", "payments", "online_orders", "order_items",
   "document_registry", "stock_movements", "expenses", "expense_categories", "cash_sessions",
   "suppliers", "purchases", "purchase_items", "employees", "salary_payments", "rent_payments",

@@ -15,6 +15,7 @@ import { useSettings, formatMoney } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import { reprintSaleDocument } from "@/lib/reprint";
 import type { DocumentType } from "@/lib/documents";
+import { offlineQueryFn } from "@/lib/offline/query";
 
 export const Route = createFileRoute("/_authenticated/admin/documents/history")({ component: HistoryPage });
 
@@ -42,7 +43,7 @@ function HistoryPage() {
 
   const { data = [], isLoading, refetch } = useQuery({
     queryKey: ["document-history", q, type, from, to],
-    queryFn: async () => {
+    queryFn: offlineQueryFn("query:document-history", async () => {
       let query = supabase
         .from("document_registry")
         .select("id, code, doc_type, doc_number, sale_id, customer_name, total_usd, created_at")
@@ -55,18 +56,26 @@ function HistoryPage() {
       const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as Row[];
-    },
+    }, "table:document_registry"),
   });
 
+  const visibleData = useMemo(() => data.filter((row) => {
+    const needle = q.trim().toLowerCase();
+    return (type === "all" || row.doc_type === type)
+      && (!from || row.created_at >= `${from}T00:00:00`)
+      && (!to || row.created_at <= `${to}T23:59:59`)
+      && (!needle || row.code.toLowerCase().includes(needle) || (row.customer_name ?? "").toLowerCase().includes(needle));
+  }), [data, from, q, to, type]);
+
   const totals = useMemo(() => {
-    const factures = data.filter((r) => r.doc_type === "facture");
-    const recus = data.filter((r) => r.doc_type === "recu");
+    const factures = visibleData.filter((r) => r.doc_type === "facture");
+    const recus = visibleData.filter((r) => r.doc_type === "recu");
     return {
       facturesCount: factures.length,
       recusCount: recus.length,
-      totalUsd: data.reduce((s, r) => s + Number(r.total_usd || 0), 0),
+      totalUsd: visibleData.reduce((s, r) => s + Number(r.total_usd || 0), 0),
     };
-  }, [data]);
+  }, [visibleData]);
 
   async function reprint(row: Row) {
     if (!row.sale_id) { toast.error("Document sans vente liée — réimpression impossible."); return; }
@@ -143,8 +152,8 @@ function HistoryPage() {
             </TableHeader>
             <TableBody>
               {isLoading && <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Chargement…</TableCell></TableRow>}
-              {!isLoading && data.length === 0 && <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Aucun document.</TableCell></TableRow>}
-              {data.map((r) => (
+              {!isLoading && visibleData.length === 0 && <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Aucun document.</TableCell></TableRow>}
+              {visibleData.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-mono text-xs">{r.code}</TableCell>
                   <TableCell>

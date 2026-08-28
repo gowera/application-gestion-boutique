@@ -61,6 +61,21 @@ function Page() {
   });
 
   const subtotal = lines.reduce((a, l) => a + Number(l.qty || 0) * Number(l.unit || 0), 0);
+  const stockSummary = useMemo(() => {
+    const grouped = new Map<string, { productId: string; name: string; qty: number; stock: number }>();
+    for (const line of lines) {
+      if (!line.productId || !line.name.trim()) continue;
+      const product = products.find((candidate) => candidate.id === line.productId);
+      const current = grouped.get(line.productId);
+      grouped.set(line.productId, {
+        productId: line.productId,
+        name: product?.name ?? line.name,
+        qty: (current?.qty ?? 0) + Number(line.qty || 0),
+        stock: Number(product?.stock ?? 0),
+      });
+    }
+    return Array.from(grouped.values());
+  }, [lines, products]);
 
   const createDocument = useMutation({
     mutationFn: async (decrementStock: boolean) => {
@@ -121,7 +136,7 @@ function Page() {
       );
       queued = res.queued;
       docCode = res.data?.result?.code ?? res.data?.code ?? `LOC-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-      if (queued && stockItems.length > 0) {
+       if (queued && stockItems.length > 0) {
           await cacheUpdate<Product[]>("query:documents-products", (current) => (current ?? products).map((product) => {
             const qty = stockItems.filter((item) => item.product_id === product.id).reduce((sum, item) => sum + item.qty, 0);
             return qty > 0 ? { ...product, stock: Math.max(0, product.stock - qty) } : product;
@@ -130,6 +145,26 @@ function Page() {
             const qty = stockItems.filter((item) => item.product_id === product.id).reduce((sum, item) => sum + item.qty, 0);
             return qty > 0 ? { ...product, stock: Math.max(0, Number(product.stock) - qty) } : product;
           }));
+          const createdAt = new Date().toISOString();
+          await cacheUpdate<Array<Record<string, unknown>>>("table:stock_movements", (current) => [
+            ...stockItems.map((item) => {
+              const product = products.find((candidate) => candidate.id === item.product_id);
+              return {
+                id: `${operationId}:${item.product_id}`,
+                product_id: item.product_id,
+                delta: -item.qty,
+                reason: "sale",
+                ref_type: "document",
+                ref_id: operationId,
+                note: `Sortie locale liée au document ${docCode}`,
+                user_id: null,
+                created_at: createdAt,
+                products: product ? { id: product.id, name: product.name, sku: null, stock: Math.max(0, product.stock - item.qty) } : null,
+                pending_sync: true,
+              };
+            }),
+            ...(current ?? []),
+          ]);
       }
       downloadReceipt({
         logoDataUrl,
@@ -309,15 +344,26 @@ function Page() {
           <AlertDialogHeader>
             <AlertDialogTitle>Retirer les produits du stock ?</AlertDialogTitle>
             <AlertDialogDescription>
-              {lines.filter((line) => line.productId).length > 0
-                ? "Les produits du catalogue présents dans ce document peuvent être retranchés du stock. Les lignes saisies manuellement ne modifient jamais le stock."
-                : "Aucune ligne n’est liée à un produit du catalogue. Vous pouvez générer le PDF sans modifier le stock."}
+              Choisissez si les produits liés à cette facture doivent être retranchés du stock. Les lignes saisies manuellement ne modifient jamais le stock.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="max-h-64 overflow-y-auto rounded-md border">
+            {stockSummary.length > 0 ? (
+              <div className="divide-y">
+                {stockSummary.map((item) => (
+                  <div key={item.productId} className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 px-3 py-2 text-sm">
+                    <div className="min-w-0"><div className="truncate font-medium">{item.name}</div><div className="text-xs text-muted-foreground">Stock actuel : {item.stock} · Après retrait : {item.stock - item.qty}</div></div>
+                    <div className="font-semibold text-destructive">−{item.qty}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="p-3 text-sm text-muted-foreground">Aucune ligne liée à un produit du catalogue.</p>
+            )}
+          </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction className="bg-secondary text-secondary-foreground hover:bg-secondary/80" onClick={() => createDocument.mutate(false)}>Non, PDF uniquement</AlertDialogAction>
-            <AlertDialogAction disabled={!lines.some((line) => line.productId)} onClick={() => createDocument.mutate(true)}>Oui, retirer du stock</AlertDialogAction>
+            <AlertDialogCancel onClick={() => createDocument.mutate(false)}>Non, PDF uniquement</AlertDialogCancel>
+            <AlertDialogAction disabled={stockSummary.length === 0 || stockSummary.some((item) => item.qty <= 0 || item.qty > item.stock)} onClick={() => createDocument.mutate(true)}>Oui, retirer du stock</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
