@@ -125,6 +125,14 @@ function DashboardPage() {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-energy">Pilotage</p>
             <h1 className="mt-2 text-display text-3xl md:text-4xl font-extrabold">Tableau de bord</h1>
             <p className="mt-2 text-sm text-primary-foreground/80">Vue synthétique et temps réel de l'activité CONETEC.</p>
+            <div className="mt-3 flex items-center gap-2">
+              <DataSourceBadge source={kpiSource} refreshing={refreshing} className="bg-white/15 border-white/25 text-primary-foreground" />
+              <span className="text-[11px] text-primary-foreground/70">
+                {kpiSource === "server"
+                  ? "Synchronisé avec le serveur."
+                  : "Affichage immédiat depuis l'ordinateur, mise à jour dès la connexion."}
+              </span>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="lg" className="gap-2 bg-white/10 border-white/20 text-primary-foreground hover:bg-white/20"><Link to="/boutique" target="_blank" rel="noreferrer"><ArrowRight className="h-4 w-4" />Voir le site</Link></Button>
