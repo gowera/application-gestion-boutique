@@ -16,6 +16,9 @@ export function useSync(): SyncState {
   useEffect(() => startSyncEngine(), []);
   // Après chaque téléchargement serveur -> local, toutes les listes affichées
   // (produits, clients, documents…) repartent de la base locale à jour.
-  useEffect(() => onBootstrapRefreshed(() => { void qc.invalidateQueries(); }), [qc]);
+  useEffect(() => {
+    const off = onBootstrapRefreshed(() => { void qc.invalidateQueries(); });
+    return () => { off(); };
+  }, [qc]);
   return useSyncExternalStore(subscribeSync, getSyncState, () => serverState);
 }
