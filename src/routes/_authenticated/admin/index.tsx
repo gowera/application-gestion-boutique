@@ -23,8 +23,9 @@ function DashboardPage() {
   const currency = settings?.primary_currency ?? "USD";
   const rate = settings?.usd_to_cdf_rate ?? 2800;
 
-  const { data: kpis } = useQuery({
+  const { data: kpis, source: kpiSource, refreshing } = useLocalFirstQuery({
     queryKey: ["dashboard-kpis"],
+    cacheKey: "dashboard:kpis",
     queryFn: async () => {
       const now = new Date();
       const startDay = new Date(now); startDay.setHours(0, 0, 0, 0);
