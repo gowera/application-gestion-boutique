@@ -4,6 +4,8 @@ import { getCustomTemplate, type CanvasElement, type CanvasTemplate, type Docume
 import type { Currency } from "./currency";
 import { formatMoney } from "./currency";
 
+export type DocumentLabel = "Facture" | "Reçu" | "Facture Proforma";
+
 export interface ReceiptData {
   shopName: string;
   address: string;
@@ -18,7 +20,7 @@ export interface ReceiptData {
   credit: number;
   currency: Currency;
   rate: number;
-  documentType?: "Facture" | "Reçu";
+  documentType?: DocumentLabel;
   template?: "standard" | "pro" | "custom";
   logoDataUrl?: string;
   note?: string;
@@ -261,7 +263,7 @@ function renderCustomTemplate(doc: jsPDF, tpl: CanvasTemplate, data: ReceiptData
 }
 
 export function buildReceiptDoc(data: ReceiptData): jsPDF {
-  const kind: DocumentKind = data.documentType === "Facture" ? "facture" : "recu";
+  const kind: DocumentKind = data.documentType === "Reçu" ? "recu" : "facture";
   if (data.template === "custom") {
     const tpl = getCustomTemplate(kind);
     const doc = new jsPDF({ unit: "mm", format: [tpl.pageWidth, tpl.pageHeight] });
@@ -374,9 +376,8 @@ export function buildReceiptDoc(data: ReceiptData): jsPDF {
 
 
 export function downloadReceipt(data: ReceiptData) {
-  const kind: DocumentKind = data.documentType === "Facture" ? "facture" : "recu";
   const doc = buildReceiptDoc(data);
-  const prefix = kind === "facture" ? "facture" : "recu";
+  const prefix = data.documentType === "Reçu" ? "recu" : data.documentType === "Facture Proforma" ? "facture-proforma" : "facture";
   doc.save(`${prefix}-${data.code}.pdf`);
 }
 

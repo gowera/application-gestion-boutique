@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DOCUMENT_TEMPLATES, getStoredDocumentTemplate, setStoredDocumentTemplate, type DocumentTemplateId, type DocumentKind } from "@/lib/document-template";
 import { FileText, History } from "lucide-react";
-import { downloadReceipt } from "@/lib/pdf";
+import { downloadReceipt, type DocumentLabel } from "@/lib/pdf";
 import { useLogoDataUrl } from "@/lib/logo";
 import { EditorCanvas } from "@/components/documents/editor-canvas";
 import { useSettings } from "@/lib/currency";
@@ -40,7 +40,7 @@ function Page() {
   const logoDataUrl = useLogoDataUrl();
   const [template, setTemplate] = useState<DocumentTemplateId>(getStoredDocumentTemplate());
   const [designerKind, setDesignerKind] = useState<DocumentKind>("recu");
-  const [documentType, setDocumentType] = useState<"Facture" | "Reçu">("Facture");
+  const [documentType, setDocumentType] = useState<DocumentLabel>("Facture");
   const [customerId, setCustomerId] = useState("");
   const [manualMode, setManualMode] = useState(false);
   const [manualCustomer, setManualCustomer] = useState({ name: "", phone: "", address: "" });
@@ -61,6 +61,7 @@ function Page() {
       ((await supabase.from("products").select("id,name,sale_price,stock").eq("status", "active").is("deleted_at", null).order("name").limit(500)).data ?? []) as Product[], "table:products"),
   });
 
+  const isProforma = documentType === "Facture Proforma";
   const subtotal = lines.reduce((a, l) => a + Number(l.qty || 0) * Number(l.unit || 0), 0);
   const stockSummary = useMemo(() => {
     const grouped = new Map<string, { productId: string; name: string; qty: number; stock: number }>();
@@ -104,7 +105,7 @@ function Page() {
       const items = lines.filter((l) => l.name.trim()).map((l) => ({ name: l.name, qty: Number(l.qty || 0), unit: Number(l.unit || 0), total: Number(l.qty || 0) * Number(l.unit || 0) }));
       const total = items.reduce((a, i) => a + i.total, 0);
       const groupedStock = new Map<string, number>();
-      if (decrementStock) {
+      if (decrementStock && !isProforma) {
         for (const line of lines.filter((candidate) => candidate.productId && candidate.name.trim())) {
           const productId = line.productId;
           if (!productId) continue;
@@ -119,7 +120,21 @@ function Page() {
       }
       let docCode = "";
       let queued = false;
-      const docType = labelToDocType(documentType);
+      if (isProforma) {
+        // Proforma : document d'offre, sans numérotation officielle ni impact stock.
+        docCode = `PRO-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+        downloadReceipt({
+          logoDataUrl,
+          shopName: settings?.shop_name ?? "CONETEC",
+          address: settings?.address ?? "", phone: settings?.phone ?? "",
+          code: docCode, customer: customerName,
+          items, subtotal: total, discount: 0, total, paid: 0, credit: total,
+          currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
+          documentType, template, note: note || undefined,
+        });
+        return { code: docCode, queued: false };
+      }
+      const docType = labelToDocType(documentType as "Facture" | "Reçu");
       const operationId = crypto.randomUUID();
       const payload = { doc_type: docType, customer_name: customerName, total_usd: total, stock_items: stockItems };
       const res = await runOrQueue<{ code?: string; result?: { code?: string } }>(
@@ -267,10 +282,11 @@ function Page() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label>Type</Label>
-                  <Select value={documentType} onValueChange={(v) => setDocumentType(v as "Facture" | "Reçu")}>
+                  <Select value={documentType} onValueChange={(v) => setDocumentType(v as DocumentLabel)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Facture">Facture</SelectItem>
+                      <SelectItem value="Facture Proforma">Facture Proforma</SelectItem>
                       <SelectItem value="Reçu">Reçu</SelectItem>
                     </SelectContent>
                   </Select>
@@ -339,7 +355,7 @@ function Page() {
                 <Label>Note</Label>
                 <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Détails ou conditions" />
               </div>
-              <Button className="w-full" onClick={() => setConfirmStock(true)} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
+              <Button className="w-full" onClick={() => (isProforma ? createDocument.mutate(false) : setConfirmStock(true))} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
               <p className="text-xs text-muted-foreground">Le document est numéroté automatiquement (séquentiel, sans doublon) et utilise le modèle actif.</p>
             </CardContent>
           </Card>
