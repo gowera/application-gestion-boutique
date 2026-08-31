@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { cacheSet, setLocalUser } from "./store";
+import { cacheGet, cacheSet, setLocalUser } from "./store";
 import { resolveTableRows } from "./conflict";
 
 
@@ -43,6 +43,17 @@ export function getBootstrapProgress() {
 
 const REFRESH_INTERVAL_MS = 10 * 60_000;
 let lastRunAt = 0;
+let metaRestoredFor: string | null = null;
+
+/** Relit l'état du dernier téléchargement conservé dans la base locale. */
+export async function restoreBootstrapMeta(userId: string): Promise<void> {
+  if (metaRestoredFor === userId) return;
+  metaRestoredFor = userId;
+  setLocalUser(userId);
+  const meta = await cacheGet<{ ready: boolean; at: string; counts?: Record<string, number> }>("bootstrap:meta");
+  if (meta?.ready) emit({ ready: true, lastBootstrapAt: meta.at });
+}
+
 
 /**
  * Télécharge (ou rafraîchit) toutes les données autorisées dans la base locale.
@@ -57,6 +68,7 @@ export async function bootstrapOfflineData(userId: string, force = false): Promi
   emit({ running: true, completed: 0, current: null, error: null });
   try {
     const skipped: string[] = [];
+    const counts: Record<string, number> = {};
     for (let index = 0; index < DATASETS.length; index += 1) {
       const table = DATASETS[index];
       emit({ current: table, completed: index });
@@ -76,10 +88,14 @@ export async function bootstrapOfflineData(userId: string, force = false): Promi
         if (page.length < 1000) break;
         offset += 1000;
       }
-      if (!failed) await cacheSet(`table:${table}`, await resolveTableRows(table, rows));
+      if (!failed) {
+        const merged = await resolveTableRows(table, rows);
+        await cacheSet(`table:${table}`, merged);
+        counts[table] = Array.isArray(merged) ? merged.length : 0;
+      }
     }
     const at = new Date().toISOString();
-    await cacheSet("bootstrap:meta", { ready: true, at, version: 1 });
+    await cacheSet("bootstrap:meta", { ready: true, at, version: 1, counts });
     emit({ running: false, completed: DATASETS.length, current: null, ready: true, lastBootstrapAt: at, error: skipped.length ? `${skipped.length} jeu(x) non autorisé(s) ignoré(s)` : null });
   } catch (error) {
     emit({ running: false, current: null, error: error instanceof Error ? error.message : String(error) });

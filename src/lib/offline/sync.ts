@@ -84,6 +84,9 @@ export async function syncNow(): Promise<{ sent: number; failed: number }> {
   const list = await outboxList();
   if (list.length === 0) {
     emit({ online: true, pending: 0, lastSyncAt: new Date().toISOString() });
+    // Même sans écriture en attente, on rapatrie les données du serveur vers la base locale.
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.user.id) void bootstrapOfflineData(data.session.user.id);
     return { sent: 0, failed: 0 };
   }
 
