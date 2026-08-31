@@ -102,8 +102,9 @@ function DashboardPage() {
     },
   });
 
-  const { data: recentActivity } = useQuery({
+  const { data: recentActivity } = useLocalFirstQuery({
     queryKey: ["recent-activity"],
+    cacheKey: "dashboard:recent-activity",
     queryFn: async () => {
       if (isOffline()) return ((await cacheGet<Array<{ id: string; action: string; created_at: string }>>("table:activity_log")) ?? []).slice(0, 8);
       const { data } = await supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(8);
