@@ -66,8 +66,9 @@ function DashboardPage() {
     },
   });
 
-  const { data: last30 } = useQuery({
+  const { data: last30 } = useLocalFirstQuery({
     queryKey: ["dashboard-30d"],
+    cacheKey: "dashboard:30d",
     queryFn: async () => {
       const start = new Date(); start.setDate(start.getDate() - 29); start.setHours(0, 0, 0, 0);
       const data = isOffline()
