@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { getBootstrapProgress, subscribeBootstrap, bootstrapOfflineData, provisionOfflinePin } from "@/lib/offline/bootstrap";
+import { getBootstrapProgress, subscribeBootstrap, bootstrapOfflineData, provisionOfflinePin, restoreBootstrapMeta } from "@/lib/offline/bootstrap";
 import { useCurrentUser, useMyRoles } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
@@ -21,7 +21,9 @@ export function OfflineSetup() {
 
   useEffect(() => {
     if (!user || typeof window === "undefined") return;
-    void bootstrapOfflineData(user.id);
+    // À chaque ouverture : on relit l'état local puis on rapatrie les données du
+    // serveur vers la base locale (JSON) dès qu'une connexion est disponible.
+    void restoreBootstrapMeta(user.id).then(() => bootstrapOfflineData(user.id, true));
     if (window.conetecDesktop) void window.conetecDesktop.hasOfflinePin().then((hasPin) => setNeedsPin(!hasPin));
   }, [user]);
 

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircle2, Cloud, CloudOff, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSync } from "@/hooks/use-sync";
 import { discardOperation, retryOperation, syncNow } from "@/lib/offline/sync";
 import { outboxList, syncedList, type OutboxOp, type SyncedOp } from "@/lib/offline/store";
+import { bootstrapOfflineData, getBootstrapProgress, subscribeBootstrap } from "@/lib/offline/bootstrap";
+import { cacheGet } from "@/lib/offline/store";
+import { useCurrentUser } from "@/hooks/use-auth";
 import {
   POLICY_LABELS, clearConflicts, getConflictPolicy, listConflicts, setConflictPolicy,
   type ConflictEntry, type ConflictPolicy,
@@ -43,7 +46,12 @@ function when(value: string) {
   return new Date(value).toLocaleString("fr-FR");
 }
 
+const serverProgress = { running: false, completed: 0, total: 29, current: null, ready: false, lastBootstrapAt: null, error: null };
+
 function Page() {
+  const { user } = useCurrentUser();
+  const boot = useSyncExternalStore(subscribeBootstrap, getBootstrapProgress, () => serverProgress);
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const { online, syncing, pending, lastSyncAt, lastError } = useSync();
   const qc = useQueryClient();
   const [queue, setQueue] = useState<OutboxOp[]>([]);
@@ -56,10 +64,12 @@ function Page() {
     setQueue(await outboxList());
     setHistory((await syncedList()).slice().reverse().slice(0, 50));
     setConflicts((await listConflicts()).slice().reverse().slice(0, 50));
+    const meta = await cacheGet<{ counts?: Record<string, number> }>("bootstrap:meta");
+    setCounts(meta?.counts ?? {});
   }, []);
 
   useEffect(() => { setPolicy(getConflictPolicy()); }, []);
-  useEffect(() => { void refresh(); }, [refresh, pending, syncing, lastSyncAt]);
+  useEffect(() => { void refresh(); }, [refresh, pending, syncing, lastSyncAt, boot.lastBootstrapAt]);
 
   const failed = queue.filter((op) => op.error);
 
@@ -113,6 +123,39 @@ function Page() {
           La synchronisation démarre aussi automatiquement en arrière-plan dès le retour de la connexion.
         </span>
       </div>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Base de données locale (JSON)</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              disabled={!online || boot.running || !user}
+              onClick={async () => { if (user) { await bootstrapOfflineData(user.id, true); await refresh(); toast.success("Données du serveur enregistrées localement."); } }}
+            >
+              <RefreshCw className={`h-4 w-4 ${boot.running ? "animate-spin" : ""}`} />
+              Télécharger les données du serveur
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {boot.running
+                ? `Téléchargement en cours : ${boot.current ?? ""} (${boot.completed}/${boot.total})`
+                : boot.lastBootstrapAt
+                  ? `Dernier téléchargement : ${when(boot.lastBootstrapAt)} · ${Object.values(counts).reduce((a, b) => a + b, 0)} enregistrement(s) locaux`
+                  : "Aucune donnée locale : connectez-vous à Internet pour lancer le téléchargement."}
+            </span>
+          </div>
+          {boot.error && <div className="text-xs text-warning-foreground">{boot.error}</div>}
+          {Object.keys(counts).length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(counts).filter(([, n]) => n > 0).map(([table, n]) => (
+                <Badge key={table} variant="secondary" className="text-[10px]">{table} · {n}</Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Résolution des conflits</CardTitle></CardHeader>
