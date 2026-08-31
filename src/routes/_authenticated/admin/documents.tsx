@@ -12,7 +12,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DOCUMENT_TEMPLATES, getStoredDocumentTemplate, setStoredDocumentTemplate, type DocumentTemplateId, type DocumentKind } from "@/lib/document-template";
 import { FileText, History } from "lucide-react";
-import { downloadReceipt, type DocumentLabel } from "@/lib/pdf";
+import { buildReceiptDoc, downloadReceipt, type DocumentLabel } from "@/lib/pdf";
+import { useDocumentMarks, fileToDataUrl } from "@/lib/document-marks";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useLogoDataUrl } from "@/lib/logo";
 import { EditorCanvas } from "@/components/documents/editor-canvas";
 import { useSettings } from "@/lib/currency";
@@ -48,6 +50,8 @@ function Page() {
   const [note, setNote] = useState("");
   const [lines, setLines] = useState<LineItem[]>([{ name: "", qty: 1, unit: 0 }]);
   const [confirmStock, setConfirmStock] = useState(false);
+  const marks = useDocumentMarks();
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
 
   const { data: customers = [] } = useQuery<Customer[]>({
@@ -131,6 +135,7 @@ function Page() {
           items, subtotal: total, discount: 0, total, paid: 0, credit: total,
           currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
           documentType, template, note: note || undefined,
+          signatureDataUrl: marks.signature, stampDataUrl: marks.stamp,
         });
         return { code: docCode, queued: false };
       }
@@ -195,6 +200,7 @@ function Page() {
         items, subtotal: total, discount: 0, total, paid: total, credit: 0,
         currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
         documentType, template, note: note || undefined,
+        signatureDataUrl: marks.signature, stampDataUrl: marks.stamp,
       });
       return { code: docCode, queued, stockApplied: stockItems.length > 0 };
     },
@@ -205,10 +211,37 @@ function Page() {
       qc.invalidateQueries({ queryKey: ["documents-products"] });
       qc.invalidateQueries({ queryKey: ["stock-products"] });
       qc.invalidateQueries({ queryKey: ["stock-movements"] });
+      // Les mêmes données doivent apparaître partout dans le tableau de bord.
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      qc.invalidateQueries({ queryKey: ["customers-all"] });
+      qc.invalidateQueries({ queryKey: ["documents-customers"] });
+      qc.invalidateQueries({ queryKey: ["admin-dashboard"] });
       setLines([{ name: "", qty: 1, unit: 0 }]); setNote("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const openPreview = () => {
+    const items = lines.filter((l) => l.name.trim()).map((l) => ({ name: l.name, qty: Number(l.qty || 0), unit: Number(l.unit || 0), total: Number(l.qty || 0) * Number(l.unit || 0) }));
+    if (items.length === 0) { toast.error("Ajoutez au moins une ligne"); return; }
+    const customerName = manualMode
+      ? (manualCustomer.name.trim() || "Client")
+      : (customers.find((c) => c.id === customerId)?.name ?? "Client");
+    const total = items.reduce((a, i) => a + i.total, 0);
+    const doc = buildReceiptDoc({
+      logoDataUrl,
+      shopName: settings?.shop_name ?? "CONETEC",
+      address: settings?.address ?? "", phone: settings?.phone ?? "",
+      code: "APERÇU", customer: customerName,
+      items, subtotal: total, discount: 0, total,
+      paid: isProforma ? 0 : total, credit: isProforma ? total : 0,
+      currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
+      documentType, template, note: note || undefined,
+      signatureDataUrl: marks.signature, stampDataUrl: marks.stamp,
+    });
+    setPreviewUrl(doc.output("datauristring"));
+  };
 
   const selectedTemplate = useMemo(() => DOCUMENT_TEMPLATES.find((item) => item.id === template) ?? DOCUMENT_TEMPLATES[0], [template]);
 
@@ -251,6 +284,32 @@ function Page() {
             </CardHeader>
             <CardContent className="min-w-0 overflow-x-auto p-3 sm:p-6">
               <EditorCanvas kind={designerKind} onSaved={() => { setTemplate("custom"); setStoredDocumentTemplate("custom"); toast.success("Modèle enregistré et appliqué partout"); }} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Signature & sceau</CardTitle>
+              <p className="text-sm text-muted-foreground">Ajoutés en bas des factures et reçus générés. Conservés sur cet appareil (disponibles hors ligne).</p>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              {([["signature", "Signature"], ["stamp", "Sceau"]] as const).map(([kind, label]) => (
+                <div key={kind} className="space-y-2 rounded-md border p-3">
+                  <Label>{label}</Label>
+                  <div className="flex h-24 items-center justify-center rounded-md border bg-muted/30">
+                    {marks[kind] ? <img src={marks[kind]} alt={label} className="max-h-20 max-w-full object-contain" /> : <span className="text-xs text-muted-foreground">Aucune image</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input type="file" accept="image/png,image/jpeg" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try { marks.save(kind, await fileToDataUrl(file)); toast.success(`${label} enregistrée`); }
+                      catch { toast.error("Image illisible"); }
+                    }} />
+                    <Button type="button" variant="outline" size="sm" disabled={!marks[kind]} onClick={() => { marks.save(kind, null); toast.success(`${label} supprimée`); }}>Retirer</Button>
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
@@ -355,12 +414,23 @@ function Page() {
                 <Label>Note</Label>
                 <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Détails ou conditions" />
               </div>
+              <Button className="w-full" variant="outline" onClick={openPreview}>Prévisualiser le document</Button>
               <Button className="w-full" onClick={() => (isProforma ? createDocument.mutate(false) : setConfirmStock(true))} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
               <p className="text-xs text-muted-foreground">Le document est numéroté automatiquement (séquentiel, sans doublon) et utilise le modèle actif.</p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+      <Dialog open={previewUrl !== null} onOpenChange={(open) => { if (!open) setPreviewUrl(null); }}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader><DialogTitle>Aperçu — {documentType}</DialogTitle></DialogHeader>
+          {previewUrl && <iframe title="Aperçu du document" src={previewUrl} className="h-[65vh] w-full rounded-md border" />}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewUrl(null)}>Fermer</Button>
+            <Button onClick={() => { setPreviewUrl(null); if (isProforma) createDocument.mutate(false); else setConfirmStock(true); }} disabled={createDocument.isPending}>Générer le PDF</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <AlertDialog open={confirmStock} onOpenChange={setConfirmStock}>
         <AlertDialogContent>
           <AlertDialogHeader>

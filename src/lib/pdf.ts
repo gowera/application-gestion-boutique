@@ -24,6 +24,8 @@ export interface ReceiptData {
   template?: "standard" | "pro" | "custom";
   logoDataUrl?: string;
   note?: string;
+  signatureDataUrl?: string;
+  stampDataUrl?: string;
 }
 
 export interface PurchasePdfData {
@@ -262,6 +264,31 @@ function renderCustomTemplate(doc: jsPDF, tpl: CanvasTemplate, data: ReceiptData
   doc.setTextColor(0, 0, 0);
 }
 
+/** Signature (gauche) et sceau (droite) apposés en bas du document. */
+function drawSignatureAndStamp(doc: jsPDF, data: ReceiptData, w: number, margin: number, y: number, metaSize: number): number {
+  if (!data.signatureDataUrl && !data.stampDataUrl) return y;
+  const boxW = (w - margin * 2 - 4) / 2;
+  const boxH = 20;
+  const place = (src: string | undefined, x: number, label: string) => {
+    doc.setFontSize(metaSize);
+    doc.setFont("helvetica", "normal");
+    if (src) {
+      try {
+        const fmt = src.includes("image/jpeg") || src.includes("image/jpg") ? "JPEG" : "PNG";
+        const props = doc.getImageProperties(src);
+        const ratio = Math.min(boxW / props.width, boxH / props.height);
+        const iw = props.width * ratio;
+        const ih = props.height * ratio;
+        doc.addImage(src, fmt, x + (boxW - iw) / 2, y + (boxH - ih) / 2, iw, ih);
+      } catch { /* image indisponible */ }
+    }
+    doc.text(label, x + boxW / 2, y + boxH + 4, { align: "center" });
+  };
+  place(data.signatureDataUrl, margin, "Signature");
+  place(data.stampDataUrl, margin + boxW + 4, "Sceau");
+  return y + boxH + 8;
+}
+
 export function buildReceiptDoc(data: ReceiptData): jsPDF {
   const kind: DocumentKind = data.documentType === "Reçu" ? "recu" : "facture";
   if (data.template === "custom") {
@@ -276,7 +303,8 @@ export function buildReceiptDoc(data: ReceiptData): jsPDF {
   const w = isTicket58 ? 58 : 80;
   const margin = isTicket58 ? 3 : 4;
   // Hauteur estimée pour éviter toute coupure du contenu.
-  const pageHeight = Math.max(120, 90 + data.items.length * (isTicket58 ? 9 : 7));
+  const marksHeight = data.signatureDataUrl || data.stampDataUrl ? 32 : 0;
+  const pageHeight = Math.max(120, 90 + marksHeight + data.items.length * (isTicket58 ? 9 : 7));
   const doc = new jsPDF({ unit: "mm", format: [w, pageHeight] });
   const isPro = data.template === "pro";
   // Tailles augmentées : lisibilité à l'impression thermique.
@@ -369,6 +397,7 @@ export function buildReceiptDoc(data: ReceiptData): jsPDF {
     y2 += 4;
   }
   y2 += 4;
+  y2 = drawSignatureAndStamp(doc, data, w, margin, y2, fs.meta);
   doc.setFontSize(fs.meta);
   doc.text("Merci de votre confiance.", w / 2, y2, { align: "center" });
   return doc;
