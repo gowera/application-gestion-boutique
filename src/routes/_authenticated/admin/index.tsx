@@ -87,8 +87,9 @@ function DashboardPage() {
     },
   });
 
-  const { data: topProducts } = useQuery({
+  const { data: topProducts } = useLocalFirstQuery({
     queryKey: ["dashboard-top-products"],
+    cacheKey: "dashboard:top-products",
     queryFn: async () => {
       const start = new Date(); start.setDate(start.getDate() - 30);
       const data = isOffline()
