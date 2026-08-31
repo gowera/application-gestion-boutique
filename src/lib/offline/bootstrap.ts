@@ -37,6 +37,18 @@ export function subscribeBootstrap(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
+const refreshListeners = new Set<() => void>();
+
+/**
+ * Notifie l'application qu'un nouveau jeu de données serveur est disponible
+ * localement : les écrans (produits, clients, documents…) se rafraîchissent
+ * ainsi tous à partir des mêmes données.
+ */
+export function onBootstrapRefreshed(listener: () => void) {
+  refreshListeners.add(listener);
+  return () => refreshListeners.delete(listener);
+}
+
 export function getBootstrapProgress() {
   return progress;
 }
@@ -96,6 +108,7 @@ export async function bootstrapOfflineData(userId: string, force = false): Promi
     }
     const at = new Date().toISOString();
     await cacheSet("bootstrap:meta", { ready: true, at, version: 1, counts });
+    refreshListeners.forEach((listener) => { try { listener(); } catch { /* ignore */ } });
     emit({ running: false, completed: DATASETS.length, current: null, ready: true, lastBootstrapAt: at, error: skipped.length ? `${skipped.length} jeu(x) non autorisé(s) ignoré(s)` : null });
   } catch (error) {
     emit({ running: false, current: null, error: error instanceof Error ? error.message : String(error) });
