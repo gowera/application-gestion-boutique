@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useLocalFirstQuery } from "@/hooks/use-local-first-query";
+import { DataSourceBadge } from "@/components/admin/data-source-badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,9 @@ function DashboardPage() {
   const currency = settings?.primary_currency ?? "USD";
   const rate = settings?.usd_to_cdf_rate ?? 2800;
 
-  const { data: kpis } = useQuery({
+  const { data: kpis, source: kpiSource, refreshing } = useLocalFirstQuery({
     queryKey: ["dashboard-kpis"],
+    cacheKey: "dashboard:kpis",
     queryFn: async () => {
       const now = new Date();
       const startDay = new Date(now); startDay.setHours(0, 0, 0, 0);
@@ -64,8 +66,9 @@ function DashboardPage() {
     },
   });
 
-  const { data: last30 } = useQuery({
+  const { data: last30 } = useLocalFirstQuery({
     queryKey: ["dashboard-30d"],
+    cacheKey: "dashboard:30d",
     queryFn: async () => {
       const start = new Date(); start.setDate(start.getDate() - 29); start.setHours(0, 0, 0, 0);
       const data = isOffline()
@@ -84,8 +87,9 @@ function DashboardPage() {
     },
   });
 
-  const { data: topProducts } = useQuery({
+  const { data: topProducts } = useLocalFirstQuery({
     queryKey: ["dashboard-top-products"],
+    cacheKey: "dashboard:top-products",
     queryFn: async () => {
       const start = new Date(); start.setDate(start.getDate() - 30);
       const data = isOffline()
@@ -98,8 +102,9 @@ function DashboardPage() {
     },
   });
 
-  const { data: recentActivity } = useQuery({
+  const { data: recentActivity } = useLocalFirstQuery({
     queryKey: ["recent-activity"],
+    cacheKey: "dashboard:recent-activity",
     queryFn: async () => {
       if (isOffline()) return ((await cacheGet<Array<{ id: string; action: string; created_at: string }>>("table:activity_log")) ?? []).slice(0, 8);
       const { data } = await supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(8);
@@ -120,6 +125,14 @@ function DashboardPage() {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-energy">Pilotage</p>
             <h1 className="mt-2 text-display text-3xl md:text-4xl font-extrabold">Tableau de bord</h1>
             <p className="mt-2 text-sm text-primary-foreground/80">Vue synthétique et temps réel de l'activité CONETEC.</p>
+            <div className="mt-3 flex items-center gap-2">
+              <DataSourceBadge source={kpiSource} refreshing={refreshing} className="bg-white/15 border-white/25 text-primary-foreground" />
+              <span className="text-[11px] text-primary-foreground/70">
+                {kpiSource === "server"
+                  ? "Synchronisé avec le serveur."
+                  : "Affichage immédiat depuis l'ordinateur, mise à jour dès la connexion."}
+              </span>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="lg" className="gap-2 bg-white/10 border-white/20 text-primary-foreground hover:bg-white/20"><Link to="/boutique" target="_blank" rel="noreferrer"><ArrowRight className="h-4 w-4" />Voir le site</Link></Button>
