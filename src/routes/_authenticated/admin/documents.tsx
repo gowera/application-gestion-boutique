@@ -127,16 +127,7 @@ function Page() {
       if (isProforma) {
         // Proforma : document d'offre, sans numérotation officielle ni impact stock.
         docCode = `PRO-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-        downloadReceipt({
-          logoDataUrl,
-          shopName: settings?.shop_name ?? "CONETEC",
-          address: settings?.address ?? "", phone: settings?.phone ?? "",
-          code: docCode, customer: customerName,
-          items, subtotal: total, discount: 0, total, paid: 0, credit: total,
-          currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
-          documentType, template, note: note || undefined,
-          signatureDataUrl: marks.signature, stampDataUrl: marks.stamp,
-        });
+        await emitDocument({ code: docCode, customerName, items, total, paid: 0, credit: total });
         return { code: docCode, queued: false };
       }
       const docType = labelToDocType(documentType as "Facture" | "Reçu");
