@@ -192,16 +192,7 @@ function Page() {
             ...(current ?? []),
           ]);
       }
-      downloadReceipt({
-        logoDataUrl,
-        shopName: settings?.shop_name ?? "CONETEC",
-        address: settings?.address ?? "", phone: settings?.phone ?? "",
-        code: docCode, customer: customerName,
-        items, subtotal: total, discount: 0, total, paid: total, credit: 0,
-        currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
-        documentType, template, note: note || undefined,
-        signatureDataUrl: marks.signature, stampDataUrl: marks.stamp,
-      });
+      await emitDocument({ code: docCode, customerName, items, total, paid: total, credit: 0 });
       return { code: docCode, queued, stockApplied: stockItems.length > 0 };
     },
     onSuccess: (res) => {
