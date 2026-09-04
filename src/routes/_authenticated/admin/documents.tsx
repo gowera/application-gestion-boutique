@@ -284,6 +284,7 @@ function Page() {
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="models">Modèles de document</TabsTrigger>
           <TabsTrigger value="create">Créer un document</TabsTrigger>
+          <TabsTrigger value="prints">Documents imprimés</TabsTrigger>
         </TabsList>
 
         <TabsContent value="models" className="mt-4 space-y-6">
