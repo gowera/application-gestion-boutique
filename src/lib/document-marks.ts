@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
+import { cacheGet, cacheSet } from "@/lib/offline/store";
 
 /**
- * Signature et sceau des documents : conservés en local (data URL) afin de
- * rester disponibles hors ligne, comme le modèle de document actif.
+ * Signature et sceau des documents : conservés sur l'appareil (application
+ * Windows : base locale chiffrée sur disque ; navigateur : IndexedDB), avec un
+ * miroir localStorage pour un affichage immédiat au démarrage. Ils ne dépendent
+ * d'aucune donnée du serveur et restent disponibles 100 % hors ligne.
  */
 const SIGNATURE_KEY = "conetec.document.signature";
 const STAMP_KEY = "conetec.document.stamp";
+const LOCAL_DB_KEY = "document-marks";
 
 export type DocumentMarks = { signature?: string; stamp?: string };
 
@@ -21,11 +25,31 @@ export function getDocumentMarks(): DocumentMarks {
   return { signature: read(SIGNATURE_KEY), stamp: read(STAMP_KEY) };
 }
 
-export function setDocumentMark(kind: keyof DocumentMarks, dataUrl: string | null) {
+function writeMirror(kind: keyof DocumentMarks, dataUrl: string | null) {
   if (typeof localStorage === "undefined") return;
   const key = kind === "signature" ? SIGNATURE_KEY : STAMP_KEY;
   if (dataUrl) localStorage.setItem(key, dataUrl);
   else localStorage.removeItem(key);
+}
+
+/** Recharge la signature et le sceau depuis la base locale durable. */
+export async function loadDocumentMarks(): Promise<DocumentMarks> {
+  const stored = (await cacheGet<DocumentMarks>(LOCAL_DB_KEY)) ?? {};
+  const current = getDocumentMarks();
+  const merged: DocumentMarks = {
+    signature: stored.signature ?? current.signature,
+    stamp: stored.stamp ?? current.stamp,
+  };
+  writeMirror("signature", merged.signature ?? null);
+  writeMirror("stamp", merged.stamp ?? null);
+  listeners.forEach((listener) => listener());
+  return merged;
+}
+
+export function setDocumentMark(kind: keyof DocumentMarks, dataUrl: string | null) {
+  writeMirror(kind, dataUrl);
+  const next = getDocumentMarks();
+  void cacheSet(LOCAL_DB_KEY, next);
   listeners.forEach((listener) => listener());
 }
 
@@ -38,7 +62,7 @@ export function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-/** Hook réactif sur la signature et le sceau enregistrés. */
+/** Hook réactif sur la signature et le sceau enregistrés sur cet appareil. */
 export function useDocumentMarks(): DocumentMarks & { save: (kind: keyof DocumentMarks, dataUrl: string | null) => void } {
   const [marks, setMarks] = useState<DocumentMarks>({});
   useEffect(() => {
@@ -46,6 +70,7 @@ export function useDocumentMarks(): DocumentMarks & { save: (kind: keyof Documen
     sync();
     listeners.add(sync);
     window.addEventListener("storage", sync);
+    void loadDocumentMarks();
     return () => { listeners.delete(sync); window.removeEventListener("storage", sync); };
   }, []);
   const save = useCallback((kind: keyof DocumentMarks, dataUrl: string | null) => setDocumentMark(kind, dataUrl), []);
