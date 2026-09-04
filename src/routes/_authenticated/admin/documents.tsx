@@ -11,9 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DOCUMENT_TEMPLATES, getStoredDocumentTemplate, setStoredDocumentTemplate, type DocumentTemplateId, type DocumentKind } from "@/lib/document-template";
-import { FileText, History } from "lucide-react";
-import { buildReceiptDoc, downloadReceipt, type DocumentLabel } from "@/lib/pdf";
+import { FileText, History, Mail, Printer } from "lucide-react";
+import { buildReceiptDoc, type DocumentLabel } from "@/lib/pdf";
 import { useDocumentMarks, fileToDataUrl } from "@/lib/document-marks";
+import { recordPrint, usePrintLog, formatPrintDate } from "@/lib/print-log";
+import { sendDocumentEmail } from "@/lib/email.functions";
+import { useCurrentUser } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useLogoDataUrl } from "@/lib/logo";
 import { EditorCanvas } from "@/components/documents/editor-canvas";
