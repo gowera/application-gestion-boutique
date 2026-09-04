@@ -52,6 +52,13 @@ function Page() {
   const [confirmStock, setConfirmStock] = useState(false);
   const marks = useDocumentMarks();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const { user } = useCurrentUser();
+  const [lastDoc, setLastDoc] = useState<{ code: string; filename: string; base64: string; customer: string; type: DocumentLabel } | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+
 
 
   const { data: customers = [] } = useQuery<Customer[]>({
