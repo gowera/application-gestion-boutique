@@ -11,9 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DOCUMENT_TEMPLATES, getStoredDocumentTemplate, setStoredDocumentTemplate, type DocumentTemplateId, type DocumentKind } from "@/lib/document-template";
-import { FileText, History } from "lucide-react";
-import { buildReceiptDoc, downloadReceipt, type DocumentLabel } from "@/lib/pdf";
+import { FileText, History, Mail, Printer } from "lucide-react";
+import { buildReceiptDoc, type DocumentLabel } from "@/lib/pdf";
 import { useDocumentMarks, fileToDataUrl } from "@/lib/document-marks";
+import { recordPrint, usePrintLog, formatPrintDate } from "@/lib/print-log";
+import { sendDocumentEmail } from "@/lib/email.functions";
+import { useCurrentUser } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useLogoDataUrl } from "@/lib/logo";
 import { EditorCanvas } from "@/components/documents/editor-canvas";
@@ -52,6 +55,13 @@ function Page() {
   const [confirmStock, setConfirmStock] = useState(false);
   const marks = useDocumentMarks();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const { user } = useCurrentUser();
+  const [lastDoc, setLastDoc] = useState<{ code: string; filename: string; base64: string; customer: string; type: DocumentLabel } | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+
 
 
   const { data: customers = [] } = useQuery<Customer[]>({
@@ -82,6 +92,38 @@ function Page() {
     }
     return Array.from(grouped.values());
   }, [lines, products]);
+
+  /**
+   * Génère le PDF, le télécharge, l'inscrit au journal d'impression local
+   * (date, heure, utilisateur) et le garde prêt pour un envoi par email.
+   */
+  const emitDocument = async (args: {
+    code: string; customerName: string;
+    items: { name: string; qty: number; unit: number; total: number }[];
+    total: number; paid: number; credit: number;
+  }) => {
+    const doc = buildReceiptDoc({
+      logoDataUrl,
+      shopName: settings?.shop_name ?? "CONETEC",
+      address: settings?.address ?? "", phone: settings?.phone ?? "",
+      code: args.code, customer: args.customerName,
+      items: args.items, subtotal: args.total, discount: 0, total: args.total,
+      paid: args.paid, credit: args.credit,
+      currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
+      documentType, template, note: note || undefined,
+      signatureDataUrl: marks.signature, stampDataUrl: marks.stamp,
+    });
+    const prefix = documentType === "Reçu" ? "recu" : isProforma ? "facture-proforma" : "facture";
+    const filename = `${prefix}-${args.code}.pdf`;
+    doc.save(filename);
+    const base64 = doc.output("datauristring").split(",")[1] ?? "";
+    setLastDoc({ code: args.code, filename, base64, customer: args.customerName, type: documentType });
+    await recordPrint({
+      code: args.code, documentType, customer: args.customerName,
+      totalUsd: args.total, user: user?.email ?? "Utilisateur", origin: "création",
+    });
+  };
+
 
   const createDocument = useMutation({
     mutationFn: async (decrementStock: boolean) => {
@@ -127,16 +169,7 @@ function Page() {
       if (isProforma) {
         // Proforma : document d'offre, sans numérotation officielle ni impact stock.
         docCode = `PRO-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-        downloadReceipt({
-          logoDataUrl,
-          shopName: settings?.shop_name ?? "CONETEC",
-          address: settings?.address ?? "", phone: settings?.phone ?? "",
-          code: docCode, customer: customerName,
-          items, subtotal: total, discount: 0, total, paid: 0, credit: total,
-          currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
-          documentType, template, note: note || undefined,
-          signatureDataUrl: marks.signature, stampDataUrl: marks.stamp,
-        });
+        await emitDocument({ code: docCode, customerName, items, total, paid: 0, credit: total });
         return { code: docCode, queued: false };
       }
       const docType = labelToDocType(documentType as "Facture" | "Reçu");
@@ -192,16 +225,7 @@ function Page() {
             ...(current ?? []),
           ]);
       }
-      downloadReceipt({
-        logoDataUrl,
-        shopName: settings?.shop_name ?? "CONETEC",
-        address: settings?.address ?? "", phone: settings?.phone ?? "",
-        code: docCode, customer: customerName,
-        items, subtotal: total, discount: 0, total, paid: total, credit: 0,
-        currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
-        documentType, template, note: note || undefined,
-        signatureDataUrl: marks.signature, stampDataUrl: marks.stamp,
-      });
+      await emitDocument({ code: docCode, customerName, items, total, paid: total, credit: 0 });
       return { code: docCode, queued, stockApplied: stockItems.length > 0 };
     },
     onSuccess: (res) => {
@@ -260,6 +284,7 @@ function Page() {
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="models">Modèles de document</TabsTrigger>
           <TabsTrigger value="create">Créer un document</TabsTrigger>
+          <TabsTrigger value="prints">Documents imprimés</TabsTrigger>
         </TabsList>
 
         <TabsContent value="models" className="mt-4 space-y-6">
@@ -417,8 +442,18 @@ function Page() {
               <Button className="w-full" variant="outline" onClick={openPreview}>Prévisualiser le document</Button>
               <Button className="w-full" onClick={() => (isProforma ? createDocument.mutate(false) : setConfirmStock(true))} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
               <p className="text-xs text-muted-foreground">Le document est numéroté automatiquement (séquentiel, sans doublon) et utilise le modèle actif.</p>
+              {lastDoc && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 p-3 text-sm">
+                  <span>Dernier document : <strong>{lastDoc.code}</strong> — {lastDoc.customer}</span>
+                  <Button size="sm" variant="outline" onClick={() => setEmailOpen(true)}><Mail className="mr-2 h-4 w-4" />Envoyer par email</Button>
+                </div>
+              )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="prints" className="mt-4">
+          <PrintJournalCard />
         </TabsContent>
       </Tabs>
       <Dialog open={previewUrl !== null} onOpenChange={(open) => { if (!open) setPreviewUrl(null); }}>
