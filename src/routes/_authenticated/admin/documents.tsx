@@ -441,8 +441,18 @@ function Page() {
               <Button className="w-full" variant="outline" onClick={openPreview}>Prévisualiser le document</Button>
               <Button className="w-full" onClick={() => (isProforma ? createDocument.mutate(false) : setConfirmStock(true))} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
               <p className="text-xs text-muted-foreground">Le document est numéroté automatiquement (séquentiel, sans doublon) et utilise le modèle actif.</p>
+              {lastDoc && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 p-3 text-sm">
+                  <span>Dernier document : <strong>{lastDoc.code}</strong> — {lastDoc.customer}</span>
+                  <Button size="sm" variant="outline" onClick={() => setEmailOpen(true)}><Mail className="mr-2 h-4 w-4" />Envoyer par email</Button>
+                </div>
+              )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="prints" className="mt-4">
+          <PrintJournalCard />
         </TabsContent>
       </Tabs>
       <Dialog open={previewUrl !== null} onOpenChange={(open) => { if (!open) setPreviewUrl(null); }}>
