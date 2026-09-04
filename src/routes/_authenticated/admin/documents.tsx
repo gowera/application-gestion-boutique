@@ -90,6 +90,38 @@ function Page() {
     return Array.from(grouped.values());
   }, [lines, products]);
 
+  /**
+   * Génère le PDF, le télécharge, l'inscrit au journal d'impression local
+   * (date, heure, utilisateur) et le garde prêt pour un envoi par email.
+   */
+  const emitDocument = async (args: {
+    code: string; customerName: string;
+    items: { name: string; qty: number; unit: number; total: number }[];
+    total: number; paid: number; credit: number;
+  }) => {
+    const doc = buildReceiptDoc({
+      logoDataUrl,
+      shopName: settings?.shop_name ?? "CONETEC",
+      address: settings?.address ?? "", phone: settings?.phone ?? "",
+      code: args.code, customer: args.customerName,
+      items: args.items, subtotal: args.total, discount: 0, total: args.total,
+      paid: args.paid, credit: args.credit,
+      currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
+      documentType, template, note: note || undefined,
+      signatureDataUrl: marks.signature, stampDataUrl: marks.stamp,
+    });
+    const prefix = documentType === "Reçu" ? "recu" : isProforma ? "facture-proforma" : "facture";
+    const filename = `${prefix}-${args.code}.pdf`;
+    doc.save(filename);
+    const base64 = doc.output("datauristring").split(",")[1] ?? "";
+    setLastDoc({ code: args.code, filename, base64, customer: args.customerName, type: documentType });
+    await recordPrint({
+      code: args.code, documentType, customer: args.customerName,
+      totalUsd: args.total, user: user?.email ?? "Utilisateur", origin: "création",
+    });
+  };
+
+
   const createDocument = useMutation({
     mutationFn: async (decrementStock: boolean) => {
       if (!lines.some((l) => l.name.trim())) throw new Error("Ajoutez au moins une ligne");
