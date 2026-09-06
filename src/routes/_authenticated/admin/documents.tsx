@@ -19,6 +19,7 @@ import { sendDocumentEmail } from "@/lib/email.functions";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useLogoDataUrl } from "@/lib/logo";
+import { PrintJournalCard } from "@/components/admin/print-journal";
 import { EditorCanvas } from "@/components/documents/editor-canvas";
 import { useSettings } from "@/lib/currency";
 import { labelToDocType } from "@/lib/documents";
