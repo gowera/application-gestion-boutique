@@ -17,6 +17,7 @@ import { useDocumentMarks, fileToDataUrl } from "@/lib/document-marks";
 import { recordPrint, usePrintLog, formatPrintDate } from "@/lib/print-log";
 import { sendDocumentEmail } from "@/lib/email.functions";
 import { useCurrentUser } from "@/hooks/use-auth";
+import { PdfPreview } from "@/components/documents/pdf-preview";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useLogoDataUrl } from "@/lib/logo";
 import { PrintJournalCard } from "@/components/admin/print-journal";
@@ -458,10 +459,11 @@ function Page() {
         </TabsContent>
       </Tabs>
       <Dialog open={previewUrl !== null} onOpenChange={(open) => { if (!open) setPreviewUrl(null); }}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-h-[92vh] w-[96vw] max-w-3xl overflow-y-auto p-3 sm:p-6">
           <DialogHeader><DialogTitle>Aperçu — {documentType}</DialogTitle></DialogHeader>
-          {previewUrl && <iframe title="Aperçu du document" src={previewUrl} className="h-[65vh] w-full rounded-md border" />}
-          <DialogFooter>
+          {previewUrl && <PdfPreview dataUri={previewUrl} />}
+          <DialogFooter className="gap-2 sm:gap-0">
+
             <Button variant="outline" onClick={() => setPreviewUrl(null)}>Fermer</Button>
             <Button onClick={() => { setPreviewUrl(null); if (isProforma) createDocument.mutate(false); else setConfirmStock(true); }} disabled={createDocument.isPending}>Générer le PDF</Button>
           </DialogFooter>
