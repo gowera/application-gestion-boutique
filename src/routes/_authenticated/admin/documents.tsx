@@ -17,6 +17,7 @@ import { useDocumentMarks, fileToDataUrl } from "@/lib/document-marks";
 import { recordPrint, usePrintLog, formatPrintDate } from "@/lib/print-log";
 import { sendDocumentEmail } from "@/lib/email.functions";
 import { useCurrentUser } from "@/hooks/use-auth";
+import { PdfPreview } from "@/components/documents/pdf-preview";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useLogoDataUrl } from "@/lib/logo";
 import { PrintJournalCard } from "@/components/admin/print-journal";
