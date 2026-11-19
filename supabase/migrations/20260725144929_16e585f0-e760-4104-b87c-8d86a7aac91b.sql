@@ -1,1 +1,0 @@
-ALTER TABLE public.quote_requests ADD COLUMN IF NOT EXISTS attachment_url text;

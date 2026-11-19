@@ -1,1 +1,0 @@
-ALTER TABLE public.customer_ledger ADD COLUMN IF NOT EXISTS due_date date;

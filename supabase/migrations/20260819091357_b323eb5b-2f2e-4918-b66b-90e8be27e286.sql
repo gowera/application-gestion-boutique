@@ -1,1 +1,0 @@
-update public.settings set extras = coalesce(extras,'{}'::jsonb) || jsonb_build_object('win_app_url','/__l5e/assets-v1/9146e7d1-62c4-46be-81bb-15348d619692/CONETEC-win-x64-1.0.0.zip','win_app_version','1.0.0','win_app_size','143 Mo','win_app_published_at', to_char(now(),'YYYY-MM-DD')) where id = 1;
