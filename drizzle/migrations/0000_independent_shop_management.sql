@@ -1,0 +1,74 @@
+CREATE TABLE public.shops (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT ON public.shops TO authenticated; GRANT ALL ON public.shops TO service_role;
+ALTER TABLE public.shops ENABLE ROW LEVEL SECURITY;
+CREATE TABLE public.shop_memberships (user_id uuid PRIMARY KEY, shop_id uuid NOT NULL REFERENCES public.shops(id), created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT ON public.shop_memberships TO authenticated; GRANT ALL ON public.shop_memberships TO service_role;
+ALTER TABLE public.shop_memberships ENABLE ROW LEVEL SECURITY;
+CREATE FUNCTION public.current_shop_id() RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT shop_id FROM public.shop_memberships WHERE user_id=auth.uid() $$;
+REVOKE ALL ON FUNCTION public.current_shop_id() FROM PUBLIC; GRANT EXECUTE ON FUNCTION public.current_shop_id() TO authenticated;
+CREATE POLICY shops_member_read ON public.shops FOR SELECT TO authenticated USING(id=public.current_shop_id());
+CREATE POLICY memberships_shop_read ON public.shop_memberships FOR SELECT TO authenticated USING(shop_id=public.current_shop_id());
+CREATE TABLE public.shop_settings (shop_id uuid PRIMARY KEY REFERENCES public.shops(id), shop_name text NOT NULL, logo_url text, address text, phone text, whatsapp text, email text, primary_currency public.currency_code NOT NULL DEFAULT 'USD', usd_to_cdf_rate numeric NOT NULL DEFAULT 2800, low_stock_threshold integer NOT NULL DEFAULT 5, invoice_prefix text NOT NULL DEFAULT 'FAC', legal_mentions text, document_theme_color text, extras jsonb NOT NULL DEFAULT '{}', updated_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT, UPDATE ON public.shop_settings TO authenticated; GRANT ALL ON public.shop_settings TO service_role;
+ALTER TABLE public.shop_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY shop_settings_read ON public.shop_settings FOR SELECT TO authenticated USING(shop_id=public.current_shop_id());
+CREATE POLICY shop_settings_owner_update ON public.shop_settings FOR UPDATE TO authenticated USING(shop_id=public.current_shop_id() AND EXISTS(SELECT 1 FROM public.shops WHERE id=shop_id AND owner_id=auth.uid())) WITH CHECK(shop_id=public.current_shop_id());
+CREATE FUNCTION public.initialize_shop(_name text, _logo text DEFAULT NULL, _phone text DEFAULT NULL, _address text DEFAULT NULL, _email text DEFAULT NULL, _theme text DEFAULT 'emerald') RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE sid uuid; BEGIN
+IF auth.uid() IS NULL THEN RAISE EXCEPTION 'unauthenticated'; END IF;
+IF length(trim(_name))<2 THEN RAISE EXCEPTION 'Nom de boutique requis'; END IF;
+IF _theme NOT IN ('emerald','blue','rose','graphite') THEN RAISE EXCEPTION 'Couleur invalide'; END IF;
+SELECT shop_id INTO sid FROM public.shop_memberships WHERE user_id=auth.uid(); IF sid IS NOT NULL THEN RETURN sid; END IF;
+INSERT INTO public.shops(owner_id) VALUES(auth.uid()) RETURNING id INTO sid;
+INSERT INTO public.shop_memberships(user_id,shop_id) VALUES(auth.uid(),sid);
+INSERT INTO public.shop_settings(shop_id,shop_name,logo_url,phone,address,email,extras) VALUES(sid,trim(_name),_logo,_phone,_address,_email,jsonb_build_object('dashboard_theme',_theme));
+INSERT INTO public.profiles(id,full_name) VALUES(auth.uid(),COALESCE(auth.jwt()->'user_metadata'->>'full_name','Propriétaire')) ON CONFLICT(id) DO NOTHING;
+INSERT INTO public.user_roles(user_id,role) VALUES(auth.uid(),'admin') ON CONFLICT(user_id,role) DO NOTHING;
+RETURN sid; END $$;
+REVOKE ALL ON FUNCTION public.initialize_shop(text,text,text,text,text,text) FROM PUBLIC; GRANT EXECUTE ON FUNCTION public.initialize_shop(text,text,text,text,text,text) TO authenticated;
+CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid,_role public.app_role) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM public.user_roles r JOIN public.shop_memberships m ON m.user_id=r.user_id WHERE r.user_id=_user_id AND r.role=_role AND m.shop_id=public.current_shop_id()) $$;
+CREATE OR REPLACE FUNCTION public.has_any_role(_user_id uuid,_roles public.app_role[]) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM public.user_roles r JOIN public.shop_memberships m ON m.user_id=r.user_id WHERE r.user_id=_user_id AND r.role=ANY(_roles) AND m.shop_id=public.current_shop_id()) $$;
+CREATE POLICY roles_shop_boundary ON public.user_roles AS RESTRICTIVE FOR ALL TO authenticated USING(EXISTS(SELECT 1 FROM public.shop_memberships m WHERE m.user_id=user_roles.user_id AND m.shop_id=public.current_shop_id())) WITH CHECK(EXISTS(SELECT 1 FROM public.shop_memberships m WHERE m.user_id=user_roles.user_id AND m.shop_id=public.current_shop_id()));
+CREATE POLICY profiles_shop_boundary ON public.profiles AS RESTRICTIVE FOR ALL TO authenticated USING(id=auth.uid() OR EXISTS(SELECT 1 FROM public.shop_memberships m WHERE m.user_id=profiles.id AND m.shop_id=public.current_shop_id())) WITH CHECK(id=auth.uid());
+DO $$ DECLARE t text; BEGIN FOREACH t IN ARRAY ARRAY['products','categories','customers','customer_ledger','sales','sale_items','payments','stock_movements','cash_sessions','document_registry','documents_settings','sync_operations','team_members','activity_log','notifications','suppliers','purchases','purchase_items','employees','expenses','expense_categories','salary_payments','rent_payments','interventions','quote_requests','message_replies','invitations','product_images','product_suppliers','online_orders','order_items','product_reviews'] LOOP
+EXECUTE format('ALTER TABLE public.%I ADD COLUMN shop_id uuid REFERENCES public.shops(id) DEFAULT public.current_shop_id()',t);
+EXECUTE format('CREATE INDEX ON public.%I(shop_id)',t);
+EXECUTE format('CREATE POLICY shop_boundary ON public.%I AS RESTRICTIVE FOR ALL TO authenticated USING(shop_id=public.current_shop_id()) WITH CHECK(shop_id=public.current_shop_id())',t);
+EXECUTE format('REVOKE ALL ON public.%I FROM anon',t);
+END LOOP; END $$;
+ALTER TABLE public.products DROP CONSTRAINT products_sku_key; ALTER TABLE public.products ADD UNIQUE(shop_id,sku);
+ALTER TABLE public.document_registry DROP CONSTRAINT document_registry_doc_type_doc_number_key; ALTER TABLE public.document_registry ADD UNIQUE(shop_id,doc_type,doc_number);
+CREATE TABLE public.shop_document_counters(shop_id uuid NOT NULL DEFAULT public.current_shop_id() REFERENCES public.shops(id),doc_type text NOT NULL,year integer NOT NULL,last_number integer NOT NULL DEFAULT 0,PRIMARY KEY(shop_id,doc_type,year));
+GRANT SELECT,INSERT,UPDATE ON public.shop_document_counters TO authenticated; GRANT ALL ON public.shop_document_counters TO service_role;
+ALTER TABLE public.shop_document_counters ENABLE ROW LEVEL SECURITY;
+CREATE POLICY counter_shop ON public.shop_document_counters FOR ALL TO authenticated USING(shop_id=public.current_shop_id()) WITH CHECK(shop_id=public.current_shop_id());
+CREATE OR REPLACE FUNCTION public.issue_document_number(_doc_type text,_sale_id uuid DEFAULT NULL,_customer_name text DEFAULT NULL,_total_usd numeric DEFAULT 0) RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$ DECLARE sid uuid:=public.current_shop_id(); n integer; y integer:=extract(year from now()); c text; rid uuid; BEGIN
+IF sid IS NULL OR NOT public.has_any_role(auth.uid(),ARRAY['admin','manager','caissier','vendeur']::public.app_role[]) THEN RAISE EXCEPTION 'forbidden'; END IF;
+IF _doc_type NOT IN ('facture','recu') THEN RAISE EXCEPTION 'invalid_type'; END IF;
+IF _sale_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.sales WHERE id=_sale_id) THEN RAISE EXCEPTION 'sale_not_found'; END IF;
+INSERT INTO public.shop_document_counters(shop_id,doc_type,year,last_number) VALUES(sid,_doc_type,y,1) ON CONFLICT(shop_id,doc_type,year) DO UPDATE SET last_number=shop_document_counters.last_number+1 RETURNING last_number INTO n;
+c:=CASE WHEN _doc_type='facture' THEN 'FACT' ELSE 'RECU' END||'-'||left(sid::text,8)||'-'||y||'-'||lpad(n::text,5,'0');
+INSERT INTO public.document_registry(doc_type,doc_number,code,sale_id,customer_name,total_usd,generated_by) VALUES(_doc_type,n,c,_sale_id,_customer_name,_total_usd,auth.uid()) RETURNING id INTO rid;
+RETURN jsonb_build_object('id',rid,'code',c,'number',n,'doc_type',_doc_type,'year',y); END $$;
+DO $$ DECLARE r record; body text; BEGIN FOR r IN SELECT p.oid,p.proname,pg_get_functiondef(p.oid) def FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('adjust_stock','cancel_sale','create_pos_sale','sync_apply_operation','record_customer_payment','receive_purchase','list_trash_items','restore_trash_item','purge_trash_item','next_sale_code','next_purchase_code','next_order_code','next_intervention_code','log_auth_event') LOOP
+body:=replace(r.def,'SECURITY DEFINER','SECURITY INVOKER');
+body:=replace(body,'FROM public.settings WHERE id=1','FROM public.shop_settings WHERE shop_id=public.current_shop_id()');
+EXECUTE body;
+EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon',r.oid::regprocedure);
+EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO authenticated',r.oid::regprocedure);
+END LOOP; END $$;
+DO $$ DECLARE r record; BEGIN FOR r IN SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('create_online_order','claim_my_orders','claim_order_by_code','check_invitation') LOOP EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon, authenticated',r.oid::regprocedure); END LOOP; END $$;
+GRANT SELECT,INSERT,UPDATE ON public.sales TO authenticated;
+GRANT SELECT,INSERT ON public.sale_items,public.document_registry,public.sync_operations,public.stock_movements,public.customer_ledger TO authenticated;
+CREATE POLICY sales_staff_insert ON public.sales FOR INSERT TO authenticated WITH CHECK(public.has_any_role(auth.uid(),ARRAY['admin','manager','caissier','vendeur']::public.app_role[]));
+CREATE POLICY registry_staff_insert ON public.document_registry FOR INSERT TO authenticated WITH CHECK(public.has_any_role(auth.uid(),ARRAY['admin','manager','caissier','vendeur']::public.app_role[]));
+CREATE POLICY sync_staff_insert ON public.sync_operations FOR INSERT TO authenticated WITH CHECK(user_id=auth.uid());
+CREATE FUNCTION public.check_shop_relationships() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE row_data jsonb:=to_jsonb(NEW); col text; target text; ref_id uuid; target_shop uuid; BEGIN
+IF NEW.shop_id IS NULL THEN RAISE EXCEPTION 'Boutique requise'; END IF;
+FOREACH col IN ARRAY ARRAY['product_id','category_id','customer_id','sale_id','session_id','parent_id','supplier_id','purchase_id','employee_id','quote_request_id','order_id'] LOOP
+ref_id:=NULLIF(row_data->>col,'')::uuid; IF ref_id IS NULL THEN CONTINUE; END IF;
+target:=CASE col WHEN 'product_id' THEN 'products' WHEN 'category_id' THEN CASE WHEN TG_TABLE_NAME='expenses' THEN 'expense_categories' ELSE 'categories' END WHEN 'customer_id' THEN 'customers' WHEN 'sale_id' THEN 'sales' WHEN 'session_id' THEN 'cash_sessions' WHEN 'parent_id' THEN 'categories' WHEN 'supplier_id' THEN 'suppliers' WHEN 'purchase_id' THEN 'purchases' WHEN 'employee_id' THEN 'employees' WHEN 'quote_request_id' THEN 'quote_requests' WHEN 'order_id' THEN 'online_orders' END;
+EXECUTE format('SELECT shop_id FROM public.%I WHERE id=$1',target) INTO target_shop USING ref_id;
+IF target_shop IS DISTINCT FROM NEW.shop_id THEN RAISE EXCEPTION 'Référence extérieure à la boutique'; END IF; END LOOP; RETURN NEW; END $$;
+DO $$ DECLARE t text; BEGIN FOREACH t IN ARRAY ARRAY['products','categories','sales','sale_items','payments','stock_movements','customer_ledger','document_registry','product_images','product_suppliers','purchase_items','purchases','expenses','salary_payments','interventions','message_replies','order_items'] LOOP EXECUTE format('CREATE TRIGGER shop_relationships BEFORE INSERT OR UPDATE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.check_shop_relationships()',t); END LOOP; END $$;
+COMMENT ON TABLE public.settings IS 'DEPRECATED: global settings replaced by shop_settings for independent shops';
+COMMENT ON TABLE public.online_orders IS 'DEPRECATED: online storefront removed';
