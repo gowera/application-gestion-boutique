@@ -67,7 +67,7 @@ function AuthPage() {
       });
       setLoading(false);
       if (error) return toast.error(error.message);
-      toast.success("Compte créé — bienvenue dans votre espace client.");
+      toast.success("Compte créé — bienvenue.");
     }
   }
 
@@ -97,7 +97,7 @@ function AuthPage() {
               {mode === "login" ? "Connexion" : "Créer un compte"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {mode === "login" ? "Accédez à votre espace client ou d'administration." : "Ouvrez votre compte client CONETEC."}
+              {mode === "login" ? "Accédez à votre espace de gestion." : "Créez votre compte de gestion."}
             </p>
             {desktopOffline ? (
               <div className="mt-6 space-y-4">
@@ -131,9 +131,6 @@ function AuthPage() {
             >
               {mode === "login" ? "Pas encore de compte ? Créer un compte" : "J'ai déjà un compte — Se connecter"}
             </button>}
-            <Link to="/" className="mt-6 block text-center text-xs text-muted-foreground hover:text-foreground">
-              ← Retour au site public
-            </Link>
           </CardContent>
         </Card>
       </div>
