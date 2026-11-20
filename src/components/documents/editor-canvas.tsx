@@ -198,8 +198,8 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
                 return (
                   <div key={el.id} onPointerDown={(e) => onPointerDown(e, el.id)}
                     style={{ ...style, width: (el.w ?? 30) * ppm, height: (el.h ?? 15) * ppm, background: "#FFF", border: isSel ? undefined : "1px dashed #CBD5E1", overflow: "visible" }}>
-                    <img src={logoUrl} alt="Logo" draggable={false}
-                      style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none", userSelect: "none" }} />
+                    {logoUrl && <img src={logoUrl} alt="Logo" draggable={false}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none", userSelect: "none" }} />}
                     {isSel && <ResizeHandle onPointerDown={(e) => onResizePointerDown(e, el.id)} />}
                   </div>
                 );

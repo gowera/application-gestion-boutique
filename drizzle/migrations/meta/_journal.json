@@ -8,6 +8,13 @@
       "when": 1795077485847,
       "tag": "0000_independent_shop_management",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795156368659,
+      "tag": "0001_owner_shop_on_signup",
+      "breakpoints": true
     }
   ]
 }

@@ -3,7 +3,9 @@ import {
   LayoutDashboard, Package, ShoppingCart, Receipt, Users, Wallet, Settings as SettingsIcon,
   Inbox, UserCog, Zap, Boxes, Wrench, Home, FolderTree, ChartBar, ShoppingBag, Briefcase, Activity, FileText, Users2, History, RefreshCw,
 } from "lucide-react";
-import logo from "@/assets/brand/logo.png";
+import { Store } from "lucide-react";
+import { useLogoUrl } from "@/lib/logo";
+import { useSettings } from "@/lib/currency";
 import { useAllowedMenus } from "@/lib/permissions";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -53,6 +55,8 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { allowed } = useAllowedMenus();
+  const logoUrl = useLogoUrl();
+  const { data: settings } = useSettings();
   const visibleGroups = groups
     .map((g) => ({ ...g, items: g.items.filter((i) => allowed.includes(i.url)) }))
     .filter((g) => g.items.length > 0);
@@ -65,12 +69,12 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border/50">
         <Link to="/admin" onClick={closeOnMobile} className="flex items-center gap-2 px-2 py-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white/90 p-1 shadow-sm">
-            <img src={logo} alt="CONETEC" className="h-7 w-7 object-contain" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-card p-1 text-primary shadow-sm">
+            {logoUrl ? <img src={logoUrl} alt="Logo" className="h-7 w-7 object-contain" /> : <Store className="h-5 w-5" />}
           </div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
-            <span className="text-display text-sm font-bold text-sidebar-foreground">CONETEC</span>
-            <span className="text-[10px] uppercase tracking-widest text-sidebar-foreground/60">Admin</span>
+            <span className="text-display text-sm font-bold text-sidebar-foreground">{settings?.shop_name || "Ma boutique"}</span>
+            <span className="text-[10px] uppercase tracking-widest text-sidebar-foreground/60">Gestion</span>
           </div>
         </Link>
       </SidebarHeader>

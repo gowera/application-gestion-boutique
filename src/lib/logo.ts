@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSettings } from "@/lib/currency";
 import { resolveImageUrl } from "@/lib/storage";
-import fallbackLogo from "@/assets/brand/logo.png";
+const fallbackLogo = "";
 
 /** Displayable URL of the shop logo (settings logo, or bundled CONETEC logo). */
 export function useLogoUrl(): string {
@@ -48,6 +48,7 @@ export function useLogoDataUrl(): string | undefined {
 export async function loadLogoDataUrl(logoUrl?: string | null): Promise<string | undefined> {
   try {
     const src = (await resolveImageUrl(logoUrl)) || fallbackLogo;
+    if (!src) return undefined;
     if (src.startsWith("data:")) return src;
     const res = await fetch(src);
     const blob = await res.blob();

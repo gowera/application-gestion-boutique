@@ -18,7 +18,7 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  shop_name: "CONETEC",
+  shop_name: "Ma boutique",
   logo_url: null,
   address: null,
   phone: null,

@@ -94,7 +94,7 @@ function AuthenticatedLayout() {
         <OfflineSetup />
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur">
           <SidebarTrigger />
-          <div className="text-display text-sm font-semibold text-primary">CONETEC · Administration</div>
+          <div className="text-display text-sm font-semibold text-primary">Gestion de stock & vente</div>
           <div className="ml-auto flex items-center gap-2">
             <SyncStatus />
             <NotificationsCenter />
