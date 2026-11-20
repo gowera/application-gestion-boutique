@@ -11,22 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as BoutiqueRouteImport } from './routes/boutique'
-import { Route as CheckoutRouteImport } from './routes/checkout'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as DevisRouteImport } from './routes/devis'
-import { Route as EquipeRouteImport } from './routes/equipe'
-import { Route as MonCompteRouteImport } from './routes/mon-compte'
-import { Route as PanierRouteImport } from './routes/panier'
-import { Route as ServicesRouteImport } from './routes/services'
-import { Route as BoutiqueProductIdRouteImport } from './routes/boutique.$productId'
-import { Route as CommandeCodeRouteImport } from './routes/commande.$code'
 import { Route as MagicLinkTokenRouteImport } from './routes/magic-link.$token'
-import { Route as ProduitProductIdRouteImport } from './routes/produit.$productId'
-import { Route as ServicesIndexRouteImport } from './routes/services.index'
-import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminCaisseRouteImport } from './routes/_authenticated/admin/caisse'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin/categories'
@@ -67,85 +53,15 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AProposRoute = AProposRouteImport.update({
-  id: '/a-propos',
-  path: '/a-propos',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BoutiqueRoute = BoutiqueRouteImport.update({
-  id: '/boutique',
-  path: '/boutique',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevisRoute = DevisRouteImport.update({
-  id: '/devis',
-  path: '/devis',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EquipeRoute = EquipeRouteImport.update({
-  id: '/equipe',
-  path: '/equipe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MonCompteRoute = MonCompteRouteImport.update({
-  id: '/mon-compte',
-  path: '/mon-compte',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PanierRoute = PanierRouteImport.update({
-  id: '/panier',
-  path: '/panier',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ServicesRoute = ServicesRouteImport.update({
-  id: '/services',
-  path: '/services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BoutiqueProductIdRoute = BoutiqueProductIdRouteImport.update({
-  id: '/$productId',
-  path: '/$productId',
-  getParentRoute: () => BoutiqueRoute,
-} as any)
-const CommandeCodeRoute = CommandeCodeRouteImport.update({
-  id: '/commande/$code',
-  path: '/commande/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MagicLinkTokenRoute = MagicLinkTokenRouteImport.update({
   id: '/magic-link/$token',
   path: '/magic-link/$token',
   getParentRoute: () => rootRouteImport,
-} as any)
-const ProduitProductIdRoute = ProduitProductIdRouteImport.update({
-  id: '/produit/$productId',
-  path: '/produit/$productId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ServicesIndexRoute = ServicesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ServicesRoute,
-} as any)
-const ServicesSlugRoute = ServicesSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => ServicesRoute,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/admin/',
@@ -319,22 +235,8 @@ const ApiPublicOgProductProductIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/a-propos': typeof AProposRoute
   '/auth': typeof AuthRoute
-  '/boutique': typeof BoutiqueRouteWithChildren
-  '/checkout': typeof CheckoutRoute
-  '/contact': typeof ContactRoute
-  '/devis': typeof DevisRoute
-  '/equipe': typeof EquipeRoute
-  '/mon-compte': typeof MonCompteRoute
-  '/panier': typeof PanierRoute
-  '/services': typeof ServicesRouteWithChildren
-  '/boutique/$productId': typeof BoutiqueProductIdRoute
-  '/commande/$code': typeof CommandeCodeRoute
   '/magic-link/$token': typeof MagicLinkTokenRoute
-  '/produit/$productId': typeof ProduitProductIdRoute
-  '/services/$slug': typeof ServicesSlugRoute
-  '/services/': typeof ServicesIndexRoute
   '/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
@@ -368,21 +270,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/a-propos': typeof AProposRoute
   '/auth': typeof AuthRoute
-  '/boutique': typeof BoutiqueRouteWithChildren
-  '/checkout': typeof CheckoutRoute
-  '/contact': typeof ContactRoute
-  '/devis': typeof DevisRoute
-  '/equipe': typeof EquipeRoute
-  '/mon-compte': typeof MonCompteRoute
-  '/panier': typeof PanierRoute
-  '/boutique/$productId': typeof BoutiqueProductIdRoute
-  '/commande/$code': typeof CommandeCodeRoute
   '/magic-link/$token': typeof MagicLinkTokenRoute
-  '/produit/$productId': typeof ProduitProductIdRoute
-  '/services/$slug': typeof ServicesSlugRoute
-  '/services': typeof ServicesIndexRoute
   '/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
@@ -418,22 +307,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/a-propos': typeof AProposRoute
   '/auth': typeof AuthRoute
-  '/boutique': typeof BoutiqueRouteWithChildren
-  '/checkout': typeof CheckoutRoute
-  '/contact': typeof ContactRoute
-  '/devis': typeof DevisRoute
-  '/equipe': typeof EquipeRoute
-  '/mon-compte': typeof MonCompteRoute
-  '/panier': typeof PanierRoute
-  '/services': typeof ServicesRouteWithChildren
-  '/boutique/$productId': typeof BoutiqueProductIdRoute
-  '/commande/$code': typeof CommandeCodeRoute
   '/magic-link/$token': typeof MagicLinkTokenRoute
-  '/produit/$productId': typeof ProduitProductIdRoute
-  '/services/$slug': typeof ServicesSlugRoute
-  '/services/': typeof ServicesIndexRoute
   '/_authenticated/admin/caisse': typeof AuthenticatedAdminCaisseRoute
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
@@ -469,22 +344,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/a-propos'
     | '/auth'
-    | '/boutique'
-    | '/checkout'
-    | '/contact'
-    | '/devis'
-    | '/equipe'
-    | '/mon-compte'
-    | '/panier'
-    | '/services'
-    | '/boutique/$productId'
-    | '/commande/$code'
     | '/magic-link/$token'
-    | '/produit/$productId'
-    | '/services/$slug'
-    | '/services/'
     | '/admin/caisse'
     | '/admin/categories'
     | '/admin/customers'
@@ -518,21 +379,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/a-propos'
     | '/auth'
-    | '/boutique'
-    | '/checkout'
-    | '/contact'
-    | '/devis'
-    | '/equipe'
-    | '/mon-compte'
-    | '/panier'
-    | '/boutique/$productId'
-    | '/commande/$code'
     | '/magic-link/$token'
-    | '/produit/$productId'
-    | '/services/$slug'
-    | '/services'
     | '/admin/caisse'
     | '/admin/categories'
     | '/admin/customers'
@@ -567,22 +415,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/a-propos'
     | '/auth'
-    | '/boutique'
-    | '/checkout'
-    | '/contact'
-    | '/devis'
-    | '/equipe'
-    | '/mon-compte'
-    | '/panier'
-    | '/services'
-    | '/boutique/$productId'
-    | '/commande/$code'
     | '/magic-link/$token'
-    | '/produit/$productId'
-    | '/services/$slug'
-    | '/services/'
     | '/_authenticated/admin/caisse'
     | '/_authenticated/admin/categories'
     | '/_authenticated/admin/customers'
@@ -618,19 +452,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AProposRoute: typeof AProposRoute
   AuthRoute: typeof AuthRoute
-  BoutiqueRoute: typeof BoutiqueRouteWithChildren
-  CheckoutRoute: typeof CheckoutRoute
-  ContactRoute: typeof ContactRoute
-  DevisRoute: typeof DevisRoute
-  EquipeRoute: typeof EquipeRoute
-  MonCompteRoute: typeof MonCompteRoute
-  PanierRoute: typeof PanierRoute
-  ServicesRoute: typeof ServicesRouteWithChildren
-  CommandeCodeRoute: typeof CommandeCodeRoute
   MagicLinkTokenRoute: typeof MagicLinkTokenRoute
-  ProduitProductIdRoute: typeof ProduitProductIdRoute
   SalaireConfirmerTokenRoute: typeof SalaireConfirmerTokenRoute
   ApiPublicShwaryCallbackRoute: typeof ApiPublicShwaryCallbackRoute
   ApiPublicOgProductProductIdRoute: typeof ApiPublicOgProductProductIdRoute
@@ -652,88 +475,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/a-propos': {
-      id: '/a-propos'
-      path: '/a-propos'
-      fullPath: '/a-propos'
-      preLoaderRoute: typeof AProposRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth': {
       id: '/auth'
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/boutique': {
-      id: '/boutique'
-      path: '/boutique'
-      fullPath: '/boutique'
-      preLoaderRoute: typeof BoutiqueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/devis': {
-      id: '/devis'
-      path: '/devis'
-      fullPath: '/devis'
-      preLoaderRoute: typeof DevisRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/equipe': {
-      id: '/equipe'
-      path: '/equipe'
-      fullPath: '/equipe'
-      preLoaderRoute: typeof EquipeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mon-compte': {
-      id: '/mon-compte'
-      path: '/mon-compte'
-      fullPath: '/mon-compte'
-      preLoaderRoute: typeof MonCompteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/panier': {
-      id: '/panier'
-      path: '/panier'
-      fullPath: '/panier'
-      preLoaderRoute: typeof PanierRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/services': {
-      id: '/services'
-      path: '/services'
-      fullPath: '/services'
-      preLoaderRoute: typeof ServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/boutique/$productId': {
-      id: '/boutique/$productId'
-      path: '/$productId'
-      fullPath: '/boutique/$productId'
-      preLoaderRoute: typeof BoutiqueProductIdRouteImport
-      parentRoute: typeof BoutiqueRoute
-    }
-    '/commande/$code': {
-      id: '/commande/$code'
-      path: '/commande/$code'
-      fullPath: '/commande/$code'
-      preLoaderRoute: typeof CommandeCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/magic-link/$token': {
@@ -742,27 +488,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/magic-link/$token'
       preLoaderRoute: typeof MagicLinkTokenRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/produit/$productId': {
-      id: '/produit/$productId'
-      path: '/produit/$productId'
-      fullPath: '/produit/$productId'
-      preLoaderRoute: typeof ProduitProductIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/services/': {
-      id: '/services/'
-      path: '/'
-      fullPath: '/services/'
-      preLoaderRoute: typeof ServicesIndexRouteImport
-      parentRoute: typeof ServicesRoute
-    }
-    '/services/$slug': {
-      id: '/services/$slug'
-      path: '/$slug'
-      fullPath: '/services/$slug'
-      preLoaderRoute: typeof ServicesSlugRouteImport
-      parentRoute: typeof ServicesRoute
     }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
@@ -1054,48 +779,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface BoutiqueRouteChildren {
-  BoutiqueProductIdRoute: typeof BoutiqueProductIdRoute
-}
-
-const BoutiqueRouteChildren: BoutiqueRouteChildren = {
-  BoutiqueProductIdRoute: BoutiqueProductIdRoute,
-}
-
-const BoutiqueRouteWithChildren = BoutiqueRoute._addFileChildren(
-  BoutiqueRouteChildren,
-)
-
-interface ServicesRouteChildren {
-  ServicesSlugRoute: typeof ServicesSlugRoute
-  ServicesIndexRoute: typeof ServicesIndexRoute
-}
-
-const ServicesRouteChildren: ServicesRouteChildren = {
-  ServicesSlugRoute: ServicesSlugRoute,
-  ServicesIndexRoute: ServicesIndexRoute,
-}
-
-const ServicesRouteWithChildren = ServicesRoute._addFileChildren(
-  ServicesRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AProposRoute: AProposRoute,
   AuthRoute: AuthRoute,
-  BoutiqueRoute: BoutiqueRouteWithChildren,
-  CheckoutRoute: CheckoutRoute,
-  ContactRoute: ContactRoute,
-  DevisRoute: DevisRoute,
-  EquipeRoute: EquipeRoute,
-  MonCompteRoute: MonCompteRoute,
-  PanierRoute: PanierRoute,
-  ServicesRoute: ServicesRouteWithChildren,
-  CommandeCodeRoute: CommandeCodeRoute,
   MagicLinkTokenRoute: MagicLinkTokenRoute,
-  ProduitProductIdRoute: ProduitProductIdRoute,
   SalaireConfirmerTokenRoute: SalaireConfirmerTokenRoute,
   ApiPublicShwaryCallbackRoute: ApiPublicShwaryCallbackRoute,
   ApiPublicOgProductProductIdRoute: ApiPublicOgProductProductIdRoute,

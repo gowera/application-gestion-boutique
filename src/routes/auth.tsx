@@ -11,10 +11,10 @@ import { STAFF_ROLES } from "@/lib/permissions";
 import { setOfflineUnlocked } from "@/lib/offline/auth";
 import { setLocalUser } from "@/lib/offline/store";
 
-async function landingFor(userId: string): Promise<"/admin" | "/mon-compte"> {
+async function landingFor(userId: string): Promise<"/admin"> {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   const list = (data ?? []).map((r) => r.role as string);
-  return list.some((r) => (STAFF_ROLES as string[]).includes(r)) ? "/admin" : "/mon-compte";
+  return list.some((r) => (STAFF_ROLES as string[]).includes(r)) ? "/admin" : "/admin";
 }
 
 
@@ -61,7 +61,7 @@ function AuthPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/mon-compte`,
+          emailRedirectTo: `${window.location.origin}/admin`,
           data: { full_name: fullName },
         },
       });

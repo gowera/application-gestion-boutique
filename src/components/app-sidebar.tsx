@@ -21,12 +21,8 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
   {
     label: "Commercial",
     items: [
-      { title: "Commandes en ligne", url: "/admin/orders", icon: ShoppingBag },
       { title: "Ventes", url: "/admin/sales", icon: Receipt },
       { title: "Documents", url: "/admin/documents", icon: FileText },
-      { title: "Clients & crédits", url: "/admin/customers", icon: Users },
-      { title: "Interventions & SAV", url: "/admin/interventions", icon: Wrench },
-      { title: "Devis & messages", url: "/admin/messages", icon: Inbox },
     ],
   },
   {
@@ -35,15 +31,11 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
       { title: "Produits & stock", url: "/admin/products", icon: Package },
       { title: "Traçabilité stock", url: "/admin/stock", icon: Activity },
       { title: "Catégories", url: "/admin/categories", icon: FolderTree },
-      { title: "Achats & fournisseurs", url: "/admin/purchases", icon: Boxes },
     ],
   },
   {
     label: "Finance & RH",
     items: [
-      { title: "Dépenses", url: "/admin/expenses", icon: Wallet },
-      { title: "Loyer", url: "/admin/rent", icon: Home },
-      { title: "Employés & salaires", url: "/admin/employees", icon: Briefcase },
       { title: "Rapports de caisse", url: "/admin/reports", icon: ChartBar },
     ],
   },
@@ -53,7 +45,6 @@ const groups: { label: string; items: { title: string; url: string; icon: typeof
       { title: "Espace équipe", url: "/admin/team", icon: Users2 },
       { title: "Rôles utilisateurs", url: "/admin/users", icon: UserCog },
       { title: "Historique & audit", url: "/admin/history", icon: History },
-      { title: "Synchronisation", url: "/admin/sync", icon: RefreshCw },
       { title: "Paramètres", url: "/admin/settings", icon: SettingsIcon },
     ],
   },

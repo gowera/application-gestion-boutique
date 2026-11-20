@@ -135,7 +135,6 @@ function DashboardPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="lg" className="gap-2 bg-white/10 border-white/20 text-primary-foreground hover:bg-white/20"><Link to="/boutique" target="_blank" rel="noreferrer"><ArrowRight className="h-4 w-4" />Voir le site</Link></Button>
             <Button asChild size="lg" className="gap-2 bg-white text-primary hover:bg-white/90"><Link to="/admin/pos"><Store className="h-4 w-4" />Vente directe</Link></Button>
             <Button asChild size="lg" className="gap-2 bg-energy text-energy-foreground hover:bg-energy/90"><Link to="/admin/reports"><Banknote className="h-4 w-4" />Rapport de caisse</Link></Button>
           </div>

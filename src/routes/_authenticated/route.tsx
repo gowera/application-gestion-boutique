@@ -55,7 +55,7 @@ export const Route = createFileRoute("/_authenticated")({
         _action: "auth.denied",
         _metadata: { path: typeof window !== "undefined" ? window.location.pathname : null, roles: list },
       }).then(() => {}, () => {});
-      throw redirect({ to: "/mon-compte" });
+      throw redirect({ to: "/auth" });
     }
     return { user };
   },
