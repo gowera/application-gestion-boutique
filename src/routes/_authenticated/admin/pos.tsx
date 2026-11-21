@@ -145,7 +145,7 @@ function PosPage() {
           }
           downloadReceipt({
             logoDataUrl,
-            shopName: settings?.shop_name ?? "CONETEC",
+            shopName: settings?.shop_name ?? "Ma boutique",
             address: settings?.address ?? "",
             phone: settings?.phone ?? "",
             code: docCode, customer: customerName,
@@ -300,7 +300,7 @@ function PosPage() {
               const customerName = customers?.find((c) => c.id === customerId)?.name ?? "Client anonyme";
               const docLabel: "Facture" | "Reçu" = documentType === "Facture" ? "Facture" : "Reçu";
               return {
-                shopName: settings?.shop_name ?? "CONETEC",
+                shopName: settings?.shop_name ?? "Ma boutique",
                 address: settings?.address ?? "",
                 phone: settings?.phone ?? "",
                 code: "APERÇU",

@@ -97,7 +97,7 @@ export function ProductReviews({ productId }: { productId: string }) {
           ))}
         </div>
         <p className="mt-4 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <ShieldCheck className="h-3.5 w-3.5 text-energy" /> Avis de clients CONETEC
+          <ShieldCheck className="h-3.5 w-3.5 text-energy" /> Avis de clients Gestion Stock
         </p>
         <Button className="mt-4 w-full bg-energy text-energy-foreground hover:bg-energy/90" onClick={() => setOpen((v) => !v)}>
           <MessageSquarePlus className="mr-2 h-4 w-4" /> Laisser un avis

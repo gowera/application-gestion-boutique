@@ -60,7 +60,7 @@ export function OfflineSetup() {
         <DialogContent onEscapeKeyDown={(event) => event.preventDefault()} onPointerDownOutside={(event) => event.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" />Activer l’accès hors ligne</DialogTitle>
-            <DialogDescription>Créez un PIN propre à cet ordinateur. Il déverrouillera uniquement les données locales ; votre mot de passe CONETEC n’est jamais enregistré.</DialogDescription>
+            <DialogDescription>Créez un PIN propre à cet ordinateur. Il déverrouillera uniquement les données locales ; votre mot de passe Gestion Stock n’est jamais enregistré.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div><Label>PIN (4 à 8 chiffres)</Label><Input type="password" inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 8))} /></div>

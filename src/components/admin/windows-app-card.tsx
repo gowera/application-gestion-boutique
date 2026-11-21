@@ -83,7 +83,7 @@ export function WindowsAppCard() {
       const blobUrl = URL.createObjectURL(new Blob(blobParts, { type: contentType }));
       const anchor = document.createElement("a");
       anchor.href = blobUrl;
-      anchor.download = `CONETEC-Setup-${version}.exe`;
+      anchor.download = `GestionStock-Setup-${version}.exe`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -111,9 +111,9 @@ export function WindowsAppCard() {
         </div>
         <div className="flex-1 min-w-[220px]">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Application Windows</div>
-          <div className="text-display text-xl font-bold">CONETEC Admin pour PC</div>
+          <div className="text-display text-xl font-bold">Gestion Stock pour PC</div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Installeur Windows : lancez le fichier téléchargé. Un raccourci CONETEC sera créé sur le Bureau et dans le menu
+            Installeur Windows : lancez le fichier téléchargé. Un raccourci Gestion Stock sera créé sur le Bureau et dans le menu
             Démarrer. L’application fonctionne sans internet : les ventes, dépenses et
             clients saisis hors ligne sont envoyés au serveur dès que la connexion revient.
             {version && ` Version ${version}.`}

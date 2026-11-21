@@ -57,7 +57,7 @@ const server = createServer(async (req, res) => {
     res.end();
   } catch (error) {
     res.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
-    res.end(`CONETEC ne peut pas démarrer : ${error instanceof Error ? error.message : String(error)}`);
+    res.end(`Gestion Stock ne peut pas démarrer : ${error instanceof Error ? error.message : String(error)}`);
   }
 });
 

@@ -416,7 +416,7 @@ function CreditsTab() {
               <TableCell className="font-medium">{c.name}</TableCell>
               <TableCell className="text-xs">
                 {c.phone && <a href={`tel:${c.phone}`} className="hover:underline">{c.phone}</a>}
-                {c.phone && <a href={`https://wa.me/${c.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Bonjour ${c.name}, nous vous rappelons votre dette de ${formatMoney(Number(c.balance), currency, rate)} chez CONETEC.`)}`} target="_blank" rel="noreferrer" className="ml-2 text-emerald-600 hover:underline">WhatsApp</a>}
+                {c.phone && <a href={`https://wa.me/${c.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Bonjour ${c.name}, nous vous rappelons votre dette de ${formatMoney(Number(c.balance), currency, rate)} chez Gestion Stock.`)}`} target="_blank" rel="noreferrer" className="ml-2 text-emerald-600 hover:underline">WhatsApp</a>}
               </TableCell>
               <TableCell className="text-right text-sm">{formatMoney(Number(c.credit_limit), currency, rate)}</TableCell>
               <TableCell className="text-right font-semibold text-destructive">{formatMoney(Number(c.balance), currency, rate)}</TableCell>

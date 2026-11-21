@@ -4,7 +4,7 @@ const DEFAULT_LAT = -1.6602694;
 const DEFAULT_LNG = 29.2329362;
 
 export const DEFAULT_MAPS_LINK =
-  "https://www.google.com/maps/place/CONETEC/@-1.6602694,29.2329362,17z/data=!3m1!4b1!4m6!3m5!1s0x19dd0700216e9405:0xe8ad95d11188fb1a!8m2!3d-1.6602694!4d29.2329362!16s%2Fg%2F11zds3hsjh";
+  "https://www.google.com/maps/place/Gestion Stock/@-1.6602694,29.2329362,17z/data=!3m1!4b1!4m6!3m5!1s0x19dd0700216e9405:0xe8ad95d11188fb1a!8m2!3d-1.6602694!4d29.2329362!16s%2Fg%2F11zds3hsjh";
 
 /** @deprecated use useMapConfig().link */
 export const MAPS_LINK = DEFAULT_MAPS_LINK;

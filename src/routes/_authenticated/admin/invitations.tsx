@@ -31,8 +31,8 @@ function Page() {
       toast.success("Invitation créée");
       qc.invalidateQueries({ queryKey: ["invitations"] });
       const link = `${window.location.origin}/magic-link/${token}`;
-      if (phone) window.open(`https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Bonjour, vous êtes invité à rejoindre CONETEC. Ouvrez ce lien : ${link}`)}`, "_blank", "noopener,noreferrer");
-      if (email) window.location.href = `mailto:${email}?subject=${encodeURIComponent("Invitation CONETEC")}&body=${encodeURIComponent(`Bonjour, vous êtes invité à rejoindre CONETEC. Ouvrez ce lien : ${link}`)}`;
+      if (phone) window.open(`https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Bonjour, vous êtes invité à rejoindre Gestion Stock. Ouvrez ce lien : ${link}`)}`, "_blank", "noopener,noreferrer");
+      if (email) window.location.href = `mailto:${email}?subject=${encodeURIComponent("Invitation Gestion Stock")}&body=${encodeURIComponent(`Bonjour, vous êtes invité à rejoindre Gestion Stock. Ouvrez ce lien : ${link}`)}`;
       setEmail(""); setPhone(""); setRole("admin");
     },
     onError: (e: Error) => toast.error(e.message),

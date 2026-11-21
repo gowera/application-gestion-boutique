@@ -22,9 +22,9 @@ import {
 export const Route = createFileRoute("/_authenticated/admin/sync")({
   head: () => ({
     meta: [
-      { title: "Synchronisation & mode hors ligne — CONETEC" },
+      { title: "Synchronisation & mode hors ligne — Gestion Stock" },
       { name: "description", content: "Suivi de la file d'attente hors ligne, des envois réussis ou en échec et de la stratégie de résolution des conflits." },
-      { property: "og:title", content: "Synchronisation & mode hors ligne — CONETEC" },
+      { property: "og:title", content: "Synchronisation & mode hors ligne — Gestion Stock" },
       { property: "og:description", content: "File d'attente, envois réussis/échoués et résolution des conflits de données." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

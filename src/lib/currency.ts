@@ -27,16 +27,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
   primary_currency: "USD",
   usd_to_cdf_rate: 2800,
   low_stock_threshold: 5,
-  invoice_prefix: "CNT",
+  invoice_prefix: "FAC",
 };
 
 export function useSettings() {
   return useQuery({
     queryKey: ["settings"],
     queryFn: offlineQueryFn("query:settings", async (): Promise<AppSettings> => {
-      const { data, error } = await supabase.from("settings").select("*").eq("id", 1).maybeSingle();
+      const { data, error } = await supabase.from("shop_settings").select("*").maybeSingle();
       if (error) throw error;
-      return { ...DEFAULT_SETTINGS, ...(data ?? {}) } as AppSettings;
+      const extras = (data?.extras && typeof data.extras === "object" ? data.extras : {}) as Record<string, unknown>;
+      return { ...DEFAULT_SETTINGS, ...extras, ...(data ?? {}) } as unknown as AppSettings;
     }),
     staleTime: 5 * 60_000,
   });

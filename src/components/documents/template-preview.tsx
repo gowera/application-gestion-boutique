@@ -48,7 +48,7 @@ export function TemplatePreview({ template, docLabel }: { template: CanvasTempla
   const { data: settings } = useSettings();
   const logoDataUrl = useLogoDataUrl();
   const shop: ShopInfo = {
-    shopName: settings?.shop_name || "CONETEC",
+    shopName: settings?.shop_name || "Ma boutique",
     address: settings?.address || "",
     phone: settings?.phone || "",
     currency: (settings?.primary_currency ?? "USD") as "USD" | "CDF",

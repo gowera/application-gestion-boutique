@@ -3,7 +3,7 @@ import { useSettings } from "@/lib/currency";
 import { resolveImageUrl } from "@/lib/storage";
 const fallbackLogo = "";
 
-/** Displayable URL of the shop logo (settings logo, or bundled CONETEC logo). */
+/** Displayable URL of the shop logo (settings logo, or bundled Gestion Stock logo). */
 export function useLogoUrl(): string {
   const { data: settings } = useSettings();
   const [url, setUrl] = useState<string>(fallbackLogo);

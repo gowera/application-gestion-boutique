@@ -3,25 +3,25 @@ Unicode true
 !include "FileFunc.nsh"
 !include "LogicLib.nsh"
 
-!define APP_NAME "CONETEC Admin"
-!define APP_PUBLISHER "CONETEC Services"
-!define APP_VERSION "1.3.0"
-!define APP_EXE "CONETEC.exe"
-!define APP_REGKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\CONETECAdmin"
+!define APP_NAME "Gestion Stock"
+!define APP_PUBLISHER "Gestion Stock"
+!define APP_VERSION "1.4.0"
+!define APP_EXE "GestionStock.exe"
+!define APP_REGKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Gestion StockAdmin"
 
 Name "${APP_NAME}"
 OutFile "${OUTPUT_FILE}"
-InstallDir "$PROGRAMFILES64\CONETEC Admin"
-InstallDirRegKey HKLM "Software\CONETEC\Admin" "InstallDir"
+InstallDir "$PROGRAMFILES64\Gestion Stock"
+InstallDirRegKey HKLM "Software\GestionStock\Admin" "InstallDir"
 RequestExecutionLevel admin
 SetCompressor /SOLID lzma
 
-VIProductVersion "1.3.0.0"
+VIProductVersion "1.4.0.0"
 VIAddVersionKey "ProductName" "${APP_NAME}"
 VIAddVersionKey "CompanyName" "${APP_PUBLISHER}"
 VIAddVersionKey "FileDescription" "Installation de ${APP_NAME}"
 VIAddVersionKey "FileVersion" "${APP_VERSION}"
-VIAddVersionKey "LegalCopyright" "© CONETEC"
+VIAddVersionKey "LegalCopyright" "© GestionStock"
 
 !define MUI_ICON "${ICON_FILE}"
 !define MUI_UNICON "${ICON_FILE}"
@@ -37,19 +37,19 @@ VIAddVersionKey "LegalCopyright" "© CONETEC"
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "French"
 
-Section "CONETEC Admin" SEC_APP
+Section "Gestion Stock" SEC_APP
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   File /r "${APP_DIR}\*"
 
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
-  CreateDirectory "$SMPROGRAMS\CONETEC"
-  CreateShortcut "$SMPROGRAMS\CONETEC\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
-  CreateShortcut "$SMPROGRAMS\CONETEC\Désinstaller ${APP_NAME}.lnk" "$INSTDIR\Uninstall.exe"
+  CreateDirectory "$SMPROGRAMS\GestionStock"
+  CreateShortcut "$SMPROGRAMS\GestionStock\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
+  CreateShortcut "$SMPROGRAMS\GestionStock\Désinstaller ${APP_NAME}.lnk" "$INSTDIR\Uninstall.exe"
   CreateShortcut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
 
-  WriteRegStr HKLM "Software\CONETEC\Admin" "InstallDir" "$INSTDIR"
+  WriteRegStr HKLM "Software\GestionStock\Admin" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\${APP_EXE}" "" "$INSTDIR\${APP_EXE}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\${APP_EXE}" "Path" "$INSTDIR"
 
@@ -57,7 +57,7 @@ Section "CONETEC Admin" SEC_APP
   WriteRegStr HKLM "${APP_REGKEY}" "DisplayIcon" "$INSTDIR\${APP_EXE},0"
   WriteRegStr HKLM "${APP_REGKEY}" "DisplayVersion" "${APP_VERSION}"
   WriteRegStr HKLM "${APP_REGKEY}" "Publisher" "${APP_PUBLISHER}"
-  WriteRegStr HKLM "${APP_REGKEY}" "URLInfoAbout" "https://www.conetec.net"
+  WriteRegStr HKLM "${APP_REGKEY}" "URLInfoAbout" ""
   WriteRegStr HKLM "${APP_REGKEY}" "InstallLocation" "$INSTDIR"
   WriteRegStr HKLM "${APP_REGKEY}" "UninstallString" '"$INSTDIR\Uninstall.exe"'
   WriteRegStr HKLM "${APP_REGKEY}" "QuietUninstallString" '"$INSTDIR\Uninstall.exe" /S'
@@ -72,11 +72,11 @@ SectionEnd
 Section "Uninstall"
   SetShellVarContext all
   Delete "$DESKTOP\${APP_NAME}.lnk"
-  Delete "$SMPROGRAMS\CONETEC\${APP_NAME}.lnk"
-  Delete "$SMPROGRAMS\CONETEC\Désinstaller ${APP_NAME}.lnk"
-  RMDir "$SMPROGRAMS\CONETEC"
+  Delete "$SMPROGRAMS\GestionStock\${APP_NAME}.lnk"
+  Delete "$SMPROGRAMS\GestionStock\Désinstaller ${APP_NAME}.lnk"
+  RMDir "$SMPROGRAMS\GestionStock"
   RMDir /r "$INSTDIR"
   DeleteRegKey HKLM "${APP_REGKEY}"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\${APP_EXE}"
-  DeleteRegKey HKLM "Software\CONETEC\Admin"
+  DeleteRegKey HKLM "Software\GestionStock\Admin"
 SectionEnd

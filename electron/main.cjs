@@ -197,7 +197,7 @@ function createWindow() {
     width: 1440,
     height: 900,
     backgroundColor: "#04122e",
-    title: "CONETEC",
+    title: "Gestion Stock",
     icon: path.join(__dirname, "icon.png"),
     webPreferences: {
       contextIsolation: true,
@@ -210,7 +210,7 @@ function createWindow() {
   Menu.setApplicationMenu(
     Menu.buildFromTemplate([
       {
-        label: "CONETEC",
+        label: "Gestion Stock",
         submenu: [
           { label: "Recharger", accelerator: "F5", click: () => win && win.loadURL(LOCAL_URL) },
           { role: "toggleDevTools", label: "Outils de développement" },

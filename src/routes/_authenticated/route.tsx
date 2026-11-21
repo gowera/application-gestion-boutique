@@ -8,6 +8,7 @@ import { SyncStatus } from "@/components/admin/sync-status";
 import { useAllowedMenus, STAFF_ROLES } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { OfflineSetup } from "@/components/admin/offline-setup";
+import { ShopOnboarding, ShopTheme } from "@/components/admin/shop-onboarding";
 import { getOfflineProfile } from "@/lib/offline/auth";
 import { setLocalUser } from "@/lib/offline/store";
 import { useSync } from "@/hooks/use-sync";
@@ -92,6 +93,8 @@ function AuthenticatedLayout() {
       <AppSidebar />
       <SidebarInset>
         <OfflineSetup />
+        <ShopTheme />
+        <ShopOnboarding />
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur">
           <SidebarTrigger />
           <div className="text-display text-sm font-semibold text-primary">Gestion de stock & vente</div>

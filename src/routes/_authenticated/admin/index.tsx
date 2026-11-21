@@ -124,7 +124,7 @@ function DashboardPage() {
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-energy">Pilotage</p>
             <h1 className="mt-2 text-display text-3xl md:text-4xl font-extrabold">Tableau de bord</h1>
-            <p className="mt-2 text-sm text-primary-foreground/80">Vue synthétique et temps réel de l'activité CONETEC.</p>
+            <p className="mt-2 text-sm text-primary-foreground/80">Vue synthétique et temps réel de l'activité Gestion Stock.</p>
             <div className="mt-3 flex items-center gap-2">
               <DataSourceBadge source={kpiSource} refreshing={refreshing} className="bg-white/15 border-white/25 text-primary-foreground" />
               <span className="text-[11px] text-primary-foreground/70">

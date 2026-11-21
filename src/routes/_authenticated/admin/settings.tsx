@@ -52,7 +52,7 @@ function Page() {
     primary_currency: "USD" as Currency,
     usd_to_cdf_rate: 2800,
     low_stock_threshold: 5,
-    invoice_prefix: "CNT",
+    invoice_prefix: "FAC",
     logo_url: "",
     legal_mentions: "",
     document_theme_color: "#0b1e3f",
@@ -74,7 +74,7 @@ function Page() {
       primary_currency: (d.primary_currency ?? "USD") as Currency,
       usd_to_cdf_rate: Number(d.usd_to_cdf_rate ?? 2800),
       low_stock_threshold: Number(d.low_stock_threshold ?? 5),
-      invoice_prefix: d.invoice_prefix ?? "CNT",
+      invoice_prefix: d.invoice_prefix ?? "FAC",
       logo_url: d.logo_url ?? "",
       legal_mentions: d.legal_mentions ?? "",
       document_theme_color: d.document_theme_color ?? "#0b1e3f",
@@ -375,6 +375,7 @@ function Page() {
               </Select>
             </div>
           </div>
+          <div><Label>Couleur du tableau de bord</Label><Input type="color" value={ex("brand_color", "#22a05a")} onChange={(e) => setEx("brand_color", e.target.value)} /></div>
           <div><Label>Couleur d'accent des documents</Label><Input type="color" value={core.document_theme_color} onChange={(e) => setCore({ ...core, document_theme_color: e.target.value })} /></div>
           <div><Label>Mentions légales</Label><Textarea rows={4} value={core.legal_mentions} onChange={(e) => setCore({ ...core, legal_mentions: e.target.value })} /></div>
           <div><Label>Conditions générales de vente</Label><Textarea rows={4} value={ex("terms", "")} onChange={(e) => setEx("terms", e.target.value)} /></div>
@@ -403,7 +404,7 @@ function Page() {
               <p className="text-xs text-muted-foreground">Renseignez le lien du fichier d'installation publié. Il alimente le bouton de téléchargement du tableau de bord.</p>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="md:col-span-2"><Label>Lien de téléchargement</Label><Input value={ex("win_app_url", "")} onChange={(e) => setEx("win_app_url", e.target.value)} placeholder="https://…/CONETEC-win32-x64.zip" /></div>
+              <div className="md:col-span-2"><Label>Lien de téléchargement</Label><Input value={ex("win_app_url", "")} onChange={(e) => setEx("win_app_url", e.target.value)} placeholder="https://…/GestionStock-win32-x64.zip" /></div>
               <div><Label>Version</Label><Input value={ex("win_app_version", "")} onChange={(e) => setEx("win_app_version", e.target.value)} placeholder="1.0.0" /></div>
               <div><Label>Taille affichée</Label><Input value={ex("win_app_size", "")} onChange={(e) => setEx("win_app_size", e.target.value)} placeholder="180 Mo" /></div>
               <div><Label>Date de publication</Label><Input type="date" value={ex("win_app_date", "")} onChange={(e) => setEx("win_app_date", e.target.value)} /></div>
@@ -417,7 +418,7 @@ function Page() {
             <Label>Activer la boutique en ligne</Label>
             <Switch checked={ex("shop_enabled", true)} onCheckedChange={(v) => setEx("shop_enabled", v)} />
           </div>
-          <div><Label>Domaine personnalisé</Label><Input value={ex("custom_domain", "")} onChange={(e) => setEx("custom_domain", e.target.value)} placeholder="shop.conetec.cd" /></div>
+          <div><Label>Domaine personnalisé</Label><Input value={ex("custom_domain", "")} onChange={(e) => setEx("custom_domain", e.target.value)} placeholder="boutique.exemple.com" /></div>
           <div><Label>Titre SEO</Label><Input value={ex("seo_title", "")} onChange={(e) => setEx("seo_title", e.target.value)} /></div>
           <div><Label>Meta description</Label><Textarea rows={2} value={ex("seo_description", "")} onChange={(e) => setEx("seo_description", e.target.value)} /></div>
           <div><Label>Mots-clés</Label><Input value={ex("seo_keywords", "")} onChange={(e) => setEx("seo_keywords", e.target.value)} /></div>
@@ -524,8 +525,7 @@ function Page() {
                 const file = e.target.files?.[0]; if (!file) return;
                 try {
                   const obj = JSON.parse(await file.text());
-                  const { error } = await supabase.from("settings").update(obj).eq("id", 1);
-                  if (error) throw error;
+                  await setAdminSettings(obj);
                   toast.success("Paramètres importés");
                   qc.invalidateQueries({ queryKey: ["settings"] });
                 } catch (err) { toast.error((err as Error).message); }
@@ -540,7 +540,7 @@ function Page() {
 
         {tab === "apropos" && <>
           <div><Label>Version de l'application</Label><Input value={ex("app_version", "v1.0.0")} onChange={(e) => setEx("app_version", e.target.value)} /></div>
-          <div><Label>Email de support</Label><Input value={ex("support_email", "support@conetec.cd")} onChange={(e) => setEx("support_email", e.target.value)} /></div>
+          <div><Label>Email de support</Label><Input value={ex("support_email", "")} onChange={(e) => setEx("support_email", e.target.value)} /></div>
           <div><Label>Téléphone support</Label><Input value={ex("support_phone", "")} onChange={(e) => setEx("support_phone", e.target.value)} /></div>
           <div><Label>Licence / informations légales</Label><Textarea rows={5} value={ex("license", "")} onChange={(e) => setEx("license", e.target.value)} /></div>
         </>}

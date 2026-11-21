@@ -21,7 +21,7 @@ export const sendDocumentEmail = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SendDocumentEmailResult> => {
     const apiKey = process.env["RESEND_API_KEY"];
     if (!apiKey) return { ok: false, reason: "not_configured" };
-    const from = process.env["DOCUMENT_EMAIL_FROM"] ?? "CONETEC <onboarding@resend.dev>";
+    const from = process.env["DOCUMENT_EMAIL_FROM"] ?? "Gestion Stock <onboarding@resend.dev>";
 
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",

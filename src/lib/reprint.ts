@@ -53,7 +53,7 @@ export async function reprintSaleDocument(opts: {
 
   downloadReceipt({
     logoDataUrl,
-    shopName: settings?.shop_name ?? "CONETEC",
+    shopName: settings?.shop_name ?? "Ma boutique",
     address: settings?.address ?? "",
     phone: settings?.phone ?? "",
     code: code!,

@@ -106,7 +106,7 @@ function Page() {
   }) => {
     const doc = buildReceiptDoc({
       logoDataUrl,
-      shopName: settings?.shop_name ?? "CONETEC",
+      shopName: settings?.shop_name ?? "Ma boutique",
       address: settings?.address ?? "", phone: settings?.phone ?? "",
       code: args.code, customer: args.customerName,
       items: args.items, subtotal: args.total, discount: 0, total: args.total,
@@ -257,7 +257,7 @@ function Page() {
     const total = items.reduce((a, i) => a + i.total, 0);
     const doc = buildReceiptDoc({
       logoDataUrl,
-      shopName: settings?.shop_name ?? "CONETEC",
+      shopName: settings?.shop_name ?? "Ma boutique",
       address: settings?.address ?? "", phone: settings?.phone ?? "",
       code: "APERÇU", customer: customerName,
       items, subtotal: total, discount: 0, total,

@@ -13,7 +13,7 @@ export function ProductIdentity({
   className?: string;
 }) {
   const model = sku?.trim() || (id ? id.slice(0, 8).toUpperCase() : "");
-  const secondary = [brand?.trim() || "CONETEC", model].filter(Boolean);
+  const secondary = [brand?.trim() || "Ma boutique", model].filter(Boolean);
   return (
     <div className={`leading-tight text-foreground ${className}`}>
       <span className="block text-sm font-bold line-clamp-2 sm:text-base">{name}</span>
