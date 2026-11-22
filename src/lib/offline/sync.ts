@@ -86,7 +86,7 @@ export async function syncNow(): Promise<{ sent: number; failed: number }> {
     emit({ online: true, pending: 0, lastSyncAt: new Date().toISOString() });
     // Même sans écriture en attente, on rapatrie les données du serveur vers la base locale.
     const { data } = await supabase.auth.getSession();
-    if (data.session?.user.id) void bootstrapOfflineData(data.session.user.id);
+    if (data.session?.user.id) await bootstrapOfflineData(data.session.user.id);
     return { sent: 0, failed: 0 };
   }
 
@@ -117,7 +117,7 @@ export async function syncNow(): Promise<{ sent: number; failed: number }> {
       lastError: failed > 0 ? `${failed} opération(s) en échec` : null,
     });
     const { data } = await supabase.auth.getSession();
-    if (data.session?.user.id) void bootstrapOfflineData(data.session.user.id);
+    if (data.session?.user.id) await bootstrapOfflineData(data.session.user.id, sent > 0);
   }
   return { sent, failed };
 }
@@ -151,18 +151,20 @@ let started = false;
 /** Vérifie réellement la disponibilité du serveur (navigator.onLine ment souvent). */
 async function probeConnectivity(): Promise<boolean> {
   if (typeof navigator !== "undefined" && !navigator.onLine) return false;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
-    await fetch(`${window.location.origin}/favicon.ico?ping=${Date.now()}`, {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/health`, {
       method: "HEAD",
       cache: "no-store",
+      headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
       signal: controller.signal,
     });
-    clearTimeout(timer);
-    return true;
+    return response.ok;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -175,16 +177,22 @@ export function startSyncEngine(): () => void {
   started = true;
 
   const onOnline = () => {
-    emit({ online: true });
-    void syncNow();
+    void tick(true);
   };
   const onOffline = () => emit({ online: false });
   const onWake = () => { if (!document.hidden) void tick(); };
 
-  async function tick() {
+  async function tick(reconnected = false) {
     const reachable = await probeConnectivity();
+    const wasOffline = !state.online;
     if (reachable !== state.online) emit({ online: reachable });
-    if (reachable) await syncNow();
+    if (reachable) {
+      await syncNow();
+      if (wasOffline || reconnected) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.user.id) await bootstrapOfflineData(data.session.user.id, true);
+      }
+    }
   }
 
   window.addEventListener("online", onOnline);

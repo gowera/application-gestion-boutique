@@ -36,7 +36,7 @@ function scoped(key: string): string {
 function fileDb() {
   if (typeof window === "undefined") return undefined;
   const bridge = window.conetecDesktop;
-  if (bridge?.dbGet && bridge.dbSet && bridge.dbDel) return bridge;
+  if (bridge?.dbGet && bridge.dbSet && bridge.dbDel) return { dbGet: bridge.dbGet, dbSet: bridge.dbSet, dbDel: bridge.dbDel };
   return undefined;
 }
 
@@ -58,12 +58,8 @@ async function decode<T>(value: unknown): Promise<T> {
 async function read<T>(key: string): Promise<T | undefined> {
   const db = fileDb();
   if (db) {
-    try {
-      const value = await db.dbGet!(scoped(key));
-      if (value != null) return value as T;
-    } catch {
-      /* on tente IndexedDB en secours */
-    }
+    const value = await db.dbGet(scoped(key));
+    if (value != null) return value as T;
   }
   if (!store) return undefined;
   try {
@@ -77,19 +73,12 @@ async function read<T>(key: string): Promise<T | undefined> {
 async function write<T>(key: string, value: T): Promise<void> {
   const db = fileDb();
   if (db) {
-    try {
-      const result = await db.dbSet!(scoped(key), value);
-      if (result?.ok) return;
-    } catch {
-      /* on tente IndexedDB en secours */
-    }
+    const result = await db.dbSet(scoped(key), value);
+    if (!result.ok) throw new Error(result.error ?? "Impossible d’enregistrer les données sur le disque.");
+    return;
   }
-  if (!store) return;
-  try {
-    await set(scoped(key), await encode(value), store);
-  } catch {
-    /* quota ou mode privé : on ignore */
-  }
+  if (!store) throw new Error("Le stockage local n’est pas disponible sur cet appareil.");
+  await set(scoped(key), await encode(value), store);
 }
 
 /* ---------- Cache de lecture ---------- */
@@ -113,7 +102,7 @@ export async function cacheUpdate<T>(key: string, update: (current: T | undefine
 export async function cacheClear(key: string): Promise<void> {
   const db = fileDb();
   if (db) {
-    try { await db.dbDel!(scoped(`cache:${key}`)); } catch { /* ignore */ }
+    await db.dbDel(scoped(`cache:${key}`));
   }
   if (!store) return;
   try {

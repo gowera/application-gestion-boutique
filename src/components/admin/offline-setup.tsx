@@ -23,7 +23,8 @@ export function OfflineSetup() {
     if (!user || typeof window === "undefined") return;
     // À chaque ouverture : on relit l'état local puis on rapatrie les données du
     // serveur vers la base locale (JSON) dès qu'une connexion est disponible.
-    void restoreBootstrapMeta(user.id).then(() => bootstrapOfflineData(user.id, true));
+    void restoreBootstrapMeta(user.id).then(() => bootstrapOfflineData(user.id, true))
+      .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Impossible de lire la base locale."));
     if (window.conetecDesktop) void window.conetecDesktop.hasOfflinePin().then((hasPin) => setNeedsPin(!hasPin));
   }, [user]);
 
@@ -53,8 +54,8 @@ export function OfflineSetup() {
           </div>
         </div>
       )}
-      {!state.running && state.error && state.ready && (
-        <div className="border-b bg-warning/10 px-4 py-2 text-center text-xs text-warning-foreground">Préparation hors ligne terminée avec restrictions : {state.error}.</div>
+      {!state.running && state.error && (
+        <div role="alert" className="border-b bg-destructive/10 px-4 py-2 text-center text-xs text-destructive">Enregistrement local incomplet : {state.error}.</div>
       )}
       <Dialog open={needsPin} onOpenChange={() => {}}>
         <DialogContent onEscapeKeyDown={(event) => event.preventDefault()} onPointerDownOutside={(event) => event.preventDefault()}>

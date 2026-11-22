@@ -14,8 +14,8 @@ export type BootstrapProgress = {
 };
 
 const DATASETS = [
-  "settings", "user_roles", "products", "categories", "product_images", "product_suppliers", "customers",
-  "customer_ledger", "sales", "sale_items", "payments", "online_orders", "order_items",
+  "shop_settings", "user_roles", "products", "categories", "product_images", "product_suppliers", "customers",
+  "customer_ledger", "sales", "sale_items", "payments",
   "document_registry", "stock_movements", "expenses", "expense_categories", "cash_sessions",
   "suppliers", "purchases", "purchase_items", "employees", "salary_payments", "rent_payments",
   "interventions", "quote_requests", "notifications", "team_members", "activity_log",
@@ -56,14 +56,17 @@ export function getBootstrapProgress() {
 const REFRESH_INTERVAL_MS = 10 * 60_000;
 let lastRunAt = 0;
 let metaRestoredFor: string | null = null;
+const REQUIRED_DATASETS = new Set<string>(["shop_settings", "products", "categories", "customers", "sales", "sale_items", "document_registry", "stock_movements"]);
 
 /** Relit l'état du dernier téléchargement conservé dans la base locale. */
 export async function restoreBootstrapMeta(userId: string): Promise<void> {
   if (metaRestoredFor === userId) return;
-  metaRestoredFor = userId;
   setLocalUser(userId);
+  emit({ ready: false, lastBootstrapAt: null, error: null });
   const meta = await cacheGet<{ ready: boolean; at: string; counts?: Record<string, number> }>("bootstrap:meta");
   if (meta?.ready) emit({ ready: true, lastBootstrapAt: meta.at });
+  metaRestoredFor = userId;
+  lastRunAt = 0;
 }
 
 
@@ -75,7 +78,6 @@ export async function restoreBootstrapMeta(userId: string): Promise<void> {
 export async function bootstrapOfflineData(userId: string, force = false): Promise<void> {
   if (progress.running || typeof navigator === "undefined" || !navigator.onLine) return;
   if (!force && progress.ready && Date.now() - lastRunAt < REFRESH_INTERVAL_MS) return;
-  lastRunAt = Date.now();
   setLocalUser(userId);
   emit({ running: true, completed: 0, current: null, error: null });
   try {
@@ -91,6 +93,7 @@ export async function bootstrapOfflineData(userId: string, force = false): Promi
       while (true) {
         const { data, error } = await supabase.from(table).select("*").range(offset, offset + 999);
         if (error) {
+          if (REQUIRED_DATASETS.has(table)) throw new Error(`Téléchargement incomplet : ${error.message}`);
           skipped.push(table);
           failed = true;
           break;
@@ -107,7 +110,8 @@ export async function bootstrapOfflineData(userId: string, force = false): Promi
       }
     }
     const at = new Date().toISOString();
-    await cacheSet("bootstrap:meta", { ready: true, at, version: 1, counts });
+    await cacheSet("bootstrap:meta", { ready: true, at, version: 2, counts });
+    lastRunAt = Date.now();
     refreshListeners.forEach((listener) => { try { listener(); } catch { /* ignore */ } });
     emit({ running: false, completed: DATASETS.length, current: null, ready: true, lastBootstrapAt: at, error: skipped.length ? `${skipped.length} jeu(x) non autorisé(s) ignoré(s)` : null });
   } catch (error) {
