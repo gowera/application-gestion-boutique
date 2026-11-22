@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { offlineQueryFn } from "@/lib/offline/query";
+import { cacheGet } from "@/lib/offline/store";
+import { isOffline } from "@/lib/offline/sync";
 
 export type Currency = "USD" | "CDF";
 
@@ -34,6 +36,13 @@ export function useSettings() {
   return useQuery({
     queryKey: ["settings"],
     queryFn: offlineQueryFn("query:settings", async (): Promise<AppSettings> => {
+      if (isOffline()) {
+        const rows = await cacheGet<Array<Record<string, unknown>>>("table:shop_settings");
+        const local = rows?.[0];
+        if (!local) throw new Error("Les paramètres de la boutique ne sont pas encore téléchargés sur cet appareil.");
+        const extras = local["extras"] && typeof local["extras"] === "object" ? local["extras"] : {};
+        return { ...DEFAULT_SETTINGS, ...extras, ...local } as unknown as AppSettings;
+      }
       const { data, error } = await supabase.from("shop_settings").select("*").maybeSingle();
       if (error) throw error;
       const extras = (data?.extras && typeof data.extras === "object" ? data.extras : {}) as Record<string, unknown>;

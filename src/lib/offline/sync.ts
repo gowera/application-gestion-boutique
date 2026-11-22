@@ -154,13 +154,9 @@ async function probeConnectivity(): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
   try {
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/health`, {
-      method: "HEAD",
-      cache: "no-store",
-      headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-      signal: controller.signal,
-    });
-    return response.ok;
+    const { error } = await supabase.from("shop_settings")
+      .select("shop_id", { head: true }).limit(1).abortSignal(controller.signal);
+    return !error;
   } catch {
     return false;
   } finally {

@@ -12,3 +12,4 @@
 - Initialize the desktop JSON database before opening the window, outside browser cache and installation files; this makes an empty database exist even before online sign-in.
 - Desktop writes must fail visibly instead of falling back silently to browser storage; readiness is valid only after durable writes succeed.
 - Encrypt desktop records with OS secure storage and replace them atomically with a previous-version backup; interrupted writes must not erase saved work.
+- Package Electron from an explicit allowlist of current compiled assets and desktop runtime files; never embed environment files or repository metadata and never reuse stale compiled output.

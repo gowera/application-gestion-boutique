@@ -5,7 +5,7 @@ Unicode true
 
 !define APP_NAME "Gestion Stock"
 !define APP_PUBLISHER "Gestion Stock"
-!define APP_VERSION "1.4.0"
+!define APP_VERSION "1.4.1"
 !define APP_EXE "GestionStock.exe"
 !define APP_REGKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Gestion StockAdmin"
 
@@ -16,7 +16,7 @@ InstallDirRegKey HKLM "Software\GestionStock\Admin" "InstallDir"
 RequestExecutionLevel admin
 SetCompressor /SOLID lzma
 
-VIProductVersion "1.4.0.0"
+VIProductVersion "1.4.1.0"
 VIAddVersionKey "ProductName" "${APP_NAME}"
 VIAddVersionKey "CompanyName" "${APP_PUBLISHER}"
 VIAddVersionKey "FileDescription" "Installation de ${APP_NAME}"
