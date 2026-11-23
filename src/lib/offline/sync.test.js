@@ -1,8 +1,8 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 
-const events: string[] = [];
-let operations: Array<{ id: string; kind: string; tries: number; payload: Record<string, unknown> }> = [];
-let downloadError: string | null = null;
+const events = [];
+let operations = [];
+let downloadError = null;
 mock.module("@/integrations/supabase/client", () => ({ supabase: {
   auth: { getSession: async () => ({ data: { session: { user: { id: "owner" } } } }) },
   rpc: async () => { events.push("upload"); return { error: null }; },
