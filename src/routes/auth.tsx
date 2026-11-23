@@ -19,6 +19,14 @@ async function landingFor(userId: string): Promise<"/admin"> {
 
 
 export const Route = createFileRoute("/auth")({
+  head: () => ({ meta: [
+    { title: "Connexion — Gestion Stock" },
+    { name: "description", content: "Connectez-vous à votre boutique ou déverrouillez vos données locales avec votre PIN." },
+    { property: "og:title", content: "Connexion — Gestion Stock" },
+    { property: "og:description", content: "Accédez à votre espace de gestion de stock et de vente directe." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   ssr: false,
   beforeLoad: async () => {
     if (typeof window !== "undefined" && window.conetecDesktop && !navigator.onLine) return;

@@ -6,7 +6,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useSettings } from "@/lib/currency";
 import { useSync } from "@/hooks/use-sync";
-import windowsAppAsset from "@/assets/conetec-setup-1.3.0.exe.asset.json";
+// A new installer is enabled only once fresh compiled assets have been packaged.
+const windowsAppAsset = { url: "", project_id: "", size: 0, content_type: "application/vnd.microsoft.portable-executable" };
 
 function extra(settings: unknown, key: string): string {
   const extras = (settings as { extras?: Record<string, unknown> } | null)?.extras;
@@ -36,8 +37,8 @@ export function WindowsAppCard() {
   const assetUrl = windowsAppAsset.url.startsWith("/")
     ? `https://project--${windowsAppAsset.project_id}-dev.lovable.app${windowsAppAsset.url}`
     : windowsAppAsset.url;
-  const url = assetUrl || configuredUrl;
-  const version = "1.3.0";
+  const url = assetUrl;
+  const version = "1.4.1";
   const size = formatBytes(windowsAppAsset.size);
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -116,8 +117,7 @@ export function WindowsAppCard() {
             Installeur Windows : lancez le fichier téléchargé. Un raccourci Gestion Stock sera créé sur le Bureau et dans le menu
             Démarrer. L’application fonctionne sans internet : les ventes, dépenses et
             clients saisis hors ligne sont envoyés au serveur dès que la connexion revient.
-            {version && ` Version ${version}.`}
-            {size && ` (${size})`}
+            {url ? ` Version ${version}. (${size})` : ` Mise à jour ${version} en préparation.`}
           </p>
 
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
@@ -136,7 +136,7 @@ export function WindowsAppCard() {
         ) : (
           <Button size="lg" variant="outline" disabled className="gap-2">
             <Download className="h-4 w-4" />
-            Bientôt disponible
+            Mise à jour en préparation
           </Button>
         )}
         {(downloading || received > 0) && !failure && (

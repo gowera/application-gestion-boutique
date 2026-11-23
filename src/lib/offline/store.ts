@@ -59,7 +59,7 @@ async function read<T>(key: string): Promise<T | undefined> {
   const db = fileDb();
   if (db) {
     const value = await db.dbGet(scoped(key));
-    if (value != null) return value as T;
+    return value == null ? undefined : value as T;
   }
   if (!store) return undefined;
   try {

@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { archiveSynced, outboxAdd, outboxList, outboxRemove, outboxUpdate, type OutboxOp } from "./store";
-import { bootstrapOfflineData } from "./bootstrap";
+import { bootstrapOfflineData, getBootstrapProgress } from "./bootstrap";
 
 export type SyncState = {
   online: boolean;
@@ -74,29 +74,21 @@ async function pushOne(op: OutboxOp): Promise<boolean> {
 }
 
 /** Rejoue la file d'attente. Sans réseau ou sans session, ne fait rien. */
-export async function syncNow(): Promise<{ sent: number; failed: number }> {
+export async function syncNow(forceDownload = false): Promise<{ sent: number; failed: number }> {
   if (state.syncing) return { sent: 0, failed: 0 };
   if (isOffline()) {
     emit({ online: false });
     await refreshPending();
     return { sent: 0, failed: 0 };
   }
-  const list = await outboxList();
-  if (list.length === 0) {
-    emit({ online: true, pending: 0, lastSyncAt: new Date().toISOString() });
-    // Même sans écriture en attente, on rapatrie les données du serveur vers la base locale.
-    const { data } = await supabase.auth.getSession();
-    if (data.session?.user.id) await bootstrapOfflineData(data.session.user.id);
-    return { sent: 0, failed: 0 };
-  }
-
   emit({ syncing: true, lastError: null });
   let sent = 0;
   let failed = 0;
   try {
+    const list = await outboxList();
     const { data: session } = await supabase.auth.getSession();
     if (!session.session) {
-      emit({ syncing: false, lastError: "Session expirée : reconnectez-vous pour synchroniser." });
+      emit({ lastError: "Session expirée : reconnectez-vous pour synchroniser." });
       return { sent: 0, failed: list.length };
     }
     for (const op of list) {
@@ -109,15 +101,18 @@ export async function syncNow(): Promise<{ sent: number; failed: number }> {
         await outboxUpdate(op.id, { tries: op.tries + 1, error: (e as Error).message });
       }
     }
+    // Push first, then pull, including launches with an empty queue.
+    await bootstrapOfflineData(session.session.user.id, forceDownload || sent > 0);
+    const download = getBootstrapProgress();
+    emit({
+      lastSyncAt: download.ready && !download.error ? new Date().toISOString() : state.lastSyncAt,
+      lastError: failed > 0 ? `${failed} opération(s) en échec` : download.error,
+    });
+  } catch (error) {
+    emit({ lastError: error instanceof Error ? error.message : String(error) });
   } finally {
     await refreshPending();
-    emit({
-      syncing: false,
-      lastSyncAt: new Date().toISOString(),
-      lastError: failed > 0 ? `${failed} opération(s) en échec` : null,
-    });
-    const { data } = await supabase.auth.getSession();
-    if (data.session?.user.id) await bootstrapOfflineData(data.session.user.id, sent > 0);
+    emit({ syncing: false });
   }
   return { sent, failed };
 }
@@ -183,11 +178,7 @@ export function startSyncEngine(): () => void {
     const wasOffline = !state.online;
     if (reachable !== state.online) emit({ online: reachable });
     if (reachable) {
-      await syncNow();
-      if (wasOffline || reconnected) {
-        const { data } = await supabase.auth.getSession();
-        if (data.session?.user.id) await bootstrapOfflineData(data.session.user.id, true);
-      }
+      await syncNow(wasOffline || reconnected);
     }
   }
 

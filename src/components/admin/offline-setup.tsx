@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { getBootstrapProgress, subscribeBootstrap, bootstrapOfflineData, provisionOfflinePin, restoreBootstrapMeta } from "@/lib/offline/bootstrap";
+import { getBootstrapProgress, subscribeBootstrap, provisionOfflinePin, restoreBootstrapMeta } from "@/lib/offline/bootstrap";
+import { syncNow } from "@/lib/offline/sync";
 import { useCurrentUser, useMyRoles } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
@@ -12,6 +13,7 @@ const serverProgress = { running: false, completed: 0, total: 29, current: null,
 
 export function OfflineSetup() {
   const { user } = useCurrentUser();
+  const userId = user?.id;
   const { data: roles = [] } = useMyRoles();
   const state = useSyncExternalStore(subscribeBootstrap, getBootstrapProgress, () => serverProgress);
   const [needsPin, setNeedsPin] = useState(false);
@@ -20,13 +22,13 @@ export function OfflineSetup() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!user || typeof window === "undefined") return;
+    if (!userId || typeof window === "undefined") return;
     // À chaque ouverture : on relit l'état local puis on rapatrie les données du
     // serveur vers la base locale (JSON) dès qu'une connexion est disponible.
-    void restoreBootstrapMeta(user.id).then(() => bootstrapOfflineData(user.id, true))
+    void restoreBootstrapMeta(userId).then(() => syncNow(true))
       .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Impossible de lire la base locale."));
     if (window.conetecDesktop) void window.conetecDesktop.hasOfflinePin().then((hasPin) => setNeedsPin(!hasPin));
-  }, [user]);
+  }, [userId]);
 
   async function savePin() {
     if (!user) return;

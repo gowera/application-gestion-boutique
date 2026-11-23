@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu, ipcMain, safeStorage } = require("electron");
+const { app, BrowserWindow, shell, Menu, ipcMain, safeStorage, dialog } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const http = require("http");
@@ -209,6 +209,9 @@ app.whenReady().then(() => {
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+}).catch((error) => {
+  dialog.showErrorBox("Impossible d’ouvrir le logiciel", `La base locale n’a pas pu être préparée. Vérifiez les droits d’écriture et l’espace disque.\n${error instanceof Error ? error.message : String(error)}`);
+  app.quit();
 });
 
 app.on("window-all-closed", () => {

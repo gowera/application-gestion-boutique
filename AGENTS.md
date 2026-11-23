@@ -13,3 +13,6 @@
 - Desktop writes must fail visibly instead of falling back silently to browser storage; readiness is valid only after durable writes succeed.
 - Encrypt desktop records with OS secure storage and replace them atomically with a previous-version backup; interrupted writes must not erase saved work.
 - Package Electron from an explicit allowlist of current compiled assets and desktop runtime files; never embed environment files or repository metadata and never reuse stale compiled output.
+- Treat desktop disk storage as authoritative and flush writes before atomic replacement; browser cache must not mask missing or failed durable records.
+- Serialize synchronization across upload and download; launch preparation must use the same queue-first flow as reconnection to avoid concurrent refreshes.
+- Cache shop logo image bytes alongside local datasets so branding and PDF rendering remain available after browser cache deletion.

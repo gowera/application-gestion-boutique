@@ -31,6 +31,8 @@ export function useMyRoles() {
     enabled: !!user,
     queryFn: async () => {
       if (!user) return [];
+      const offline = getOfflineProfile();
+      if (!navigator.onLine && offline?.userId === user.id) return offline.roles as AppRole[];
       const cacheKey = `conetec:roles:${user.id}`;
       try {
         const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", user.id);

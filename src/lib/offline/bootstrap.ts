@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { cacheGet, cacheSet, setLocalUser } from "./store";
 import { resolveTableRows } from "./conflict";
+import { localLogoDataUrl } from "./logo";
 
 
 export type BootstrapProgress = {
@@ -106,6 +107,12 @@ export async function bootstrapOfflineData(userId: string, force = false): Promi
       if (!failed) {
         const merged = await resolveTableRows(table, rows);
         await cacheSet(`table:${table}`, merged);
+        if (table === "shop_settings") {
+          for (const row of merged) {
+            const logo = (row as Record<string, unknown>)["logo_url"];
+            if (typeof logo === "string" && logo) await localLogoDataUrl(logo);
+          }
+        }
         counts[table] = Array.isArray(merged) ? merged.length : 0;
       }
     }

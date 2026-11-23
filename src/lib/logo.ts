@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSettings } from "@/lib/currency";
 import { resolveImageUrl } from "@/lib/storage";
+import { localLogoDataUrl } from "@/lib/offline/logo";
 const fallbackLogo = "";
 
 /** Displayable URL of the shop logo (settings logo, or bundled Gestion Stock logo). */
@@ -11,7 +12,8 @@ export function useLogoUrl(): string {
     let active = true;
     const src = settings?.logo_url;
     if (!src) { setUrl(fallbackLogo); return; }
-    resolveImageUrl(src).then((next) => { if (active) setUrl(next || fallbackLogo); });
+    localLogoDataUrl(src).then((next) => { if (active) setUrl(next || fallbackLogo); })
+      .catch(() => { if (active) setUrl(fallbackLogo); });
     return () => { active = false; };
   }, [settings?.logo_url]);
   return url;
@@ -47,6 +49,7 @@ export function useLogoDataUrl(): string | undefined {
  */
 export async function loadLogoDataUrl(logoUrl?: string | null): Promise<string | undefined> {
   try {
+    if (logoUrl) return await localLogoDataUrl(logoUrl);
     const src = (await resolveImageUrl(logoUrl)) || fallbackLogo;
     if (!src) return undefined;
     if (src.startsWith("data:")) return src;

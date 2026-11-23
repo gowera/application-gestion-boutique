@@ -11,7 +11,13 @@ function createLocalDatabase(userData, encryption) {
   function atomicWrite(file, contents) {
     const temporary = `${file}.${crypto.randomUUID()}.tmp`;
     try {
-      fs.writeFileSync(temporary, contents, { mode: 0o600 });
+      const descriptor = fs.openSync(temporary, "w", 0o600);
+      try {
+        fs.writeFileSync(descriptor, contents);
+        fs.fsyncSync(descriptor);
+      } finally {
+        fs.closeSync(descriptor);
+      }
       if (fs.existsSync(file)) fs.copyFileSync(file, `${file}.bak`);
       fs.renameSync(temporary, file);
     } finally {
