@@ -10,11 +10,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { LocalUnavailable } from "@/components/admin/local-unavailable";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 const ROLES: AppRole[] = ["admin", "manager", "caissier", "vendeur", "comptable", "technicien", "livreur", "client"];
 
-export const Route = createFileRoute("/_authenticated/admin/users")({ component: Page });
+export const Route = createFileRoute("/_authenticated/admin/users")({ component: RoutePage });
+
+function RoutePage() {
+  if (typeof window !== "undefined" && window.conetecDesktop) return <LocalUnavailable feature="Utilisateurs" />;
+  return <Page />;
+}
 
 function Page() {
   const isAdmin = useHasRole("admin");

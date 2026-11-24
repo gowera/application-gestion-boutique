@@ -112,7 +112,9 @@ function PosPage() {
     },
     onSuccess: async (saleId) => {
       if (!saleId) {
-        toast.success("Vente enregistrée hors ligne — elle sera envoyée dès le retour du réseau.");
+        toast.success(typeof window !== "undefined" && window.conetecDesktop
+          ? "Vente enregistrée localement — aucune synchronisation."
+          : "Vente enregistrée hors ligne — elle sera envoyée dès le retour du réseau.");
         setCart([]); setDiscount(0); setNote(""); setPayments([{ method: "cash", amount: 0, currency }]); setCustomerId(null); setIsCredit(false); setDueDate(""); setDocumentType("Reçu");
         return;
       }

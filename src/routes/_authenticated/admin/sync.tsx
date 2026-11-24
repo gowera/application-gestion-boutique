@@ -59,6 +59,7 @@ function Page() {
   const [conflicts, setConflicts] = useState<ConflictEntry[]>([]);
   const [policy, setPolicy] = useState<ConflictPolicy>("merge");
   const [busy, setBusy] = useState(false);
+  const desktop = typeof window !== "undefined" && Boolean(window.conetecDesktop);
 
   const refresh = useCallback(async () => {
     setQueue(await outboxList());
@@ -85,6 +86,22 @@ function Page() {
       setBusy(false);
       await refresh();
     }
+  }
+
+  if (desktop) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-4">
+        <h1 className="text-display text-xl font-semibold">Données locales</h1>
+        <Card>
+          <CardHeader><CardTitle className="text-base">Aucune synchronisation</CardTitle></CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <p>Cette version de Gestion Stock utilise uniquement les données enregistrées sur cet ordinateur.</p>
+            <p>Les comptes sont vérifiés en ligne une seule fois lors de la première activation. Les données de la boutique ne sont ni téléchargées depuis le serveur ni envoyées vers celui-ci.</p>
+            <p>La base locale est vide au premier démarrage; les fonctions non disponibles localement restent désactivées.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

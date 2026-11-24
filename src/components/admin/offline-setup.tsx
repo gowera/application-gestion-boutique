@@ -23,6 +23,11 @@ export function OfflineSetup() {
 
   useEffect(() => {
     if (!userId || typeof window === "undefined") return;
+    if (window.conetecDesktop) {
+      if (user) setLocalUser(user.id);
+      void window.conetecDesktop.hasOfflinePin().then((hasPin) => setNeedsPin(!hasPin));
+      return;
+    }
     // À chaque ouverture : on relit l'état local puis on rapatrie les données du
     // serveur vers la base locale (JSON) dès qu'une connexion est disponible.
     void restoreBootstrapMeta(userId).then(() => syncNow(true))

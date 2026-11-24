@@ -11,8 +11,14 @@ import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 import { offlineQueryFn } from "@/lib/offline/query";
+import { LocalUnavailable } from "@/components/admin/local-unavailable";
 
-export const Route = createFileRoute("/_authenticated/admin/orders")({ component: Page });
+export const Route = createFileRoute("/_authenticated/admin/orders")({ component: RoutePage });
+
+function RoutePage() {
+  if (typeof window !== "undefined" && window.conetecDesktop) return <LocalUnavailable feature="Commandes en ligne" />;
+  return <Page />;
+}
 
 const STATUS = ["pending", "confirmed", "preparing", "shipping", "delivered", "cancelled", "refunded"] as const;
 const LABEL: Record<string, string> = { pending: "En attente", confirmed: "Confirmée", preparing: "Préparation", shipping: "Livraison", delivered: "Livrée", cancelled: "Annulée", refunded: "Remboursée" };

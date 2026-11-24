@@ -46,6 +46,15 @@ function slugify(value: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+function fileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error("Impossible de lire l’image."));
+    reader.readAsDataURL(file);
+  });
+}
+
 function ProductsPage() {
   const { data: settings } = useSettings();
   const [q, setQ] = useState("");
@@ -176,6 +185,7 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
   const [uploadingImages, setUploadingImages] = useState(false);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const isEdit = !!product;
+  const desktopLocal = typeof window !== "undefined" && Boolean(window.conetecDesktop);
   const qc = useQueryClient();
   const { data: settings } = useSettings();
 
@@ -201,12 +211,18 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
   const save = useMutation({
     mutationFn: async () => {
       setUploadingImages(true);
-      const uploadedUrls = await Promise.all(imageFiles.map(async (file) => {
-        const path = await shopStoragePath(`${crypto.randomUUID()}-${file.name}`);
-        const { error: uploadError } = await supabase.storage.from("product-images").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
-        if (uploadError) throw uploadError;
-        return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-      }));
+      const uploadedUrls = desktopLocal
+        ? await Promise.all(imageFiles.map(fileAsDataUrl))
+        : await Promise.all(imageFiles.map(async (file) => {
+          const path = await shopStoragePath(`${crypto.randomUUID()}-${file.name}`);
+          const { error: uploadError } = await supabase.storage.from("product-images").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
+          if (uploadError) throw uploadError;
+          return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+        }));
+      const additionalImages = imageInput.split(/\n|,/).map((value) => value.trim()).filter(Boolean);
+      if (desktopLocal && additionalImages.some((url) => !url.startsWith("data:"))) {
+        throw new Error("En mode local, ajoutez les images depuis cet ordinateur plutôt qu’avec une URL.");
+      }
       const payload = {
         name: form.name ?? "",
         sku: form.sku || null,
@@ -219,7 +235,7 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
         stock: Number(form.stock ?? 0),
         low_stock_threshold: form.low_stock_threshold != null ? Number(form.low_stock_threshold) : null,
         status: (form.status as Product["status"]) ?? "active",
-        images: [...uploadedUrls, ...imageInput.split(/\n|,/).map((v) => v.trim()).filter(Boolean)],
+        images: [...uploadedUrls, ...additionalImages],
         show_stock_public: Boolean(form.show_stock_public),
       };
       if (!payload.name.trim()) throw new Error("Nom requis");
@@ -323,7 +339,9 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
           <div className="md:col-span-2">
             <Label>Images du produit</Label>
             <p className="mt-1 text-xs text-muted-foreground">
-              Ajoutez autant d’images que vous voulez : sélectionnez plusieurs fichiers (ils s’ajoutent aux précédents) et/ou collez des URL, une par ligne. La première image sert d’image principale.
+              {desktopLocal
+                ? "Les images choisies sur cet ordinateur sont conservées dans la base locale. Les URL externes ne sont pas disponibles."
+                : "Ajoutez autant d’images que vous voulez : sélectionnez plusieurs fichiers (ils s’ajoutent aux précédents) et/ou collez des URL, une par ligne. La première image sert d’image principale."}
             </p>
             <input
               type="file"
@@ -348,7 +366,7 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
                 ))}
               </div>
             )}
-            <Textarea rows={3} value={imageInput} onChange={(e) => setImageInput(e.target.value)} className="mt-2" placeholder="https://exemple.com/image1.jpg&#10;https://exemple.com/image2.jpg" />
+            <Textarea rows={3} value={imageInput} onChange={(e) => setImageInput(e.target.value)} className="mt-2" disabled={desktopLocal} placeholder="https://exemple.com/image1.jpg&#10;https://exemple.com/image2.jpg" />
             {(() => {
               const urls = imageInput.split(/\n|,/).map((v) => v.trim()).filter(Boolean);
               if (!urls.length) return null;

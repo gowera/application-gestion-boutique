@@ -1,0 +1,61 @@
+name: Windows installer release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Verify release version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($version -ne $env:GITHUB_REF_NAME.TrimStart("v")) {
+            throw "Le tag $env:GITHUB_REF_NAME ne correspond pas à package.json ($version)."
+          }
+          Add-Content $env:GITHUB_ENV "APP_VERSION=$version"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build current application
+        run: bun run build
+
+      - name: Package Windows application
+        run: bun run electron:package:win
+
+      - name: Install NSIS
+        run: choco install nsis --yes --no-progress
+
+      - name: Build installer
+        run: bun run electron:installer:win
+
+      - name: Locate installer
+        shell: pwsh
+        run: |
+          $installer = Join-Path ([System.IO.Path]::GetTempPath()) "GestionStock-Setup-$env:APP_VERSION.exe"
+          if (!(Test-Path $installer)) {
+            throw "L’installeur attendu est absent : $installer"
+          }
+          Add-Content $env:GITHUB_ENV "INSTALLER_PATH=$installer"
+
+      - name: Publish installer
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Gestion Stock ${{ github.ref_name }}
+          files: ${{ env.INSTALLER_PATH }}
+          make_latest: true

@@ -7,8 +7,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
+import { LocalUnavailable } from "@/components/admin/local-unavailable";
 
-export const Route = createFileRoute("/_authenticated/admin/trash")({ component: Page });
+export const Route = createFileRoute("/_authenticated/admin/trash")({ component: RoutePage });
+
+function RoutePage() {
+  if (typeof window !== "undefined" && window.conetecDesktop) return <LocalUnavailable feature="Corbeille" />;
+  return <Page />;
+}
 
 type TrashRow = {
   id: string;

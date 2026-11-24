@@ -1,10 +1,11 @@
-const { app, BrowserWindow, shell, Menu, ipcMain, safeStorage, dialog } = require("electron");
+const { app, BrowserWindow, shell, Menu, ipcMain, safeStorage, dialog, session } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const http = require("http");
 const fs = require("fs");
 const crypto = require("crypto");
 const { createLocalDatabase } = require("./local-db.cjs");
+const { createLocalApi } = require("./local-api.cjs");
 
 const LOCAL_PORT = 41731;
 const LOCAL_URL = `http://127.0.0.1:${LOCAL_PORT}/admin`;
@@ -14,6 +15,8 @@ const SERVER_ENTRY = path.join(__dirname, "local-server.mjs");
 let win = null;
 let localServer = null;
 let localDatabase = null;
+let localApi = null;
+let blockExternalRequests = false;
 
 function offlineAuthFile() {
   return path.join(app.getPath("userData"), "offline-auth.json");
@@ -28,6 +31,7 @@ function hashPin(pin, salt) {
 }
 
 ipcMain.handle("offline-auth:has-pin", () => Boolean(readOfflineAuth()));
+ipcMain.handle("offline-auth:is-local-only", () => Boolean(readOfflineAuth()));
 ipcMain.handle("offline-auth:configure", (_event, { pin, profile }) => {
   if (!safeStorage.isEncryptionAvailable()) return { ok: false, error: "Le stockage sécurisé Windows n’est pas disponible." };
   if (!/^\d{4,8}$/.test(pin)) return { ok: false, error: "PIN invalide." };
@@ -39,7 +43,13 @@ ipcMain.handle("offline-auth:configure", (_event, { pin, profile }) => {
     attempts: 0,
     lockedUntil: 0,
   };
+  database().set(`user:${profile.userId}:cache:table:user_roles`, {
+    data: profile.roles.map((role) => ({ user_id: profile.userId, role })),
+    at: new Date().toISOString(),
+  });
   fs.writeFileSync(offlineAuthFile(), JSON.stringify(record), { mode: 0o600 });
+  blockExternalRequests = true;
+  if (localServer && localServer.connected) localServer.send({ type: "enable-local-only" });
   return { ok: true };
 });
 ipcMain.handle("offline-auth:unlock", (_event, { pin }) => {
@@ -53,8 +63,6 @@ ipcMain.handle("offline-auth:unlock", (_event, { pin }) => {
     return { ok: false, error: "PIN incorrect." };
   }
   const profile = JSON.parse(safeStorage.decryptString(Buffer.from(record.profile, "base64")));
-  const age = Date.now() - new Date(profile.validatedAt).getTime();
-  if (age > 7 * 24 * 60 * 60_000) return { ok: false, error: "Une connexion Internet est requise pour renouveler les droits de cet appareil." };
   record.attempts = 0; record.lockedUntil = 0;
   fs.writeFileSync(offlineAuthFile(), JSON.stringify(record), { mode: 0o600 });
   return { ok: true, profile };
@@ -84,6 +92,24 @@ ipcMain.handle("local-db:del", (_event, key) => {
 
 ipcMain.handle("local-db:keys", () => {
   return database().keys();
+});
+
+ipcMain.handle("local-api:request", (_event, request) => {
+  const record = readOfflineAuth();
+  if (!record || !localApi) {
+    return { status: 403, headers: { "content-type": "application/json" }, body: JSON.stringify({ message: "Le mode local n’est pas activé." }) };
+  }
+  try {
+    const profile = JSON.parse(safeStorage.decryptString(Buffer.from(record.profile, "base64")));
+    const result = localApi.handle(request, database(), profile.userId);
+    return result;
+  } catch (error) {
+    return {
+      status: 500,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message: error instanceof Error ? error.message : String(error) }),
+    };
+  }
 });
 
 ipcMain.handle("local-data:protect", (_event, value) => {
@@ -129,8 +155,9 @@ function startLocalServer() {
       PORT: String(LOCAL_PORT),
       NITRO_HOST: "127.0.0.1",
       NITRO_PORT: String(LOCAL_PORT),
+      DESKTOP_LOCAL_ONLY: String(Boolean(readOfflineAuth())),
     },
-    stdio: "ignore",
+    stdio: ["ignore", "ignore", "ignore", "ipc"],
     windowsHide: true,
   });
 }
@@ -204,6 +231,20 @@ function createWindow() {
 app.whenReady().then(() => {
   // Create the database before rendering, even on a first offline launch.
   localDatabase = createLocalDatabase(app.getPath("userData"), safeStorage);
+  localApi = createLocalApi();
+  blockExternalRequests = Boolean(readOfflineAuth());
+  const appSession = session.fromPartition("persist:conetec");
+  appSession.webRequest.onBeforeRequest((details, callback) => {
+    let localRequest = false;
+    try {
+      const requestUrl = new URL(details.url);
+      localRequest = requestUrl.protocol === "file:"
+        || (requestUrl.protocol === "http:" && ["127.0.0.1", "localhost"].includes(requestUrl.hostname));
+    } catch {
+      localRequest = false;
+    }
+    callback({ cancel: blockExternalRequests && !localRequest });
+  });
   startLocalServer();
   createWindow();
   app.on("activate", () => {

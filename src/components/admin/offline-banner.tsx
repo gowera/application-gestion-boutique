@@ -1,4 +1,4 @@
-import { CloudOff, RefreshCw } from "lucide-react";
+import { CloudOff, HardDrive, RefreshCw } from "lucide-react";
 import { useSync } from "@/hooks/use-sync";
 import { Button } from "@/components/ui/button";
 import { syncNow } from "@/lib/offline/sync";
@@ -13,8 +13,9 @@ import { Link } from "@tanstack/react-router";
 export function OfflineBanner({ scope }: { scope?: string }) {
   const { online, pending, syncing, lastSyncAt } = useSync();
   const qc = useQueryClient();
+  const desktop = typeof window !== "undefined" && Boolean(window.conetecDesktop);
 
-  if (online && pending === 0) return null;
+  if (!desktop && online && pending === 0) return null;
 
   return (
     <div
@@ -22,22 +23,24 @@ export function OfflineBanner({ scope }: { scope?: string }) {
         online ? "border-primary/30 bg-primary/5" : "border-warning/40 bg-warning/10"
       }`}
     >
-      {online ? <RefreshCw className="h-4 w-4 shrink-0" /> : <CloudOff className="h-4 w-4 shrink-0" />}
+      {desktop ? <HardDrive className="h-4 w-4 shrink-0" /> : online ? <RefreshCw className="h-4 w-4 shrink-0" /> : <CloudOff className="h-4 w-4 shrink-0" />}
       <div className="min-w-0 flex-1">
         <div className="font-medium">
-          {online ? "Écritures en attente de synchronisation" : "Mode hors ligne — enregistrement local"}
+          {desktop ? "Mode local — aucune synchronisation" : online ? "Écritures en attente de synchronisation" : "Mode hors ligne — enregistrement local"}
         </div>
         <div className="text-muted-foreground">
-          {pending > 0
+          {desktop
+            ? `Les données${scope ? ` (${scope})` : ""} restent uniquement sur cet ordinateur.`
+            : pending > 0
             ? `${pending} opération(s) en attente${scope ? ` (${scope} inclus)` : ""}.`
             : "Vos saisies sont conservées sur cet ordinateur et envoyées dès le retour de la connexion."}
-          {lastSyncAt && ` Dernière synchro : ${new Date(lastSyncAt).toLocaleTimeString("fr-FR")}.`}
+          {!desktop && lastSyncAt && ` Dernière synchro : ${new Date(lastSyncAt).toLocaleTimeString("fr-FR")}.`}
         </div>
       </div>
-      <Button size="sm" variant="ghost" asChild>
+      {!desktop && <Button size="sm" variant="ghost" asChild>
         <Link to="/admin/sync">Détails</Link>
-      </Button>
-      <Button
+      </Button>}
+      {!desktop && <Button
         size="sm"
         variant="outline"
         disabled={syncing || !online}
@@ -47,7 +50,7 @@ export function OfflineBanner({ scope }: { scope?: string }) {
         }}
       >
         {syncing ? "Synchronisation…" : "Synchroniser"}
-      </Button>
+      </Button>}
     </div>
   );
 }

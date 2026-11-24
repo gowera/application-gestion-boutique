@@ -27,7 +27,8 @@ export function ShopOnboarding() {
   const { data } = useSettings();
   const qc = useQueryClient();
   const s = data as unknown as Record<string, unknown> | undefined;
-  const open = Boolean(s) && !s?.["onboarded"] && navigator.onLine;
+  const desktopLocal = typeof window !== "undefined" && Boolean(window.conetecDesktop);
+  const open = desktopLocal ? !s?.["onboarded"] : Boolean(s) && !s?.["onboarded"] && navigator.onLine;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -37,6 +38,16 @@ export function ShopOnboarding() {
   const [busy, setBusy] = useState(false);
 
   async function upload(file: File) {
+    if (desktopLocal) {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(reader.error ?? new Error("Impossible de lire le logo."));
+        reader.readAsDataURL(file);
+      });
+      setLogo(dataUrl);
+      return;
+    }
     const path = await shopStoragePath(`site-assets/${crypto.randomUUID()}-${file.name}`);
     const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true, contentType: file.type || "image/png" });
     if (error) return toast.error(error.message);

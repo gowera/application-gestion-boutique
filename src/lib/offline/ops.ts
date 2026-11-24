@@ -26,6 +26,9 @@ export async function runOrQueue<T>(
   online: () => Promise<T>,
   operationId?: string,
 ): Promise<RunResult<T>> {
+  if (typeof window !== "undefined" && window.conetecDesktop) {
+    return { queued: false, data: await online() };
+  }
   if (isOffline() || !getSyncState().online) {
     await queueOperation(kind, label, payload, operationId);
     return { queued: true };
@@ -43,5 +46,6 @@ export async function runOrQueue<T>(
 }
 
 export function queuedMessage(label: string) {
+  if (typeof window !== "undefined" && window.conetecDesktop) return `${label} enregistré localement sur cet ordinateur.`;
   return `${label} enregistré localement — sera synchronisé au retour de la connexion.`;
 }

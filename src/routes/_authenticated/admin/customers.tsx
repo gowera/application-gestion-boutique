@@ -359,7 +359,11 @@ function CreditsTab() {
       return { queued: false };
     },
     onSuccess: (res) => {
-      toast.success(res?.queued ? "Crédit enregistré localement — synchronisation au retour du réseau" : "Crédit octroyé");
+      toast.success(res?.queued
+        ? typeof window !== "undefined" && window.conetecDesktop
+          ? "Crédit enregistré localement — aucune synchronisation."
+          : "Crédit enregistré localement — synchronisation au retour du réseau"
+        : "Crédit octroyé");
       qc.invalidateQueries({ queryKey: ["debtors"] });
       qc.invalidateQueries({ queryKey: ["customers"] });
       qc.invalidateQueries({ queryKey: ["ledger-due-dates"] });
@@ -525,7 +529,11 @@ function NewDebtDialog({ open, onClose }: { open: boolean; onClose: () => void }
       return { queued: false };
     },
     onSuccess: (res) => {
-      toast.success(res?.queued ? "Dette enregistrée localement — synchronisation au retour du réseau" : "Dette enregistrée");
+      toast.success(res?.queued
+        ? typeof window !== "undefined" && window.conetecDesktop
+          ? "Dette enregistrée localement — aucune synchronisation."
+          : "Dette enregistrée localement — synchronisation au retour du réseau"
+        : "Dette enregistrée");
       qc.invalidateQueries({ queryKey: ["debtors"] });
       qc.invalidateQueries({ queryKey: ["customers"] });
       qc.invalidateQueries({ queryKey: ["customers-all"] });

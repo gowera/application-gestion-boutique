@@ -10,6 +10,7 @@ export function useSession() {
   return useQuery({
     queryKey: ["auth", "session"],
     queryFn: async () => {
+      if (typeof window !== "undefined" && window.conetecDesktop && await window.conetecDesktop.isLocalOnly()) return null;
       const { data } = await supabase.auth.getSession();
       return data.session;
     },
@@ -21,7 +22,7 @@ export function useCurrentUser() {
   const { data: session, isLoading } = useSession();
   const offline = typeof window !== "undefined" ? getOfflineProfile() : null;
   const localUser = offline ? { id: offline.userId, email: offline.email } : null;
-  return { user: session?.user ?? localUser, isLoading };
+  return { user: localUser ?? session?.user ?? null, isLoading };
 }
 
 export function useMyRoles() {
@@ -32,6 +33,9 @@ export function useMyRoles() {
     queryFn: async () => {
       if (!user) return [];
       const offline = getOfflineProfile();
+      if (typeof window !== "undefined" && window.conetecDesktop && await window.conetecDesktop.isLocalOnly()) {
+        return offline?.userId === user.id ? offline.roles as AppRole[] : [];
+      }
       if (!navigator.onLine && offline?.userId === user.id) return offline.roles as AppRole[];
       const cacheKey = `conetec:roles:${user.id}`;
       try {

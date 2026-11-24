@@ -18,7 +18,28 @@ function serverSupabaseUrl(publicUrl: string, supabaseKey: string): string | und
 function createSupabaseFetch(supabaseUrl: string, supabaseKey: string): typeof fetch {
   const publicUrl = supabaseUrl.replace(/\/+$/, '');
   const serverUrl = serverSupabaseUrl(publicUrl, supabaseKey);
-  return (input, init) => {
+  return async (input, init) => {
+    const requestUrl = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    const desktop = typeof window !== 'undefined' ? window.conetecDesktop : undefined;
+    if (desktop?.isDesktop && await desktop.isLocalOnly()) {
+      const request = new Request(input, init);
+      const url = new URL(request.url);
+      if (url.origin !== new URL(publicUrl).origin || !url.pathname.startsWith('/rest/v1/')) {
+        return new Response(JSON.stringify({ message: 'Cette opération serveur est désactivée en mode local.' }), {
+          status: 403,
+          headers: { 'content-type': 'application/json; charset=utf-8' },
+        });
+      }
+      const result = await desktop.localRequest({
+        pathname: url.pathname,
+        search: url.search,
+        method: request.method,
+        headers: Array.from(request.headers.entries()),
+        body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text(),
+      });
+      return new Response(result.body || null, { status: result.status, headers: result.headers });
+    }
+
     const headers = new Headers(
       typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined,
     );
@@ -34,9 +55,8 @@ function createSupabaseFetch(supabaseUrl: string, supabaseKey: string): typeof f
 
     headers.set('apikey', supabaseKey);
     if (serverUrl) {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-      if (url.startsWith(`${publicUrl}/`)) {
-        const target = serverUrl + url.slice(publicUrl.length);
+      if (requestUrl.startsWith(`${publicUrl}/`)) {
+        const target = serverUrl + requestUrl.slice(publicUrl.length);
         const request = typeof input === 'string' || input instanceof URL ? target : new Request(target, input);
         return fetch(request, { ...init, headers });
       }
@@ -68,8 +88,8 @@ function createSupabaseClient() {
     },
     auth: {
       storage: brokeredPreviewStorage(),
-      persistSession: true,
-      autoRefreshToken: true,
+      persistSession: typeof window === 'undefined' || !window.conetecDesktop,
+      autoRefreshToken: typeof window === 'undefined' || !window.conetecDesktop,
     },
   });
 }

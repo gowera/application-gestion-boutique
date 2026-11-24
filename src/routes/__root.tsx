@@ -86,7 +86,7 @@ function RootComponent() {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      if (event === "SIGNED_IN") {
+      if (event === "SIGNED_IN" && !(typeof window !== "undefined" && window.conetecDesktop)) {
         void supabase.rpc("log_auth_event", {
           _action: "auth.signin",
           _metadata: { agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 180) : null },

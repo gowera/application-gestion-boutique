@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Cloud, CloudOff, RefreshCw } from "lucide-react";
+import { Cloud, CloudOff, HardDrive, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useSync } from "@/hooks/use-sync";
 import { syncNow } from "@/lib/offline/sync";
@@ -11,6 +11,7 @@ export function SyncStatus() {
   const { online, syncing, pending, lastSyncAt } = useSync();
   const [busy, setBusy] = useState(false);
   const qc = useQueryClient();
+  const desktop = typeof window !== "undefined" && Boolean(window.conetecDesktop);
 
   async function run() {
     setBusy(true);
@@ -29,6 +30,15 @@ export function SyncStatus() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (desktop) {
+    return (
+      <Button variant="ghost" size="sm" disabled className="gap-1.5 px-2 text-success">
+        <HardDrive className="h-4 w-4" />
+        <span className="hidden sm:inline text-xs font-medium">Données locales</span>
+      </Button>
+    );
   }
 
   return (

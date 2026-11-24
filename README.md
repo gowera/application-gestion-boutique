@@ -507,3 +507,7 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Application Windows — mode local
+
+Créez le compte depuis le site avant d’installer l’application Windows. Au premier lancement, une connexion Internet est requise une seule fois pour vérifier ce compte et ses rôles, puis un PIN protège l’accès local. La base de données de la boutique démarre vide et ses enregistrements sont conservés localement, chiffrés sur l’appareil. L’application Windows ne télécharge pas les données du serveur et ne les synchronise pas; les fonctions qui dépendent encore d’un service en ligne sont désactivées.

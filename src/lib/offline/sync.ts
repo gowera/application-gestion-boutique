@@ -11,7 +11,7 @@ export type SyncState = {
 };
 
 let state: SyncState = {
-  online: typeof navigator === "undefined" ? true : navigator.onLine,
+  online: typeof window !== "undefined" && window.conetecDesktop ? false : typeof navigator === "undefined" ? true : navigator.onLine,
   syncing: false,
   pending: 0,
   lastSyncAt: null,
@@ -35,6 +35,7 @@ export function getSyncState(): SyncState {
 }
 
 export function isOffline(): boolean {
+  if (typeof window !== "undefined" && window.conetecDesktop) return true;
   if (typeof navigator !== "undefined" && !navigator.onLine) return true;
   return state.online === false;
 }
@@ -51,6 +52,16 @@ export async function queueOperation(
   payload: Record<string, unknown>,
   id?: string,
 ): Promise<OutboxOp> {
+  if (typeof window !== "undefined" && window.conetecDesktop) {
+    const operationId = id ?? crypto.randomUUID();
+    const { error } = await supabase.rpc("sync_apply_operation", {
+      _client_op_id: operationId,
+      _kind: kind,
+      _payload: payload as never,
+    });
+    if (error) throw error;
+    return { id: operationId, kind, label, payload, createdAt: new Date().toISOString(), tries: 0 };
+  }
   const op = await outboxAdd({ kind, label, payload }, id);
   await refreshPending();
   void syncNow();
@@ -75,6 +86,10 @@ async function pushOne(op: OutboxOp): Promise<boolean> {
 
 /** Rejoue la file d'attente. Sans réseau ou sans session, ne fait rien. */
 export async function syncNow(forceDownload = false): Promise<{ sent: number; failed: number }> {
+  if (typeof window !== "undefined" && window.conetecDesktop) {
+    emit({ online: false, syncing: false });
+    return { sent: 0, failed: 0 };
+  }
   if (state.syncing) return { sent: 0, failed: 0 };
   if (isOffline()) {
     emit({ online: false });
@@ -119,6 +134,7 @@ export async function syncNow(forceDownload = false): Promise<{ sent: number; fa
 
 /** Réessaie immédiatement une opération précise de la file d'attente. */
 export async function retryOperation(id: string): Promise<boolean> {
+  if (typeof window !== "undefined" && window.conetecDesktop) return false;
   const list = await outboxList();
   const op = list.find((o) => o.id === id);
   if (!op) return false;
@@ -165,6 +181,10 @@ async function probeConnectivity(): Promise<boolean> {
  */
 export function startSyncEngine(): () => void {
   if (typeof window === "undefined" || started) return () => {};
+  if (window.conetecDesktop) {
+    emit({ online: false, syncing: false });
+    return () => {};
+  }
   started = true;
 
   const onOnline = () => {

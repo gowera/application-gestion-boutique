@@ -14,8 +14,14 @@ import { formatDate } from "@/lib/format";
 import { useSettings } from "@/lib/currency";
 import { Mail, MessageCircle, Phone, Send, Users } from "lucide-react";
 import { toast } from "sonner";
+import { LocalUnavailable } from "@/components/admin/local-unavailable";
 
-export const Route = createFileRoute("/_authenticated/admin/messages")({ component: Page });
+export const Route = createFileRoute("/_authenticated/admin/messages")({ component: RoutePage });
+
+function RoutePage() {
+  if (typeof window !== "undefined" && window.conetecDesktop) return <LocalUnavailable feature="Devis & messages" />;
+  return <Page />;
+}
 
 type QuoteRequest = {
   id: string; name: string; phone: string; email: string | null;

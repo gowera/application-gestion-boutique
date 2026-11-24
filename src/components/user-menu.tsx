@@ -14,11 +14,14 @@ export function UserMenu() {
   const qc = useQueryClient();
 
   async function signOut() {
-    await supabase.rpc("log_auth_event", { _action: "auth.signout", _metadata: {} }).then(() => {}, () => {});
+    const desktop = typeof window !== "undefined" && Boolean(window.conetecDesktop);
+    if (!desktop) {
+      await supabase.rpc("log_auth_event", { _action: "auth.signout", _metadata: {} }).then(() => {}, () => {});
+    }
     await qc.cancelQueries();
     qc.clear();
     clearOfflineUnlocked();
-    if (navigator.onLine) await supabase.auth.signOut();
+    if (!desktop && navigator.onLine) await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
 

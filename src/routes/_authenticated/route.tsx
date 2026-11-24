@@ -16,7 +16,8 @@ import { useSync } from "@/hooks/use-sync";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    if (typeof window !== "undefined" && window.conetecDesktop && !navigator.onLine) {
+    if (typeof window !== "undefined" && window.conetecDesktop) {
+      if (!await window.conetecDesktop.isLocalOnly()) throw redirect({ to: "/auth" });
       const offlineProfile = getOfflineProfile();
       if (!offlineProfile) throw redirect({ to: "/auth" });
       setLocalUser(offlineProfile.userId);
@@ -75,18 +76,41 @@ function AccessDenied() {
   );
 }
 
+const LOCAL_DISABLED_ROUTES = [
+  "/admin/trash",
+  "/admin/team",
+  "/admin/users",
+  "/admin/invitations",
+  "/admin/messages",
+  "/admin/orders",
+];
+
+function LocalFeatureDisabled() {
+  return (
+    <div role="status" className="mx-auto max-w-xl rounded-lg border bg-muted/30 p-6 text-center">
+      <h1 className="text-display text-lg font-semibold">Fonction désactivée en mode local</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Cette fonction dépend encore d’un service en ligne. Elle est désactivée pour que les données de l’application restent sur cet ordinateur.
+      </p>
+    </div>
+  );
+}
+
 function Guarded() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { allowed, isLoading } = useAllowedMenus();
   if (isLoading) return <Outlet />;
+  if (typeof window !== "undefined" && window.conetecDesktop
+    && LOCAL_DISABLED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
+    return <LocalFeatureDisabled />;
+  }
   const match = allowed.some((k) => (k === "/admin" ? pathname === "/admin" : pathname === k || pathname.startsWith(k + "/")));
   if (!match) return <AccessDenied />;
   return <Outlet />;
 }
 
 function AuthenticatedLayout() {
-  // Moteur de synchronisation lancé pour toute l'administration : il tourne en
-  // arrière-plan quelle que soit la page ouverte et repart dès le retour du réseau.
+  // Le moteur reste actif sur le web; la version Windows est strictement locale.
   useSync();
   return (
     <SidebarProvider>

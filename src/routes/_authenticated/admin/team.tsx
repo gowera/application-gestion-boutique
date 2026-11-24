@@ -15,8 +15,14 @@ import {
   type TeamMember, type TeamMemberInput,
 } from "@/lib/team";
 import { resolveImageUrl } from "@/lib/storage";
+import { LocalUnavailable } from "@/components/admin/local-unavailable";
 
-export const Route = createFileRoute("/_authenticated/admin/team")({ component: TeamAdminPage });
+export const Route = createFileRoute("/_authenticated/admin/team")({ component: RoutePage });
+
+function RoutePage() {
+  if (typeof window !== "undefined" && window.conetecDesktop) return <LocalUnavailable feature="Équipe" />;
+  return <TeamAdminPage />;
+}
 
 const EMPTY: TeamMemberInput = {
   name: "", role: "", bio: "", photo_url: null, cv_url: null,

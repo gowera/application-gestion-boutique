@@ -10,8 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
+import { LocalUnavailable } from "@/components/admin/local-unavailable";
 
-export const Route = createFileRoute("/_authenticated/admin/invitations")({ component: Page });
+export const Route = createFileRoute("/_authenticated/admin/invitations")({ component: RoutePage });
+
+function RoutePage() {
+  if (typeof window !== "undefined" && window.conetecDesktop) return <LocalUnavailable feature="Invitations" />;
+  return <Page />;
+}
 
 function Page() {
   const qc = useQueryClient();

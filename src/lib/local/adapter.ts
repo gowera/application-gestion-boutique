@@ -17,14 +17,25 @@ export async function setAdminSettings(payload: Record<string, unknown>): Promis
   const core = ["shop_name","logo_url","address","phone","whatsapp","email","primary_currency","usd_to_cdf_rate","low_stock_threshold","invoice_prefix","legal_mentions","document_theme_color"];
   const { data: current, error: readError } = await supabase.from("shop_settings").select("shop_id, extras").maybeSingle();
   if (readError) throw readError;
-  if (!current) throw new Error("Boutique introuvable pour ce compte.");
   const update: Record<string, unknown> = {};
-  const extras: Record<string, unknown> = { ...((current.extras as Record<string, unknown>) ?? {}), ...((payload["extras"] as Record<string, unknown>) ?? {}) };
+  const extras: Record<string, unknown> = { ...(((current?.extras as Record<string, unknown> | undefined) ?? {})), ...((payload["extras"] as Record<string, unknown>) ?? {}) };
   for (const [k, v] of Object.entries(payload)) {
     if (k === "extras") continue;
     if (core.includes(k)) update[k] = v; else extras[k] = v;
   }
   update["extras"] = extras;
+  if (!current && typeof window !== "undefined" && window.conetecDesktop) {
+    const { data: shopId, error: shopIdError } = await supabase.rpc("current_shop_id");
+    if (shopIdError) throw shopIdError;
+    const { error } = await supabase.from("shop_settings").insert({
+      shop_id: shopId,
+      shop_name: String(payload["shop_name"] ?? "Ma boutique"),
+      ...update,
+    });
+    if (error) throw error;
+    return;
+  }
+  if (!current) throw new Error("Boutique introuvable pour ce compte.");
   // @ts-expect-error dynamic payload
   const { error } = await supabase.from("shop_settings").update(update).eq("shop_id", current.shop_id);
   if (error) throw error;

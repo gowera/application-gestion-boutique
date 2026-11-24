@@ -1,11 +1,37 @@
 import { createServer } from "node:http";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
-import appHandler from "../dist/server/index.mjs";
+import appHandler from "../.output/server/index.mjs";
+
+let localOnly = process.env.DESKTOP_LOCAL_ONLY === "true";
+process.on("message", (message) => {
+  if (message?.type === "enable-local-only") localOnly = true;
+});
+
+const nativeFetch = globalThis.fetch;
+globalThis.fetch = (input, init) => {
+  if (localOnly) {
+    const requestUrl = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    let isLocal = false;
+    try {
+      const url = new URL(requestUrl);
+      isLocal = url.protocol === "http:" && ["127.0.0.1", "localhost"].includes(url.hostname);
+    } catch {
+      isLocal = false;
+    }
+    if (!isLocal) {
+      return Promise.resolve(new Response(JSON.stringify({ message: "Les requêtes réseau sont désactivées en mode local." }), {
+        status: 403,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      }));
+    }
+  }
+  return nativeFetch(input, init);
+};
 
 const host = process.env.HOST || "127.0.0.1";
 const port = Number(process.env.PORT || 41731);
-const publicDir = join(import.meta.dirname, "..", "dist", "client");
+const publicDir = join(import.meta.dirname, "..", ".output", "public");
 
 const mimeTypes = {
   ".css": "text/css; charset=utf-8",

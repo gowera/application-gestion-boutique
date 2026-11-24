@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useLogoUrl } from "@/lib/logo";
 import { STAFF_ROLES } from "@/lib/permissions";
-import { setOfflineUnlocked } from "@/lib/offline/auth";
+import { setOfflineUnlocked, type OfflineProfile } from "@/lib/offline/auth";
 import { setLocalUser } from "@/lib/offline/store";
 
 async function landingFor(userId: string): Promise<"/admin"> {
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/auth")({
   ] }),
   ssr: false,
   beforeLoad: async () => {
-    if (typeof window !== "undefined" && window.conetecDesktop && !navigator.onLine) return;
+    if (typeof window !== "undefined" && window.conetecDesktop) return;
     const { data } = await supabase.auth.getUser();
     if (data.user) throw redirect({ to: await landingFor(data.user.id) });
   },
@@ -46,26 +46,46 @@ function AuthPage() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [offlinePin, setOfflinePin] = useState("");
-  const desktopOffline = typeof window !== "undefined" && Boolean(window.conetecDesktop) && !navigator.onLine;
+  const [confirmPin, setConfirmPin] = useState("");
+  const [desktop, setDesktop] = useState(false);
+  const [localOnly, setLocalOnly] = useState(false);
+  const [setupProfile, setSetupProfile] = useState<OfflineProfile | null>(null);
 
   useEffect(() => {
-    const sub = supabase.auth.onAuthStateChange((_e, session) => {
-      if (!session) return;
-      void landingFor(session.user.id).then((to) => navigate({ to, replace: true }));
-    });
-    return () => sub.data.subscription.unsubscribe();
+    const bridge = window.conetecDesktop;
+    if (!bridge) return;
+    setDesktop(true);
+    void bridge.isLocalOnly().then(setLocalOnly);
   }, [navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     if (mode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setLoading(false);
+        return toast.error(error.message);
+      }
+      if (desktop) {
+        const { data: userRoles, error: rolesError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id);
+        setLoading(false);
+        if (rolesError) return toast.error(rolesError.message);
+        const roles = (userRoles ?? []).map((row) => row.role as string);
+        if (!roles.some((role) => (STAFF_ROLES as string[]).includes(role))) {
+          return toast.error("Ce compte n’a pas accès à la gestion de boutique.");
+        }
+        setSetupProfile({ userId: data.user.id, email: data.user.email ?? email, roles });
+        return;
+      }
       setLoading(false);
-      if (error) return toast.error(error.message);
       toast.success("Connexion réussie");
+      navigate({ to: await landingFor(data.user.id), replace: true });
     } else {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -76,7 +96,22 @@ function AuthPage() {
       setLoading(false);
       if (error) return toast.error(error.message);
       toast.success("Compte créé — bienvenue.");
+      if (data.user && data.session) navigate({ to: await landingFor(data.user.id), replace: true });
     }
+  }
+
+  async function activateLocalMode() {
+    if (!setupProfile || !window.conetecDesktop) return;
+    if (!/^\d{4,8}$/.test(offlinePin)) return toast.error("Le PIN doit contenir 4 à 8 chiffres.");
+    if (offlinePin !== confirmPin) return toast.error("Les deux PIN ne correspondent pas.");
+    setLoading(true);
+    const result = await window.conetecDesktop.configureOfflinePin(offlinePin, setupProfile);
+    setLoading(false);
+    if (!result.ok) return toast.error(result.error ?? "Impossible d’activer le mode local.");
+    setOfflineUnlocked(setupProfile);
+    setLocalUser(setupProfile.userId);
+    toast.success("Mode local activé. Aucune synchronisation ne sera effectuée.");
+    navigate({ to: "/admin", replace: true });
   }
 
   async function unlockOffline() {
@@ -105,14 +140,25 @@ function AuthPage() {
               {mode === "login" ? "Connexion" : "Créer un compte"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {mode === "login" ? "Accédez à votre espace de gestion." : "Créez votre compte de gestion."}
+              {setupProfile
+                ? "Définissez un PIN pour protéger les données stockées uniquement sur cet ordinateur."
+                : mode === "login" ? "Accédez à votre espace de gestion." : "Créez votre compte de gestion."}
             </p>
-            {desktopOffline ? (
+            {desktop && localOnly ? (
               <div className="mt-6 space-y-4">
                 <div><Label>PIN de cet appareil</Label><Input type="password" inputMode="numeric" value={offlinePin} onChange={(event) => setOfflinePin(event.target.value.replace(/\D/g, "").slice(0, 8))} /></div>
                 <Button type="button" className="w-full" size="lg" disabled={loading || offlinePin.length < 4} onClick={unlockOffline}>{loading ? "Vérification…" : "Déverrouiller hors ligne"}</Button>
-                <p className="text-center text-xs text-muted-foreground">Connexion Internet absente. Le PIN ouvre uniquement les données déjà téléchargées sur cet ordinateur.</p>
+                <p className="text-center text-xs text-muted-foreground">Toutes les données de ce compte restent sur cet ordinateur. Aucune synchronisation n’est active.</p>
               </div>
+            ) : setupProfile ? (
+              <div className="mt-6 space-y-4">
+                <p className="text-sm text-muted-foreground">Compte vérifié : {setupProfile.email}. La base locale démarre vide.</p>
+                <div><Label>PIN (4 à 8 chiffres)</Label><Input type="password" inputMode="numeric" value={offlinePin} onChange={(event) => setOfflinePin(event.target.value.replace(/\D/g, "").slice(0, 8))} /></div>
+                <div><Label>Confirmer le PIN</Label><Input type="password" inputMode="numeric" value={confirmPin} onChange={(event) => setConfirmPin(event.target.value.replace(/\D/g, "").slice(0, 8))} /></div>
+                <Button type="button" className="w-full" size="lg" disabled={loading || offlinePin.length < 4 || confirmPin.length < 4} onClick={activateLocalMode}>{loading ? "Activation…" : "Activer le mode local"}</Button>
+              </div>
+            ) : desktop && !navigator.onLine ? (
+              <p className="mt-6 text-center text-sm text-muted-foreground">Une connexion Internet est nécessaire une seule fois pour vérifier le compte et activer cet appareil.</p>
             ) : <form className="mt-6 space-y-4" onSubmit={submit}>
               {mode === "signup" && (
                 <div>
@@ -132,7 +178,7 @@ function AuthPage() {
                 {loading ? "Patientez..." : mode === "login" ? "Se connecter" : "Créer le compte"}
               </Button>
             </form>}
-            {!desktopOffline && <button
+            {!desktop && <button
               type="button"
               onClick={() => setMode(mode === "login" ? "signup" : "login")}
               className="mt-4 w-full text-center text-sm text-muted-foreground hover:text-foreground"

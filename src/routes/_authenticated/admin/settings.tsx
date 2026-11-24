@@ -39,9 +39,19 @@ const TABS: [TabId, string][] = [
 
 type Extras = Record<string, unknown>;
 
+function fileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error("Impossible de lire l’image."));
+    reader.readAsDataURL(file);
+  });
+}
+
 function Page() {
   const { data } = useSettings();
   const qc = useQueryClient();
+  const desktopLocal = typeof window !== "undefined" && Boolean(window.conetecDesktop);
   const [tab, setTab] = useState<TabId>("boutique");
 
   const [core, setCore] = useState({
@@ -90,6 +100,12 @@ function Page() {
   const setEx = (k: string, v: unknown) => setExtras((e) => ({ ...e, [k]: v }));
 
   async function uploadTo(field: "logo_url" | string, file: File, extrasField = false) {
+    if (desktopLocal) {
+      const localUrl = await fileAsDataUrl(file);
+      if (extrasField) setEx(field, localUrl); else setCore((c) => ({ ...c, [field]: localUrl } as typeof c));
+      toast.success("Image enregistrée localement");
+      return;
+    }
     const path = await shopStoragePath(`site-assets/${crypto.randomUUID()}-${file.name}`);
     const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true, contentType: file.type || "image/png" });
     if (error) { toast.error(error.message); return; }
