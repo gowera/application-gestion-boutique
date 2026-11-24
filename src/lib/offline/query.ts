@@ -19,14 +19,17 @@ function withReadTimeout<T>(promise: Promise<T>): Promise<T> {
  */
 export function offlineQueryFn<T>(cacheKey: string, fn: () => Promise<T>, bootstrapKey?: string) {
   return async (): Promise<T> => {
-    const cached = await cacheGet<T>(cacheKey) ?? (bootstrapKey ? await cacheGet<T>(bootstrapKey) : undefined);
-    if (isOffline() && cached !== undefined) return cached;
+    const desktopLocal = typeof window !== "undefined" && Boolean(window.conetecDesktop);
+    const cached = desktopLocal
+      ? undefined
+      : await cacheGet<T>(cacheKey) ?? (bootstrapKey ? await cacheGet<T>(bootstrapKey) : undefined);
+    if (!desktopLocal && isOffline() && cached !== undefined) return cached;
     try {
       const data = await withReadTimeout(fn());
-      await cacheSet(cacheKey, data);
+      if (!desktopLocal) await cacheSet(cacheKey, data);
       return data;
     } catch (err) {
-      if (cached !== undefined) return cached;
+      if (!desktopLocal && cached !== undefined) return cached;
       throw err;
     }
   };
