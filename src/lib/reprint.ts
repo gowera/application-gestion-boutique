@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { downloadReceipt } from "@/lib/pdf";
+import { buildReceiptDoc } from "@/lib/pdf";
 import { getStoredDocumentTemplate } from "@/lib/document-template";
 import { issueDocumentNumber, docTypeLabel, type DocumentType } from "@/lib/documents";
 import type { AppSettings } from "@/lib/currency";
@@ -15,7 +15,7 @@ export async function reprintSaleDocument(opts: {
   saleId: string;
   docType: DocumentType;
   settings: AppSettings | undefined;
-}) {
+}): Promise<string> {
   const { saleId, docType, settings } = opts;
   const currency = settings?.primary_currency ?? "USD";
   const rate = settings?.usd_to_cdf_rate ?? 2800;
@@ -51,7 +51,8 @@ export async function reprintSaleDocument(opts: {
 
   const logoDataUrl = await loadLogoDataUrl((settings as { logo_url?: string } | undefined)?.logo_url);
 
-  downloadReceipt({
+  const documentType = docTypeLabel(docType);
+  const pdf = buildReceiptDoc({
     logoDataUrl,
     shopName: settings?.shop_name ?? "Ma boutique",
     address: settings?.address ?? "",
@@ -68,9 +69,10 @@ export async function reprintSaleDocument(opts: {
     paid: Number(sale.paid_usd),
     credit: Number(sale.credit_usd),
     currency, rate,
-    documentType: docTypeLabel(docType),
+    documentType,
     template: getStoredDocumentTemplate(),
   });
 
-  return code!;
+  pdf.save(`${docType}-${code}.pdf`);
+  return pdf.output("datauristring");
 }

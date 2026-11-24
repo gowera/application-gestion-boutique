@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,6 +48,10 @@ function Page() {
   const [template, setTemplate] = useState<DocumentTemplateId>(getStoredDocumentTemplate());
   const [designerKind, setDesignerKind] = useState<DocumentKind>("recu");
   const [documentType, setDocumentType] = useState<DocumentLabel>("Facture");
+  const [billingPeriod, setBillingPeriod] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
   const [customerId, setCustomerId] = useState("");
   const [manualMode, setManualMode] = useState(false);
   const [manualCustomer, setManualCustomer] = useState({ name: "", phone: "", address: "" });
@@ -57,6 +61,7 @@ function Page() {
   const [confirmStock, setConfirmStock] = useState(false);
   const marks = useDocumentMarks();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const printAfterRender = useRef(false);
   const { user } = useCurrentUser();
   const [lastDoc, setLastDoc] = useState<{ code: string; filename: string; base64: string; customer: string; type: DocumentLabel } | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -64,6 +69,15 @@ function Page() {
   const [emailMessage, setEmailMessage] = useState("");
   const [emailSending, setEmailSending] = useState(false);
 
+  useEffect(() => {
+    if (marks.loadError) toast.error(`Impossible de charger la signature et le sceau : ${marks.loadError}`);
+  }, [marks.loadError]);
+
+  const onPdfRendered = useCallback(() => {
+    if (!printAfterRender.current) return;
+    printAfterRender.current = false;
+    window.setTimeout(() => window.print(), 100);
+  }, []);
 
 
   const { data: customers = [] } = useQuery<Customer[]>({
@@ -78,6 +92,7 @@ function Page() {
   });
 
   const isProforma = documentType === "Facture Proforma";
+  const isMonthly = documentType === "Facture mensuelle";
   const subtotal = lines.reduce((a, l) => a + Number(l.qty || 0) * Number(l.unit || 0), 0);
   const stockSummary = useMemo(() => {
     const grouped = new Map<string, { productId: string; name: string; qty: number; stock: number }>();
@@ -103,6 +118,7 @@ function Page() {
     code: string; customerName: string;
     items: { name: string; qty: number; unit: number; total: number }[];
     total: number; paid: number; credit: number;
+    billingPeriod?: string;
   }) => {
     const doc = buildReceiptDoc({
       logoDataUrl,
@@ -112,18 +128,23 @@ function Page() {
       items: args.items, subtotal: args.total, discount: 0, total: args.total,
       paid: args.paid, credit: args.credit,
       currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
-      documentType, template, note: note || undefined,
+      documentType, template,
+      note: isMonthly ? [`Période facturée : ${args.billingPeriod}`, note].filter(Boolean).join("\n") : note || undefined,
+      billingPeriod: args.billingPeriod,
       signatureDataUrl: marks.signature, stampDataUrl: marks.stamp,
     });
     const prefix = documentType === "Reçu" ? "recu" : isProforma ? "facture-proforma" : "facture";
     const filename = `${prefix}-${args.code}.pdf`;
     doc.save(filename);
-    const base64 = doc.output("datauristring").split(",")[1] ?? "";
+    const dataUri = doc.output("datauristring");
+    const base64 = dataUri.split(",")[1] ?? "";
     setLastDoc({ code: args.code, filename, base64, customer: args.customerName, type: documentType });
     await recordPrint({
       code: args.code, documentType, customer: args.customerName,
       totalUsd: args.total, user: user?.email ?? "Utilisateur", origin: "création",
     });
+    printAfterRender.current = true;
+    setPreviewUrl(dataUri);
   };
 
 
@@ -151,9 +172,10 @@ function Page() {
         customerName = customers.find((c) => c.id === customerId)?.name ?? "Client";
       }
       const items = lines.filter((l) => l.name.trim()).map((l) => ({ name: l.name, qty: Number(l.qty || 0), unit: Number(l.unit || 0), total: Number(l.qty || 0) * Number(l.unit || 0) }));
+      if (items.some((item) => item.qty <= 0 || item.unit < 0)) throw new Error("Les quantités doivent être positives et les prix ne peuvent pas être négatifs.");
       const total = items.reduce((a, i) => a + i.total, 0);
       const groupedStock = new Map<string, number>();
-      if (decrementStock && !isProforma) {
+      if (decrementStock && !isProforma && !isMonthly) {
         for (const line of lines.filter((candidate) => candidate.productId && candidate.name.trim())) {
           const productId = line.productId;
           if (!productId) continue;
@@ -171,12 +193,50 @@ function Page() {
       if (isProforma) {
         // Proforma : document d'offre, sans numérotation officielle ni impact stock.
         docCode = `PRO-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+        if (window.conetecDesktop) {
+          const { error } = await supabase.rpc("sync_apply_operation", {
+            _client_op_id: crypto.randomUUID(),
+            _kind: "document",
+            _payload: {
+              doc_type: "facture",
+              document_kind: "proforma",
+              code: docCode,
+              customer_id: manualMode ? null : customerId,
+              customer_name: customerName,
+              items,
+              subtotal_usd: total,
+              total_usd: total,
+              paid_usd: 0,
+              credit_usd: total,
+              note: note || null,
+            },
+          });
+          if (error) throw error;
+        }
         await emitDocument({ code: docCode, customerName, items, total, paid: 0, credit: total });
-        return { code: docCode, queued: false };
+        return { code: docCode, queued: false, stockApplied: false, monthly: false };
       }
-      const docType = labelToDocType(documentType as "Facture" | "Reçu");
+      const docType = labelToDocType(documentType);
       const operationId = crypto.randomUUID();
-      const payload = { doc_type: docType, customer_name: customerName, total_usd: total, stock_items: stockItems };
+      const documentNote = isMonthly
+        ? [`Période facturée : ${billingPeriod}`, note].filter(Boolean).join("\n")
+        : note || null;
+      const paid = isMonthly ? 0 : total;
+      const credit = isMonthly ? total : 0;
+      const payload = {
+        doc_type: docType,
+        document_kind: isMonthly ? "monthly" : "standard",
+        customer_id: manualMode ? null : customerId,
+        customer_name: customerName,
+        billing_period: isMonthly ? billingPeriod : null,
+        items,
+        subtotal_usd: total,
+        total_usd: total,
+        paid_usd: paid,
+        credit_usd: credit,
+        note: documentNote,
+        stock_items: stockItems,
+      };
       const res = await runOrQueue<{ code?: string; result?: { code?: string } }>(
           "document",
           `${documentType} — ${customerName}`,
@@ -227,11 +287,12 @@ function Page() {
             ...(current ?? []),
           ]);
       }
-      await emitDocument({ code: docCode, customerName, items, total, paid: total, credit: 0 });
-      return { code: docCode, queued, stockApplied: stockItems.length > 0 };
+      await emitDocument({ code: docCode, customerName, items, total, paid, credit, billingPeriod: isMonthly ? billingPeriod : undefined });
+      return { code: docCode, queued, stockApplied: stockItems.length > 0, monthly: isMonthly };
     },
     onSuccess: (res) => {
       if (res.queued) toast.warning(`Document ${res.code} créé hors ligne — numéro définitif attribué à la synchronisation.`);
+      else if (res.monthly) toast.success(`Facture mensuelle ${res.code} créée sans modifier le stock`);
       else toast.success(res.stockApplied ? "Document généré et stock mis à jour" : "Document généré sans modifier le stock");
       qc.invalidateQueries({ queryKey: ["document-history"] });
       qc.invalidateQueries({ queryKey: ["documents-products"] });
@@ -264,6 +325,7 @@ function Page() {
       paid: isProforma ? 0 : total, credit: isProforma ? total : 0,
       currency: settings?.primary_currency ?? "USD", rate: settings?.usd_to_cdf_rate ?? 2800,
       documentType, template, note: note || undefined,
+      billingPeriod: isMonthly ? billingPeriod : undefined,
       signatureDataUrl: marks.signature, stampDataUrl: marks.stamp,
     });
     setPreviewUrl(doc.output("datauristring"));
@@ -304,13 +366,14 @@ function Page() {
                     <SelectContent>
                       <SelectItem value="facture">Facture</SelectItem>
                       <SelectItem value="recu">Reçu</SelectItem>
+                      <SelectItem value="proforma">Facture proforma</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="min-w-0 overflow-x-auto p-3 sm:p-6">
-              <EditorCanvas kind={designerKind} onSaved={() => { setTemplate("custom"); setStoredDocumentTemplate("custom"); toast.success("Modèle enregistré et appliqué partout"); }} />
+              <EditorCanvas kind={designerKind} onSaved={() => { setTemplate("custom"); toast.success("Modèle enregistré et appliqué partout"); }} />
             </CardContent>
           </Card>
 
@@ -330,10 +393,21 @@ function Page() {
                     <Input type="file" accept="image/png,image/jpeg" onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      try { marks.save(kind, await fileToDataUrl(file)); toast.success(`${label} enregistrée`); }
-                      catch { toast.error("Image illisible"); }
+                      try {
+                        await marks.save(kind, await fileToDataUrl(file));
+                        toast.success(`${label} enregistrée`);
+                      } catch (error) {
+                        toast.error(error instanceof Error ? error.message : "Impossible d’enregistrer l’image.");
+                      }
                     }} />
-                    <Button type="button" variant="outline" size="sm" disabled={!marks[kind]} onClick={() => { marks.save(kind, null); toast.success(`${label} supprimée`); }}>Retirer</Button>
+                    <Button type="button" variant="outline" size="sm" disabled={!marks[kind]} onClick={async () => {
+                      try {
+                        await marks.save(kind, null);
+                        toast.success(`${label} supprimée`);
+                      } catch (error) {
+                        toast.error(error instanceof Error ? error.message : "Impossible de supprimer l’image.");
+                      }
+                    }}>Retirer</Button>
                   </div>
                 </div>
               ))}
@@ -345,7 +419,16 @@ function Page() {
             <CardContent className="space-y-4">
               <div>
                 <Label>Style utilisé pour les documents générés</Label>
-                <Select value={template} onValueChange={(value) => { const v = value as DocumentTemplateId; setTemplate(v); setStoredDocumentTemplate(v); toast.success("Modèle actif mis à jour"); }}>
+                <Select value={template} onValueChange={async (value) => {
+                  const next = value as DocumentTemplateId;
+                  try {
+                    await setStoredDocumentTemplate(next);
+                    setTemplate(next);
+                    toast.success("Modèle actif mis à jour");
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Impossible d’enregistrer le modèle.");
+                  }
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {DOCUMENT_TEMPLATES.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
@@ -368,10 +451,15 @@ function Page() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label>Type</Label>
-                  <Select value={documentType} onValueChange={(v) => setDocumentType(v as DocumentLabel)}>
+                  <Select value={documentType} onValueChange={(v) => {
+                    const nextType = v as DocumentLabel;
+                    setDocumentType(nextType);
+                    if (nextType === "Facture mensuelle") setManualMode(false);
+                  }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Facture">Facture</SelectItem>
+                      <SelectItem value="Facture mensuelle">Facture mensuelle</SelectItem>
                       <SelectItem value="Facture Proforma">Facture Proforma</SelectItem>
                       <SelectItem value="Reçu">Reçu</SelectItem>
                     </SelectContent>
@@ -381,7 +469,7 @@ function Page() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <Label>Client</Label>
                     <div className="flex items-center gap-2">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => { setManualMode((v) => !v); setCustomerId(""); }}>
+                      <Button type="button" variant="ghost" size="sm" disabled={isMonthly} onClick={() => { setManualMode((v) => !v); setCustomerId(""); }}>
                         {manualMode ? "Choisir dans la liste" : "Saisir manuellement"}
                       </Button>
                       {!manualMode && <CustomerQuickAdd onCreated={(id) => { qc.invalidateQueries({ queryKey: ["documents-customers"] }); setCustomerId(id); }} />}
@@ -411,6 +499,14 @@ function Page() {
 
               </div>
 
+              {isMonthly && (
+                <div className="max-w-xs space-y-2">
+                  <Label htmlFor="billing-period">Mois facturé</Label>
+                  <Input id="billing-period" type="month" value={billingPeriod} onChange={(e) => setBillingPeriod(e.target.value)} />
+                  <p className="text-xs text-muted-foreground">Une seule facture mensuelle par client et par période. Les produits facturés ne diminuent pas le stock.</p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Lignes</Label>
                 {lines.map((line, i) => (
@@ -424,7 +520,7 @@ function Page() {
                     >
                       <SelectTrigger className="col-span-2 md:col-span-1"><SelectValue placeholder="Produit boutique…" /></SelectTrigger>
                       <SelectContent>
-                        {products.map((p) => <SelectItem key={p.id} value={p.id} disabled={p.stock <= 0}>{p.name} — ${Number(p.sale_price).toFixed(2)} · Stock {p.stock}</SelectItem>)}
+                        {products.map((p) => <SelectItem key={p.id} value={p.id} disabled={!isMonthly && p.stock <= 0}>{p.name} — ${Number(p.sale_price).toFixed(2)} · Stock {p.stock}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     <Input className="col-span-2 md:col-span-1" placeholder="Désignation" value={line.name} onChange={(e) => setLines(lines.map((l, ix) => ix === i ? { ...l, productId: undefined, name: e.target.value } : l))} />
@@ -441,8 +537,8 @@ function Page() {
                 <Label>Note</Label>
                 <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Détails ou conditions" />
               </div>
-              <Button className="w-full" variant="outline" onClick={openPreview}>Prévisualiser le document</Button>
-              <Button className="w-full" onClick={() => (isProforma ? createDocument.mutate(false) : setConfirmStock(true))} disabled={createDocument.isPending}>Générer le PDF ({documentType})</Button>
+              <Button className="w-full" variant="outline" onClick={openPreview} disabled={!marks.ready}>Prévisualiser le document</Button>
+              <Button className="w-full" onClick={() => (isProforma || isMonthly ? createDocument.mutate(false) : setConfirmStock(true))} disabled={createDocument.isPending || !marks.ready}>Générer le PDF ({documentType})</Button>
               <p className="text-xs text-muted-foreground">Le document est numéroté automatiquement (séquentiel, sans doublon) et utilise le modèle actif.</p>
               {lastDoc && (
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 p-3 text-sm">
@@ -461,11 +557,12 @@ function Page() {
       <Dialog open={previewUrl !== null} onOpenChange={(open) => { if (!open) setPreviewUrl(null); }}>
         <DialogContent className="max-h-[92vh] w-[96vw] max-w-3xl overflow-y-auto p-3 sm:p-6">
           <DialogHeader><DialogTitle>Aperçu — {documentType}</DialogTitle></DialogHeader>
-          {previewUrl && <PdfPreview dataUri={previewUrl} />}
+          {previewUrl && <PdfPreview dataUri={previewUrl} onRendered={onPdfRendered} />}
           <DialogFooter className="gap-2 sm:gap-0">
 
             <Button variant="outline" onClick={() => setPreviewUrl(null)}>Fermer</Button>
-            <Button onClick={() => { setPreviewUrl(null); if (isProforma) createDocument.mutate(false); else setConfirmStock(true); }} disabled={createDocument.isPending}>Générer le PDF</Button>
+            <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" />Imprimer</Button>
+            <Button onClick={() => { setPreviewUrl(null); if (isProforma || isMonthly) createDocument.mutate(false); else setConfirmStock(true); }} disabled={createDocument.isPending || !marks.ready}>Générer le PDF</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

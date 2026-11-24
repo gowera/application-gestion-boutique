@@ -34,6 +34,6 @@ export function docTypeLabel(t: DocumentType): "Facture" | "Reçu" {
   return t === "facture" ? "Facture" : "Reçu";
 }
 
-export function labelToDocType(label: "Facture" | "Reçu"): DocumentType {
-  return label === "Facture" ? "facture" : "recu";
+export function labelToDocType(label: "Facture" | "Facture mensuelle" | "Facture Proforma" | "Reçu"): DocumentType {
+  return label === "Reçu" ? "recu" : "facture";
 }

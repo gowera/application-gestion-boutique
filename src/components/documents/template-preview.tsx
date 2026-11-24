@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { ZoomIn, ZoomOut, Printer, RefreshCw } from "lucide-react";
@@ -9,15 +9,16 @@ import { useSettings } from "@/lib/currency";
 import { useLogoDataUrl } from "@/lib/logo";
 import type { CanvasTemplate } from "@/lib/document-template";
 import type { ReceiptData } from "@/lib/pdf";
+import { PdfPreview } from "@/components/documents/pdf-preview";
 
 type ShopInfo = { shopName: string; address: string; phone: string; currency: "USD" | "CDF"; rate: number };
 
-function makeSampleData(docLabel: "Facture" | "Reçu", shop: ShopInfo): ReceiptData {
+function makeSampleData(docLabel: "Facture" | "Reçu" | "Facture Proforma", shop: ShopInfo): ReceiptData {
   return {
     shopName: shop.shopName,
     address: shop.address,
     phone: shop.phone,
-    code: docLabel === "Facture" ? "FACT-2026-00042" : "RECU-2026-00042",
+    code: docLabel === "Reçu" ? "RECU-2026-00042" : docLabel === "Facture Proforma" ? "PRO-2026-00042" : "FACT-2026-00042",
     customer: "Aperçu Client",
     items: [
       { name: "Câble électrique 2.5mm", qty: 3, unit: 4.5, total: 13.5 },
@@ -42,7 +43,7 @@ function makeSampleData(docLabel: "Facture" | "Reçu", shop: ShopInfo): ReceiptD
  * blob (same engine used at print time) whenever the template or sample data
  * changes, so the user sees the exact output while editing.
  */
-export function TemplatePreview({ template, docLabel }: { template: CanvasTemplate; docLabel: "Facture" | "Reçu" }) {
+export function TemplatePreview({ template, docLabel }: { template: CanvasTemplate; docLabel: "Facture" | "Reçu" | "Facture Proforma" }) {
   const [zoom, setZoom] = useState(100);
   const [nonce, setNonce] = useState(0);
   const { data: settings } = useSettings();
@@ -59,24 +60,15 @@ export function TemplatePreview({ template, docLabel }: { template: CanvasTempla
     [docLabel, shop.shopName, shop.address, shop.phone, shop.currency, shop.rate, logoDataUrl],
   );
 
-  const blobUrl = useMemo(() => {
+  const dataUri = useMemo(() => {
     try {
       const doc = buildCustomTemplatePreviewDoc(template, sample);
-      const url = doc.output("bloburl");
-      return String(url);
+      return doc.output("datauristring");
     } catch {
       return null;
     }
     // include nonce so a manual refresh regenerates the URL
   }, [template, sample, nonce]);
-
-  useEffect(() => {
-    return () => {
-      if (blobUrl && blobUrl.startsWith("blob:")) {
-        try { URL.revokeObjectURL(blobUrl); } catch { /* ignore */ }
-      }
-    };
-  }, [blobUrl]);
 
   return (
     <div className="flex h-full flex-col rounded border bg-muted/20">
@@ -88,21 +80,14 @@ export function TemplatePreview({ template, docLabel }: { template: CanvasTempla
           <Button size="icon" variant="ghost" onClick={() => setZoom((z) => Math.min(200, z + 10))} title="Zoomer"><ZoomIn className="h-4 w-4" /></Button>
           <span className="w-12 text-right text-xs tabular-nums">{zoom}%</span>
           <Button size="icon" variant="ghost" onClick={() => setNonce((n) => n + 1)} title="Rafraîchir"><RefreshCw className="h-4 w-4" /></Button>
-          {blobUrl && (
-            <Button size="sm" variant="outline" asChild>
-              <a href={blobUrl} target="_blank" rel="noreferrer"><Printer className="h-4 w-4 mr-1" />Imprimer</a>
-            </Button>
-          )}
+          <Button size="sm" variant="outline" onClick={() => window.print()} disabled={!dataUri}>
+            <Printer className="h-4 w-4 mr-1" />Imprimer
+          </Button>
         </div>
       </div>
       <div className="min-h-[360px] flex-1 overflow-auto p-2 sm:p-3">
-        {blobUrl ? (
-          <iframe
-            key={blobUrl}
-            title="Aperçu PDF"
-            src={`${blobUrl}#zoom=${zoom}&toolbar=1&navpanes=0`}
-            className="mx-auto block h-[420px] w-full max-w-3xl border bg-white shadow sm:h-[560px] xl:h-[720px]"
-          />
+        {dataUri ? (
+          <PdfPreview dataUri={dataUri} zoom={zoom} />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Aperçu indisponible.</div>
         )}

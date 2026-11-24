@@ -12,6 +12,8 @@ import { ShopOnboarding, ShopTheme } from "@/components/admin/shop-onboarding";
 import { getOfflineProfile } from "@/lib/offline/auth";
 import { setLocalUser } from "@/lib/offline/store";
 import { useSync } from "@/hooks/use-sync";
+import { loadDocumentTemplates } from "@/lib/document-template";
+import { DesktopStatus } from "@/components/admin/desktop-status";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -21,6 +23,7 @@ export const Route = createFileRoute("/_authenticated")({
       const offlineProfile = getOfflineProfile();
       if (!offlineProfile) throw redirect({ to: "/auth" });
       setLocalUser(offlineProfile.userId);
+      await loadDocumentTemplates();
       const isStaff = offlineProfile.roles.some((role) => (STAFF_ROLES as string[]).includes(role));
       if (!isStaff) throw redirect({ to: "/auth" });
       return { user: { id: offlineProfile.userId, email: offlineProfile.email } };
@@ -31,11 +34,13 @@ export const Route = createFileRoute("/_authenticated")({
       const offlineProfile = getOfflineProfile();
       if (!offlineProfile || navigator.onLine) throw redirect({ to: "/auth" });
       setLocalUser(offlineProfile.userId);
+      await loadDocumentTemplates();
       const isStaff = offlineProfile.roles.some((role) => (STAFF_ROLES as string[]).includes(role));
       if (!isStaff) throw redirect({ to: "/auth" });
       return { user: { id: offlineProfile.userId, email: offlineProfile.email } };
     }
     setLocalUser(user.id);
+    await loadDocumentTemplates();
     const roleCacheKey = `conetec:roles:${user.id}`;
     let list: string[] = [];
     try {
@@ -123,6 +128,7 @@ function AuthenticatedLayout() {
           <SidebarTrigger />
           <div className="text-display text-sm font-semibold text-primary">Gestion de stock & vente</div>
           <div className="ml-auto flex items-center gap-2">
+            <DesktopStatus />
             <SyncStatus />
             <NotificationsCenter />
             <UserMenu />

@@ -4,7 +4,7 @@ import { getCustomTemplate, type CanvasElement, type CanvasTemplate, type Docume
 import type { Currency } from "./currency";
 import { formatMoney } from "./currency";
 
-export type DocumentLabel = "Facture" | "Reçu" | "Facture Proforma";
+export type DocumentLabel = "Facture" | "Facture mensuelle" | "Reçu" | "Facture Proforma";
 
 export interface ReceiptData {
   shopName: string;
@@ -22,6 +22,7 @@ export interface ReceiptData {
   rate: number;
   documentType?: DocumentLabel;
   template?: "standard" | "pro" | "custom";
+  billingPeriod?: string;
   logoDataUrl?: string;
   note?: string;
   signatureDataUrl?: string;
@@ -195,6 +196,7 @@ function buildVariables(data: ReceiptData): Record<string, string> {
     code: data.code,
     customer: data.customer,
     date: new Date().toLocaleString("fr-FR"),
+    period: data.billingPeriod ?? "",
     subtotal: formatMoney(data.subtotal, data.currency, data.rate),
     discount: formatMoney(data.discount, data.currency, data.rate),
     total: formatMoney(data.total, data.currency, data.rate),
@@ -290,7 +292,7 @@ function drawSignatureAndStamp(doc: jsPDF, data: ReceiptData, w: number, margin:
 }
 
 export function buildReceiptDoc(data: ReceiptData): jsPDF {
-  const kind: DocumentKind = data.documentType === "Reçu" ? "recu" : "facture";
+  const kind: DocumentKind = data.documentType === "Reçu" ? "recu" : data.documentType === "Facture Proforma" ? "proforma" : "facture";
   if (data.template === "custom") {
     const tpl = getCustomTemplate(kind);
     const doc = new jsPDF({ unit: "mm", format: [tpl.pageWidth, tpl.pageHeight] });

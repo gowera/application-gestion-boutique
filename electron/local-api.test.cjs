@@ -50,6 +50,27 @@ test("local table inserts and filters persist without a remote request", (t) => 
   assert.equal(JSON.parse(single.body).name, "Produit précis");
 });
 
+test("documents can select active local products with no deleted_at value", (t) => {
+  const { api, db } = setup(t);
+  call(api, db, "/rest/v1/products", "POST", {
+    id: "p1",
+    name: "Produit disponible",
+    sale_price: 12,
+    stock: 5,
+    status: "active",
+  });
+
+  const result = api.handle({
+    pathname: "/rest/v1/products",
+    search: "?select=id,name,sale_price,stock&status=eq.active&deleted_at=is.null&order=name&limit=500",
+    method: "GET",
+    headers: [],
+  }, db, "owner", {});
+
+  assert.equal(result.status, 200);
+  assert.deepEqual(JSON.parse(result.body).map((product) => product.id), ["p1"]);
+});
+
 test("local update changes only matching records and remains scoped to the account", (t) => {
   const { api, db } = setup(t);
   call(api, db, "/rest/v1/customers", "POST", [{ id: "c1", name: "Client A" }, { id: "c2", name: "Client B" }]);
@@ -87,6 +108,91 @@ test("local sale records its items, payment, and stock movement on the device", 
   assert.equal(db.get("user:owner:cache:table:sales").data[0].total_usd, 20);
   assert.equal(db.get("user:owner:cache:table:sale_items").data[0].qty, 2);
   assert.equal(db.get("user:owner:cache:table:payments").data[0].amount_usd, 20);
+});
+
+test("local sale documents are numbered and saved with their item snapshot", (t) => {
+  const { api, db } = setup(t);
+  call(api, db, "/rest/v1/products", "POST", { id: "p1", name: "Lampe", stock: 5, sale_price: 10 });
+  const sale = call(api, db, "/rest/v1/rpc/sync_apply_operation", "POST", {
+    _kind: "pos_sale",
+    _payload: {
+      customer_id: null,
+      items: [{ product_id: "p1", qty: 1, unit_price_usd: 10, discount_usd: 0 }],
+      payments: [{ method: "cash", amount: 10, currency: "USD" }],
+      discount_usd: 0,
+    },
+  });
+  const saleId = JSON.parse(sale.body);
+  const result = call(api, db, "/rest/v1/rpc/sync_apply_operation", "POST", {
+    _kind: "document",
+    _payload: {
+      doc_type: "recu",
+      document_kind: "standard",
+      sale_id: saleId,
+      customer_name: "Client local",
+      items: [{ name: "Lampe", qty: 1, unit: 10, total: 10 }],
+      subtotal_usd: 10,
+      total_usd: 10,
+      paid_usd: 10,
+      credit_usd: 0,
+      stock_items: [],
+    },
+  });
+
+  assert.equal(result.status, 200);
+  assert.match(JSON.parse(result.body).result.code, /^REC-/);
+  const document = db.get("user:owner:cache:table:document_registry").data[0];
+  assert.equal(document.sale_id, saleId);
+  assert.equal(document.items[0].name, "Lampe");
+  assert.equal(db.get("user:owner:cache:table:products").data[0].stock, 4);
+});
+
+test("local issue_document_number RPC supports reprinting an existing sale", (t) => {
+  const { api, db } = setup(t);
+  const result = call(api, db, "/rest/v1/rpc/issue_document_number", "POST", {
+    _doc_type: "facture",
+    _sale_id: "sale-1",
+    _customer_name: "Client local",
+    _total_usd: 25,
+  });
+
+  assert.equal(result.status, 200);
+  assert.match(JSON.parse(result.body).code, /^FAC-/);
+  assert.equal(db.get("user:owner:cache:table:document_registry").data[0].sale_id, "sale-1");
+});
+
+test("monthly invoices keep their item snapshot, do not change stock, and reject duplicates", (t) => {
+  const { api, db } = setup(t);
+  call(api, db, "/rest/v1/products", "POST", { id: "p1", name: "Forfait", stock: 3, sale_price: 25 });
+  const payload = {
+    doc_type: "facture",
+    document_kind: "monthly",
+    customer_id: "c1",
+    customer_name: "Client mensuel",
+    billing_period: "2026-11",
+    items: [{ productId: "p1", name: "Forfait", qty: 1, unit: 25, total: 25 }],
+    subtotal_usd: 25,
+    total_usd: 25,
+    paid_usd: 0,
+    credit_usd: 25,
+    stock_items: [],
+  };
+  const create = () => call(api, db, "/rest/v1/rpc/sync_apply_operation", "POST", {
+    _kind: "document",
+    _payload: payload,
+  });
+
+  const first = create();
+  assert.equal(first.status, 200);
+  const record = db.get("user:owner:cache:table:document_registry").data[0];
+  assert.equal(record.billing_period, "2026-11");
+  assert.equal(record.items[0].name, "Forfait");
+  assert.equal(db.get("user:owner:cache:table:products").data[0].stock, 3);
+
+  const duplicate = create();
+  assert.equal(duplicate.status, 400);
+  assert.match(JSON.parse(duplicate.body).message, /existe déjà/);
+  assert.equal(db.get("user:owner:cache:table:document_registry").data.length, 1);
 });
 
 test("unsupported local RPCs fail explicitly instead of reaching the server", (t) => {

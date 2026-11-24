@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { OfflineBanner } from "@/components/admin/offline-banner";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatMoney, useSettings, convertToUsd, type Currency } from "@/lib/currency";
-import { Search, Plus, Minus, Trash2, Receipt } from "lucide-react";
+import { Search, Plus, Minus, Trash2, Receipt, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
-import { downloadReceipt } from "@/lib/pdf";
+import { buildReceiptDoc } from "@/lib/pdf";
 import { useLogoDataUrl } from "@/lib/logo";
 import { getStoredDocumentTemplate } from "@/lib/document-template";
 import { issueDocumentNumber, labelToDocType } from "@/lib/documents";
@@ -22,6 +22,9 @@ import { SalePreviewDialog } from "@/components/pos/sale-preview-dialog";
 import type { ReceiptData } from "@/lib/pdf";
 import { isOffline, queueOperation } from "@/lib/offline/sync";
 import { offlineQueryFn } from "@/lib/offline/query";
+import { recordPrint } from "@/lib/print-log";
+import { PdfPreview } from "@/components/documents/pdf-preview";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/pos")({
   component: PosPage,
@@ -45,7 +48,15 @@ function PosPage() {
   const [isCredit, setIsCredit] = useState(false);
   const [dueDate, setDueDate] = useState("");
   const [documentType, setDocumentType] = useState<"Facture" | "Reçu" | "Aucun">("Reçu");
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const printAfterRender = useRef(false);
   const qc = useQueryClient();
+
+  const onReceiptRendered = useCallback(() => {
+    if (!printAfterRender.current) return;
+    printAfterRender.current = false;
+    window.setTimeout(() => window.print(), 100);
+  }, []);
 
   const { data: allProducts } = useQuery({
     queryKey: ["pos-products"],
@@ -87,15 +98,25 @@ function PosPage() {
         _discount_usd: discount,
         _note: note || undefined,
       };
-      if (isOffline()) {
-        await queueOperation("pos_sale", `Vente ${formatMoney(total, currency, rate)}`, {
-          customer_id: rpcArgs._customer_id,
-          items: rpcArgs._items,
-          payments: rpcArgs._payments,
-          discount_usd: discount,
-          note: note || null,
-          due_date: isCredit && dueDate ? dueDate : null,
+      const localPayload = {
+        customer_id: rpcArgs._customer_id,
+        items: rpcArgs._items,
+        payments: rpcArgs._payments,
+        discount_usd: discount,
+        note: note || null,
+        due_date: isCredit && dueDate ? dueDate : null,
+      };
+      if (window.conetecDesktop) {
+        const { data, error } = await supabase.rpc("sync_apply_operation", {
+          _client_op_id: crypto.randomUUID(),
+          _kind: "pos_sale",
+          _payload: localPayload as never,
         });
+        if (error) throw error;
+        return data as string;
+      }
+      if (isOffline()) {
+        await queueOperation("pos_sale", `Vente ${formatMoney(total, currency, rate)}`, localPayload);
         return null;
       }
       const { data, error } = await supabase.rpc("create_pos_sale", rpcArgs);
@@ -133,8 +154,36 @@ function PosPage() {
         const customerName = (sale as { customers?: { name?: string } }).customers?.name ?? "Client anonyme";
         if (documentType !== "Aucun") {
           const docLabel = documentType;
-          let docCode = sale.code;
-          try {
+          let docCode: string;
+          if (window.conetecDesktop) {
+            const lineItems = (items ?? []).map((item) => ({
+              name: item.product_name,
+              qty: Number(item.qty),
+              unit: Number(item.unit_price_usd),
+              total: Number(item.line_total_usd),
+            }));
+            const { data, error } = await supabase.rpc("sync_apply_operation", {
+              _client_op_id: crypto.randomUUID(),
+              _kind: "document",
+              _payload: {
+                doc_type: labelToDocType(docLabel),
+                document_kind: "standard",
+                sale_id: saleId,
+                customer_id: sale.customer_id,
+                customer_name: customerName,
+                items: lineItems,
+                subtotal_usd: Number(sale.subtotal_usd),
+                discount_usd: Number(sale.discount_usd),
+                total_usd: Number(sale.total_usd),
+                paid_usd: Number(sale.paid_usd),
+                credit_usd: Number(sale.credit_usd),
+                note: sale.note,
+                stock_items: [],
+              } as never,
+            });
+            if (error) throw error;
+            docCode = (data as { result: { code: string } }).result.code;
+          } else {
             const issued = await issueDocumentNumber({
               docType: labelToDocType(docLabel),
               saleId,
@@ -142,20 +191,35 @@ function PosPage() {
               totalUsd: Number(sale.total_usd),
             });
             docCode = issued.code;
-          } catch (err) {
-            console.warn("Numérotation document indisponible", err);
           }
-          downloadReceipt({
+          const lineItems = (items ?? []).map((item) => ({
+            name: item.product_name,
+            qty: Number(item.qty),
+            unit: Number(item.unit_price_usd),
+            total: Number(item.line_total_usd),
+          }));
+          const pdf = buildReceiptDoc({
             logoDataUrl,
             shopName: settings?.shop_name ?? "Ma boutique",
             address: settings?.address ?? "",
             phone: settings?.phone ?? "",
             code: docCode, customer: customerName,
-            items: (items ?? []).map((i) => ({ name: i.product_name, qty: i.qty, unit: Number(i.unit_price_usd), total: Number(i.line_total_usd) })),
+            items: lineItems,
             subtotal: Number(sale.subtotal_usd), discount: Number(sale.discount_usd), total: Number(sale.total_usd),
             paid: Number(sale.paid_usd), credit: Number(sale.credit_usd), currency, rate,
             documentType: docLabel, template: getStoredDocumentTemplate(),
           });
+          pdf.save(`${docLabel === "Facture" ? "facture" : "recu"}-${docCode}.pdf`);
+          await recordPrint({
+            code: docCode,
+            documentType: docLabel,
+            customer: customerName,
+            totalUsd: Number(sale.total_usd),
+            user: "Utilisateur",
+            origin: "création",
+          });
+          printAfterRender.current = true;
+          setReceiptPreview(pdf.output("datauristring"));
         }
       }
       setCart([]); setDiscount(0); setNote(""); setPayments([{ method: "cash", amount: 0, currency }]); setCustomerId(null); setIsCredit(false); setDueDate(""); setDocumentType("Reçu");
@@ -322,6 +386,16 @@ function PosPage() {
         </CardContent>
       </Card>
     </div>
+    <Dialog open={receiptPreview !== null} onOpenChange={(open) => { if (!open) setReceiptPreview(null); }}>
+      <DialogContent className="max-h-[92vh] w-[96vw] max-w-3xl overflow-y-auto">
+        <DialogHeader><DialogTitle>Document de vente</DialogTitle></DialogHeader>
+        {receiptPreview && <PdfPreview dataUri={receiptPreview} onRendered={onReceiptRendered} />}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setReceiptPreview(null)}>Fermer</Button>
+          <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" />Imprimer</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </div>
   );
 }

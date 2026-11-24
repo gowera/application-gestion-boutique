@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,9 @@ import { offlineQueryFn } from "@/lib/offline/query";
 import { cacheGet } from "@/lib/offline/store";
 import { isOffline } from "@/lib/offline/sync";
 import type { Database } from "@/integrations/supabase/types";
+import { PdfPreview } from "@/components/documents/pdf-preview";
+import { recordPrint } from "@/lib/print-log";
+import { useCurrentUser } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/sales")({
   component: SalesPage,
@@ -29,10 +32,18 @@ type PaymentRecord = Database["public"]["Tables"]["payments"]["Row"];
 
 function SalesPage() {
   const { data: settings } = useSettings();
+  const { user } = useCurrentUser();
   const currency = settings?.primary_currency ?? "USD";
   const rate = settings?.usd_to_cdf_rate ?? 2800;
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [previewData, setPreviewData] = useState<string | null>(null);
+  const printAfterRender = useRef(false);
   const qc = useQueryClient();
+  const onPdfRendered = useCallback(() => {
+    if (!printAfterRender.current) return;
+    printAfterRender.current = false;
+    window.setTimeout(() => window.print(), 100);
+  }, []);
 
   const { data: sales, isLoading } = useQuery({
     queryKey: ["sales-list"],
@@ -102,11 +113,23 @@ function SalesPage() {
                     <div className="flex gap-1">
                       <Button size="sm" variant="ghost" onClick={() => setDetailId(s.id)} title="Détails"><Eye className="h-3.5 w-3.5" /></Button>
                       <Button size="sm" variant="ghost" title="Réimprimer reçu" onClick={async () => {
-                        try { await reprintSaleDocument({ saleId: s.id, docType: "recu", settings }); toast.success("Reçu régénéré"); }
+                        try {
+                          const preview = await reprintSaleDocument({ saleId: s.id, docType: "recu", settings });
+                          printAfterRender.current = true;
+                          setPreviewData(preview);
+                          await recordPrint({ code: s.code, documentType: "Reçu", customer: (s as { customers?: { name?: string } }).customers?.name ?? "Client anonyme", totalUsd: Number(s.total_usd), user: user?.email ?? "Utilisateur", origin: "réimpression" });
+                          toast.success("Reçu prêt à imprimer");
+                        }
                         catch (e) { toast.error((e as Error).message); }
                       }}><Printer className="h-3.5 w-3.5" /></Button>
                       <Button size="sm" variant="ghost" title="Réimprimer facture" onClick={async () => {
-                        try { await reprintSaleDocument({ saleId: s.id, docType: "facture", settings }); toast.success("Facture régénérée"); }
+                        try {
+                          const preview = await reprintSaleDocument({ saleId: s.id, docType: "facture", settings });
+                          printAfterRender.current = true;
+                          setPreviewData(preview);
+                          await recordPrint({ code: s.code, documentType: "Facture", customer: (s as { customers?: { name?: string } }).customers?.name ?? "Client anonyme", totalUsd: Number(s.total_usd), user: user?.email ?? "Utilisateur", origin: "réimpression" });
+                          toast.success("Facture prête à imprimer");
+                        }
                         catch (e) { toast.error((e as Error).message); }
                       }}><FileDown className="h-3.5 w-3.5" /></Button>
                       {s.status === "completed" && (
@@ -122,6 +145,16 @@ function SalesPage() {
           </Table>
         </CardContent>
       </Card>
+      <Dialog open={previewData !== null} onOpenChange={(open) => { if (!open) setPreviewData(null); }}>
+        <DialogContent className="max-h-[92vh] w-[96vw] max-w-3xl overflow-y-auto">
+          <DialogHeader><DialogTitle>Réimpression du document</DialogTitle></DialogHeader>
+          {previewData && <PdfPreview dataUri={previewData} onRendered={onPdfRendered} />}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewData(null)}>Fermer</Button>
+            <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" />Imprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <SaleDetail id={detailId} onClose={() => setDetailId(null)} />
     </div>
   );

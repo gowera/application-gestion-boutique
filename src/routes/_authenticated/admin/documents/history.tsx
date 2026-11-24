@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,13 @@ import { formatDate } from "@/lib/format";
 import { reprintSaleDocument } from "@/lib/reprint";
 import type { DocumentType } from "@/lib/documents";
 import { offlineQueryFn } from "@/lib/offline/query";
+import { buildReceiptDoc } from "@/lib/pdf";
+import { getStoredDocumentTemplate } from "@/lib/document-template";
+import { useLogoDataUrl } from "@/lib/logo";
+import { recordPrint } from "@/lib/print-log";
+import { useCurrentUser } from "@/hooks/use-auth";
+import { PdfPreview } from "@/components/documents/pdf-preview";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/documents/history")({ component: HistoryPage });
 
@@ -26,27 +33,45 @@ type Row = {
   doc_number: number;
   sale_id: string | null;
   customer_name: string | null;
+  customer_id?: string | null;
   total_usd: number;
   created_at: string;
+  document_kind?: "standard" | "monthly" | "proforma";
+  billing_period?: string | null;
+  items?: Array<{ name: string; qty: number; unit: number; total: number }>;
+  subtotal_usd?: number;
+  discount_usd?: number;
+  paid_usd?: number;
+  credit_usd?: number;
+  note?: string | null;
 };
 
 function HistoryPage() {
   const { data: settings } = useSettings();
+  const logoDataUrl = useLogoDataUrl();
+  const { user } = useCurrentUser();
   const currency = settings?.primary_currency ?? "USD";
   const rate = settings?.usd_to_cdf_rate ?? 2800;
 
   const [q, setQ] = useState("");
-  const [type, setType] = useState<"all" | DocumentType>("all");
+  const [type, setType] = useState<"all" | DocumentType | "monthly" | "proforma">("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [reprintingId, setReprintingId] = useState<string | null>(null);
+  const [previewData, setPreviewData] = useState<string | null>(null);
+  const printAfterRender = useRef(false);
+  const onPdfRendered = useCallback(() => {
+    if (!printAfterRender.current) return;
+    printAfterRender.current = false;
+    window.setTimeout(() => window.print(), 100);
+  }, []);
 
   const { data = [], isLoading, refetch } = useQuery({
     queryKey: ["document-history", q, type, from, to],
     queryFn: offlineQueryFn("query:document-history", async () => {
       let query = supabase
         .from("document_registry")
-        .select("id, code, doc_type, doc_number, sale_id, customer_name, total_usd, created_at")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(500);
       const { data, error } = await query;
@@ -57,14 +82,19 @@ function HistoryPage() {
 
   const visibleData = useMemo(() => data.filter((row) => {
     const needle = q.trim().toLowerCase();
-    return (type === "all" || row.doc_type === type)
+    const matchesType = type === "all"
+      || (type === "monthly" && row.document_kind === "monthly")
+      || (type === "proforma" && row.document_kind === "proforma")
+      || (type === "facture" && row.doc_type === "facture" && row.document_kind !== "proforma")
+      || (type === "recu" && row.doc_type === "recu");
+    return matchesType
       && (!from || row.created_at >= `${from}T00:00:00`)
       && (!to || row.created_at <= `${to}T23:59:59`)
       && (!needle || row.code.toLowerCase().includes(needle) || (row.customer_name ?? "").toLowerCase().includes(needle));
   }), [data, from, q, to, type]);
 
   const totals = useMemo(() => {
-    const factures = visibleData.filter((r) => r.doc_type === "facture");
+    const factures = visibleData.filter((r) => r.doc_type === "facture" && r.document_kind !== "proforma");
     const recus = visibleData.filter((r) => r.doc_type === "recu");
     return {
       facturesCount: factures.length,
@@ -74,11 +104,58 @@ function HistoryPage() {
   }, [visibleData]);
 
   async function reprint(row: Row) {
-    if (!row.sale_id) { toast.error("Document sans vente liée — réimpression impossible."); return; }
     setReprintingId(row.id);
     try {
-      await reprintSaleDocument({ saleId: row.sale_id, docType: row.doc_type, settings });
-      toast.success("Document régénéré");
+      if (row.items?.length) {
+        const documentType = row.document_kind === "proforma"
+          ? "Facture Proforma"
+          : row.document_kind === "monthly" ? "Facture mensuelle" : row.doc_type === "facture" ? "Facture" : "Reçu";
+        const pdf = buildReceiptDoc({
+          logoDataUrl,
+          shopName: settings?.shop_name ?? "Ma boutique",
+          address: settings?.address ?? "",
+          phone: settings?.phone ?? "",
+          code: row.code,
+          customer: row.customer_name ?? "Client",
+          items: row.items,
+          subtotal: Number(row.subtotal_usd ?? row.total_usd),
+          discount: Number(row.discount_usd ?? 0),
+          total: Number(row.total_usd),
+          paid: Number(row.paid_usd ?? 0),
+          credit: Number(row.credit_usd ?? row.total_usd),
+          currency,
+          rate,
+          documentType,
+          template: getStoredDocumentTemplate(),
+          note: row.note ?? undefined,
+          billingPeriod: row.billing_period ?? undefined,
+        });
+        printAfterRender.current = true;
+        setPreviewData(pdf.output("datauristring"));
+        await recordPrint({
+          code: row.code,
+          documentType,
+          customer: row.customer_name ?? "Client",
+          totalUsd: Number(row.total_usd),
+          user: user?.email ?? "Utilisateur",
+          origin: "réimpression",
+        });
+        toast.success("Document prêt à imprimer");
+      } else if (row.sale_id) {
+        setPreviewData(await reprintSaleDocument({ saleId: row.sale_id, docType: row.doc_type, settings }));
+        printAfterRender.current = true;
+        await recordPrint({
+          code: row.code,
+          documentType: row.doc_type === "facture" ? "Facture" : "Reçu",
+          customer: row.customer_name ?? "Client",
+          totalUsd: Number(row.total_usd),
+          user: user?.email ?? "Utilisateur",
+          origin: "réimpression",
+        });
+        toast.success("Document prêt à imprimer");
+      } else {
+        toast.error("Le contenu de ce document n’est pas disponible pour la réimpression.");
+      }
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -116,11 +193,13 @@ function HistoryPage() {
             </div>
             <div>
               <Label className="text-xs">Type</Label>
-              <Select value={type} onValueChange={(v) => setType(v as "all" | DocumentType)}>
+              <Select value={type} onValueChange={(v) => setType(v as "all" | DocumentType | "monthly" | "proforma")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous</SelectItem>
                   <SelectItem value="facture">Factures</SelectItem>
+                  <SelectItem value="monthly">Factures mensuelles</SelectItem>
+                  <SelectItem value="proforma">Factures proforma</SelectItem>
                   <SelectItem value="recu">Reçus</SelectItem>
                 </SelectContent>
               </Select>
@@ -154,14 +233,18 @@ function HistoryPage() {
                   <TableCell className="font-mono text-xs">{r.code}</TableCell>
                   <TableCell>
                     <Badge variant={r.doc_type === "facture" ? "default" : "secondary"}>
-                      {r.doc_type === "facture" ? "Facture" : "Reçu"}
+                      {r.document_kind === "proforma"
+                        ? "Facture proforma"
+                        : r.document_kind === "monthly"
+                          ? `Facture mensuelle${r.billing_period ? ` · ${r.billing_period}` : ""}`
+                          : r.doc_type === "facture" ? "Facture" : "Reçu"}
                     </Badge>
                   </TableCell>
                   <TableCell>{r.customer_name ?? "—"}</TableCell>
                   <TableCell>{formatDate(r.created_at, true)}</TableCell>
                   <TableCell className="text-right">{formatMoney(Number(r.total_usd), currency, rate)}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="ghost" disabled={!r.sale_id || reprintingId === r.id} onClick={() => reprint(r)}>
+                    <Button size="sm" variant="ghost" disabled={(!r.sale_id && !r.items?.length) || reprintingId === r.id} onClick={() => reprint(r)}>
                       <Printer className="h-3.5 w-3.5 mr-1" />Réimprimer
                     </Button>
                   </TableCell>
@@ -171,6 +254,16 @@ function HistoryPage() {
           </Table>
         </CardContent>
       </Card>
+      <Dialog open={previewData !== null} onOpenChange={(open) => { if (!open) setPreviewData(null); }}>
+        <DialogContent className="max-h-[92vh] w-[96vw] max-w-3xl overflow-y-auto">
+          <DialogHeader><DialogTitle>Réimpression du document</DialogTitle></DialogHeader>
+          {previewData && <PdfPreview dataUri={previewData} onRendered={onPdfRendered} />}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewData(null)}>Fermer</Button>
+            <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" />Imprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useSettings } from "@/lib/currency";
 import { useSync } from "@/hooks/use-sync";
-import windowsAppAsset from "@/assets/gestionstock-setup-1.4.5.exe.asset.json";
+import windowsAppAsset from "@/assets/gestionstock-setup-1.4.6.exe.asset.json";
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return "inconnue";
@@ -53,6 +53,11 @@ export function WindowsAppCard() {
 
     try {
       if (url.includes("github.com/gowera/application-gestion-boutique/releases/download/")) {
+        if (window.conetecDesktop) {
+          await window.conetecDesktop.openRelease(url);
+          setComplete(true);
+          return;
+        }
         const anchor = document.createElement("a");
         anchor.href = url;
         anchor.rel = "noopener noreferrer";

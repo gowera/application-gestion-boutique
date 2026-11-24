@@ -90,8 +90,8 @@ function matches(row, searchParams) {
       case "gte": result = actual >= expected; break;
       case "lt": result = actual < expected; break;
       case "lte": result = actual <= expected; break;
-      case "is": result = actual === expected; break;
-      case "not.is": result = actual !== expected; break;
+      case "is": result = expected === null ? actual === null || actual === undefined : actual === expected; break;
+      case "not.is": result = expected === null ? actual !== null && actual !== undefined : actual !== expected; break;
       case "in": result = Array.isArray(expected) && expected.some((value) => String(value) === String(actual)); break;
       case "not.in": result = Array.isArray(expected) && !expected.some((value) => String(value) === String(actual)); break;
       case "like":
@@ -313,23 +313,65 @@ function adjustStock(productId, delta, reason, note, db, userId) {
 }
 
 function issueDocument(args, db, userId) {
-  const docType = args.doc_type === "facture" || args._doc_type === "facture" ? "facture" : "recu";
+  const documentKind = args.document_kind === "monthly" || args.document_kind === "proforma"
+    ? args.document_kind
+    : "standard";
+  const docType = args.doc_type === "recu" || args._doc_type === "recu" ? "recu" : "facture";
   const year = new Date().getFullYear();
   const rows = readTable(db, userId, "document_registry");
+  if (documentKind === "monthly") {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(args.billing_period ?? ""))) {
+      throw new Error("La période de facturation mensuelle est invalide.");
+    }
+    const duplicate = rows.some((row) => row.document_kind === "monthly"
+      && row.billing_period === args.billing_period
+      && (args.customer_id
+        ? row.customer_id === args.customer_id
+        : row.customer_name === args.customer_name));
+    if (duplicate) throw new Error("Une facture existe déjà pour ce client et cette période.");
+  }
+  if (documentKind === "proforma") {
+    if (!args.code || rows.some((row) => row.code === args.code)) {
+      throw new Error("Le numéro de la facture proforma est invalide ou déjà utilisé.");
+    }
+    const record = insertRow(db, userId, "document_registry", {
+      ...documentFields(args, documentKind),
+      doc_type: "facture",
+      number: null,
+      year,
+      code: args.code,
+    });
+    return { id: record.id, code: record.code, number: null, doc_type: "facture", year };
+  }
   const number = rows
     .filter((row) => row.doc_type === docType && Number(row.year) === year)
     .reduce((max, row) => Math.max(max, Number(row.number) || 0), 0) + 1;
   const prefix = docType === "facture" ? "FAC" : "REC";
   const record = insertRow(db, userId, "document_registry", {
+    ...documentFields(args, documentKind),
     doc_type: docType,
     number,
     year,
     code: `${prefix}-${year}-${String(number).padStart(4, "0")}`,
-    sale_id: args.sale_id ?? args._sale_id ?? null,
-    customer_name: args.customer_name ?? args._customer_name ?? null,
-    total_usd: Number(args.total_usd ?? args._total_usd ?? 0),
   });
   return { id: record.id, code: record.code, number, doc_type: docType, year };
+}
+
+function documentFields(args, documentKind) {
+  return {
+    document_kind: documentKind,
+    sale_id: args.sale_id ?? args._sale_id ?? null,
+    customer_id: args.customer_id ?? null,
+    customer_name: args.customer_name ?? args._customer_name ?? null,
+    billing_period: args.billing_period ?? null,
+    items: Array.isArray(args.items) ? args.items : [],
+    subtotal_usd: Number(args.subtotal_usd ?? args.total_usd ?? args._total_usd ?? 0),
+    discount_usd: Number(args.discount_usd ?? 0),
+    total_usd: Number(args.total_usd ?? args._total_usd ?? 0),
+    paid_usd: Number(args.paid_usd ?? 0),
+    credit_usd: Number(args.credit_usd ?? args.total_usd ?? args._total_usd ?? 0),
+    note: args.note ?? null,
+  };
 }
 
 function handleRpc(name, args, db, userId) {
@@ -342,6 +384,13 @@ function handleRpc(name, args, db, userId) {
   if (name === "adjust_stock") {
     try {
       return response(200, adjustStock(args._product_id, args._delta, args._reason, args._note, db, userId));
+    } catch (error) {
+      return response(400, { message: error instanceof Error ? error.message : String(error) });
+    }
+  }
+  if (name === "issue_document_number") {
+    try {
+      return response(200, issueDocument(args, db, userId));
     } catch (error) {
       return response(400, { message: error instanceof Error ? error.message : String(error) });
     }

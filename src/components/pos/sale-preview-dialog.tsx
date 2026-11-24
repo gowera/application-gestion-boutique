@@ -7,6 +7,7 @@ import { Eye, Download, Printer } from "lucide-react";
 import { buildReceiptDoc, type ReceiptData } from "@/lib/pdf";
 import { getStoredDocumentTemplate } from "@/lib/document-template";
 import { useLogoDataUrl } from "@/lib/logo";
+import { PdfPreview } from "@/components/documents/pdf-preview";
 
 interface Props {
   disabled?: boolean;
@@ -27,23 +28,15 @@ export function SalePreviewDialog({ disabled, buildData }: Props) {
     else setData(null);
   }, [open, buildData]);
 
-  const blobUrl = useMemo(() => {
+  const pdfData = useMemo(() => {
     if (!data) return null;
     try {
       const doc = buildReceiptDoc({ ...data, logoDataUrl, template: getStoredDocumentTemplate() });
-      return String(doc.output("bloburl"));
+      return doc.output("datauristring");
     } catch {
       return null;
     }
   }, [data, logoDataUrl]);
-
-  useEffect(() => {
-    return () => {
-      if (blobUrl?.startsWith("blob:")) {
-        try { URL.revokeObjectURL(blobUrl); } catch { /* ignore */ }
-      }
-    };
-  }, [blobUrl]);
 
   function download() {
     if (!data) return;
@@ -53,9 +46,7 @@ export function SalePreviewDialog({ disabled, buildData }: Props) {
   }
 
   function print() {
-    if (!blobUrl) return;
-    const w = window.open(blobUrl, "_blank");
-    if (w) setTimeout(() => { try { w.print(); } catch { /* ignore */ } }, 500);
+    if (pdfData) window.print();
   }
 
   return (
@@ -70,7 +61,7 @@ export function SalePreviewDialog({ disabled, buildData }: Props) {
           <DialogTitle>Aperçu du document</DialogTitle>
         </DialogHeader>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={print} disabled={!blobUrl}>
+          <Button size="sm" variant="outline" onClick={print} disabled={!pdfData}>
             <Printer className="h-4 w-4 mr-1" /> Imprimer
           </Button>
           <Button size="sm" variant="outline" onClick={download} disabled={!data}>
@@ -81,13 +72,8 @@ export function SalePreviewDialog({ disabled, buildData }: Props) {
           </span>
         </div>
         <div className="min-h-[600px] rounded border bg-muted/20 p-2">
-          {blobUrl ? (
-            <iframe
-              key={blobUrl}
-              title="Aperçu"
-              src={`${blobUrl}#toolbar=1&navpanes=0`}
-              className="h-[70vh] w-full border bg-white"
-            />
+          {pdfData ? (
+            <PdfPreview dataUri={pdfData} />
           ) : (
             <div className="flex h-full items-center justify-center py-20 text-sm text-muted-foreground">
               Ajoutez des articles au panier pour afficher un aperçu.

@@ -2,6 +2,7 @@ const { app, BrowserWindow, shell, Menu, ipcMain, safeStorage, dialog, session }
 const { spawn } = require("child_process");
 const path = require("path");
 const http = require("http");
+const https = require("https");
 const fs = require("fs");
 const crypto = require("crypto");
 const { createLocalDatabase } = require("./local-db.cjs");
@@ -17,6 +18,83 @@ let localServer = null;
 let localDatabase = null;
 let localApi = null;
 let blockExternalRequests = false;
+
+function fetchLatestRelease() {
+  return new Promise((resolve, reject) => {
+    const request = https.get(
+      "https://api.github.com/repos/gowera/application-gestion-boutique/releases/latest",
+      { headers: { Accept: "application/vnd.github+json", "User-Agent": "GestionStock" } },
+      (response) => {
+        let body = "";
+        response.setEncoding("utf8");
+        response.on("data", (chunk) => {
+          body += chunk;
+          if (body.length > 1_000_000) response.destroy(new Error("Réponse de version trop volumineuse."));
+        });
+        response.on("end", () => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`Vérification de version refusée (HTTP ${response.statusCode ?? "?"}).`));
+            return;
+          }
+          try {
+            resolve(JSON.parse(body));
+          } catch {
+            reject(new Error("Réponse de version illisible."));
+          }
+        });
+      },
+    );
+    request.setTimeout(8000, () => request.destroy(new Error("Délai dépassé pendant la vérification de version.")));
+    request.on("error", reject);
+  });
+}
+
+function compareVersions(left, right) {
+  const parse = (value) => {
+    const match = String(value).match(/^v?(\d+)\.(\d+)\.(\d+)$/);
+    if (!match) throw new Error("Format de version non pris en charge.");
+    return match.slice(1).map(Number);
+  };
+  const a = parse(left);
+  const b = parse(right);
+  for (let index = 0; index < a.length; index += 1) {
+    if (a[index] !== b[index]) return a[index] - b[index];
+  }
+  return 0;
+}
+
+ipcMain.handle("app:version", () => app.getVersion());
+ipcMain.handle("printers:list", async () => {
+  if (!win) throw new Error("La fenêtre de l’application n’est pas prête.");
+  const printers = await win.webContents.getPrintersAsync();
+  return printers.map(({ name, displayName, isDefault, status }) => ({ name, displayName, isDefault, status }));
+});
+ipcMain.handle("app:update-check", async () => {
+  const release = await fetchLatestRelease();
+  const latestVersion = String(release.tag_name ?? "");
+  const asset = Array.isArray(release.assets)
+    ? release.assets.find((entry) => entry.name === `GestionStock-Setup-${latestVersion.replace(/^v/, "")}.exe`)
+    : undefined;
+  const downloadUrl = String(asset?.browser_download_url ?? "");
+  const parsedUrl = new URL(downloadUrl);
+  if (parsedUrl.protocol !== "https:"
+    || parsedUrl.hostname !== "github.com"
+    || !parsedUrl.pathname.startsWith("/gowera/application-gestion-boutique/releases/download/")) {
+    throw new Error("Le lien de mise à jour publié n’est pas autorisé.");
+  }
+  const currentVersion = app.getVersion();
+  return { currentVersion, latestVersion: latestVersion.replace(/^v/, ""), downloadUrl, updateAvailable: compareVersions(latestVersion, currentVersion) > 0 };
+});
+ipcMain.handle("app:open-release", async (_event, downloadUrl) => {
+  const parsedUrl = new URL(String(downloadUrl));
+  if (parsedUrl.protocol !== "https:"
+    || parsedUrl.hostname !== "github.com"
+    || !parsedUrl.pathname.startsWith("/gowera/application-gestion-boutique/releases/download/")) {
+    throw new Error("Le lien de téléchargement n’est pas autorisé.");
+  }
+  await shell.openExternal(parsedUrl.href);
+  return true;
+});
 
 function offlineAuthFile() {
   return path.join(app.getPath("userData"), "offline-auth.json");

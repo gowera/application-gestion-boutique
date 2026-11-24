@@ -415,18 +415,6 @@ function Page() {
             <Switch checked={ex("cash_drawer", false)} onCheckedChange={(v) => setEx("cash_drawer", v)} />
           </div>
           <div><Label>Terminal de paiement</Label><Input value={ex("payment_terminal", "")} onChange={(e) => setEx("payment_terminal", e.target.value)} /></div>
-          <div className="rounded-lg border p-4 space-y-3">
-            <div>
-              <h3 className="text-display font-semibold">Application Windows (mode hors ligne)</h3>
-              <p className="text-xs text-muted-foreground">Renseignez le lien du fichier d'installation publié. Il alimente le bouton de téléchargement du tableau de bord.</p>
-            </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="md:col-span-2"><Label>Lien de téléchargement</Label><Input value={ex("win_app_url", "")} onChange={(e) => setEx("win_app_url", e.target.value)} placeholder="https://…/GestionStock-win32-x64.zip" /></div>
-              <div><Label>Version</Label><Input value={ex("win_app_version", "")} onChange={(e) => setEx("win_app_version", e.target.value)} placeholder="1.0.0" /></div>
-              <div><Label>Taille affichée</Label><Input value={ex("win_app_size", "")} onChange={(e) => setEx("win_app_size", e.target.value)} placeholder="180 Mo" /></div>
-              <div><Label>Date de publication</Label><Input type="date" value={ex("win_app_date", "")} onChange={(e) => setEx("win_app_date", e.target.value)} /></div>
-            </div>
-          </div>
         </>}
 
 

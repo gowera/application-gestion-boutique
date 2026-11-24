@@ -4,6 +4,10 @@ declare global {
   interface Window {
     conetecDesktop?: {
       isDesktop: boolean;
+      getAppVersion(): Promise<string>;
+      listPrinters(): Promise<Array<{ name: string; displayName: string; isDefault: boolean; status: number }>>;
+      checkForUpdates(): Promise<{ currentVersion: string; latestVersion: string; downloadUrl: string; updateAvailable: boolean }>;
+      openRelease(url: string): Promise<boolean>;
       hasOfflinePin(): Promise<boolean>;
       isLocalOnly(): Promise<boolean>;
       configureOfflinePin(pin: string, profile: { userId: string; email: string; roles: string[] }): Promise<{ ok: boolean; error?: string }>;

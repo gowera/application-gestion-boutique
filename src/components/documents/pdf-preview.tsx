@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
  * PDF dans une iframe (blob/data URI). On rend donc chaque page en image
  * (canvas) via pdf.js, ce qui fonctionne partout, y compris hors ligne.
  */
-export function PdfPreview({ dataUri }: { dataUri: string }) {
+export function PdfPreview({ dataUri, onRendered, zoom = 100 }: { dataUri: string; onRendered?: () => void; zoom?: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +45,7 @@ export function PdfPreview({ dataUri }: { dataUri: string }) {
           const canvas = document.createElement("canvas");
           canvas.width = Math.floor(viewport.width);
           canvas.height = Math.floor(viewport.height);
+          canvas.style.setProperty("--print-width", `${(base.width * 25.4) / 72}mm`);
           canvas.style.width = "100%";
           canvas.style.height = "auto";
           canvas.className = "mx-auto mb-3 block rounded-md border bg-white shadow-sm";
@@ -55,16 +56,17 @@ export function PdfPreview({ dataUri }: { dataUri: string }) {
           container.appendChild(canvas);
         }
         setLoading(false);
+        onRendered?.();
       } catch {
         if (!cancelled) { setError("Aperçu indisponible sur cet appareil."); setLoading(false); }
       }
     })();
 
     return () => { cancelled = true; };
-  }, [dataUri]);
+  }, [dataUri, onRendered]);
 
   return (
-    <div className="max-h-[65vh] overflow-auto rounded-md border bg-muted/30 p-1">
+    <div data-printable-document style={{ zoom: zoom / 100 }} className="max-h-[65vh] overflow-auto rounded-md border bg-muted/30 p-1">
       {loading && (
         <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Préparation de l'aperçu…

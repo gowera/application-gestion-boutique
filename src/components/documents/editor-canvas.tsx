@@ -115,19 +115,26 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
     window.addEventListener("pointerup", up);
   }
 
-  function save() {
-    setCustomTemplate(kind, template);
-    setStoredDocumentTemplate("custom");
-
-    toast.success("Modèle enregistré. Il sera utilisé pour tous les documents.");
-    onSaved?.();
+  async function save() {
+    try {
+      await setCustomTemplate(kind, template);
+      await setStoredDocumentTemplate("custom");
+      toast.success("Modèle enregistré. Il sera utilisé pour tous les documents.");
+      onSaved?.();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible d’enregistrer le modèle.");
+    }
   }
 
-  function reset() {
-    resetCustomTemplate(kind);
-    setTemplate(getCustomTemplate(kind));
-    setSelectedId(null);
-    toast.info("Modèle réinitialisé.");
+  async function reset() {
+    try {
+      await resetCustomTemplate(kind);
+      setTemplate(getCustomTemplate(kind));
+      setSelectedId(null);
+      toast.info("Modèle réinitialisé.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible de réinitialiser le modèle.");
+    }
   }
 
   const canvasWidth = template.pageWidth * ppm;
@@ -323,7 +330,7 @@ export function EditorCanvas({ kind, onSaved }: { kind: DocumentKind; onSaved?: 
       </div>
 
       <div className="min-w-0 min-h-[420px] lg:col-span-2 xl:col-span-1 xl:min-h-[600px]">
-        <TemplatePreview template={template} docLabel={kind === "facture" ? "Facture" : "Reçu"} />
+        <TemplatePreview template={template} docLabel={kind === "recu" ? "Reçu" : kind === "proforma" ? "Facture Proforma" : "Facture"} />
       </div>
 
     </div>

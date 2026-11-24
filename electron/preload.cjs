@@ -2,6 +2,10 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("conetecDesktop", {
   isDesktop: true,
+  getAppVersion: () => ipcRenderer.invoke("app:version"),
+  listPrinters: () => ipcRenderer.invoke("printers:list"),
+  checkForUpdates: () => ipcRenderer.invoke("app:update-check"),
+  openRelease: (url) => ipcRenderer.invoke("app:open-release", url),
   hasOfflinePin: () => ipcRenderer.invoke("offline-auth:has-pin"),
   isLocalOnly: () => ipcRenderer.invoke("offline-auth:is-local-only"),
   configureOfflinePin: (pin, profile) => ipcRenderer.invoke("offline-auth:configure", { pin, profile }),
