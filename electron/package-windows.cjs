@@ -18,7 +18,7 @@ async function main() {
     }
     const manifest = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
     fs.writeFileSync(path.join(staging, "package.json"), JSON.stringify({ name: "gestionstock", version: manifest.version, main: "electron/main.cjs", type: "module" }));
-    const { default: packager } = await import("@electron/packager");
+    const mod = await import("@electron/packager"); const packager = mod.packager || mod.default;
     const electronVersion = JSON.parse(fs.readFileSync(require.resolve("electron/package.json"), "utf8")).version;
     const outputs = await packager({ dir: staging, name: "GestionStock", platform: "win32", arch: "x64", electronVersion, appVersion: manifest.version, out: "/tmp/gestionstock-release", overwrite: true, asar: true, icon: path.join(__dirname, "icon.ico"), win32metadata: { CompanyName: "Gestion Stock", FileDescription: "Gestion Stock", ProductName: "Gestion Stock" } });
     console.log(outputs.join("\n"));

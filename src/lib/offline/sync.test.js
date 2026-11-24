@@ -1,5 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 
+Object.defineProperty(globalThis, "navigator", { value: { onLine: true }, configurable: true });
 const events = [];
 let operations = [];
 let downloadError = null;
