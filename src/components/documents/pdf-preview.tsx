@@ -57,8 +57,12 @@ export function PdfPreview({ dataUri, onRendered, zoom = 100 }: { dataUri: strin
         }
         setLoading(false);
         onRendered?.();
-      } catch {
-        if (!cancelled) { setError("Aperçu indisponible sur cet appareil."); setLoading(false); }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Impossible de générer l’aperçu PDF.", error);
+          setError("Aperçu indisponible sur cet appareil.");
+          setLoading(false);
+        }
       }
     })();
 
