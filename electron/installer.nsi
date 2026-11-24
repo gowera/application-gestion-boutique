@@ -6,7 +6,7 @@ Unicode true
 !define APP_NAME "Gestion Stock"
 !define APP_PUBLISHER "Gestion Stock"
 !ifndef APP_VERSION
-!define APP_VERSION "1.4.6"
+!define APP_VERSION "1.4.7"
 !endif
 !define APP_EXE "GestionStock.exe"
 !define APP_REGKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Gestion StockAdmin"

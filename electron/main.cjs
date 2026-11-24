@@ -9,7 +9,7 @@ const { createLocalDatabase } = require("./local-db.cjs");
 const { createLocalApi } = require("./local-api.cjs");
 
 const LOCAL_PORT = 41731;
-const LOCAL_URL = `http://127.0.0.1:${LOCAL_PORT}/admin`;
+const LOCAL_URL = `http://127.0.0.1:${LOCAL_PORT}/auth`;
 const OFFLINE_PAGE = path.join(__dirname, "offline.html");
 const SERVER_ENTRY = path.join(__dirname, "local-server.mjs");
 
@@ -242,7 +242,7 @@ function startLocalServer() {
 
 function waitForLocalServer(attempt = 0) {
   if (!win) return;
-  const request = http.get(`http://127.0.0.1:${LOCAL_PORT}/`, (response) => {
+  const request = http.get(LOCAL_URL, (response) => {
     response.resume();
     // L'application est servie localement : aucune connexion Internet requise.
     win.loadURL(LOCAL_URL).catch(() => {
