@@ -18,6 +18,12 @@ type DocumentTemplateState = {
   custom: CustomTemplateStore;
 };
 
+function uid(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
+}
+
 function createDefaultState(): DocumentTemplateState {
   return {
     active: "standard",
@@ -129,8 +135,6 @@ export type CustomTemplateStore = {
   recu: CanvasTemplate;
   proforma: CanvasTemplate;
 };
-
-const uid = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2));
 
 export function defaultTemplate(kind: DocumentKind): CanvasTemplate {
   const isFacture = kind !== "recu";
