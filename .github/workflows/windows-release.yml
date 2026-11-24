@@ -42,7 +42,18 @@ jobs:
         run: choco install nsis --yes --no-progress
 
       - name: Build installer
-        run: bun run electron:installer:win
+        shell: pwsh
+        run: |
+          $searchRoots = @("$env:ProgramFiles\NSIS", "${env:ProgramFiles(x86)}\NSIS")
+          $makensis = $searchRoots |
+            ForEach-Object { Join-Path $_ "makensis.exe" } |
+            Where-Object { Test-Path $_ } |
+            Select-Object -First 1
+          if (!$makensis) {
+            throw "makensis.exe est introuvable après l’installation de NSIS."
+          }
+          $env:PATH = "$(Split-Path -Parent $makensis);$env:PATH"
+          bun run electron:installer:win
 
       - name: Locate installer
         shell: pwsh
