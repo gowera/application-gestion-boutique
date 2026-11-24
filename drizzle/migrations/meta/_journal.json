@@ -15,6 +15,13 @@
       "when": 1795156368659,
       "tag": "0001_owner_shop_on_signup",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795504764801,
+      "tag": "0002_tighten_access_rules",
+      "breakpoints": true
     }
   ]
 }

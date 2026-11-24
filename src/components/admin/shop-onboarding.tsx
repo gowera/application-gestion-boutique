@@ -1,3 +1,4 @@
+import { shopStoragePath } from "@/lib/shop-storage";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -36,7 +37,7 @@ export function ShopOnboarding() {
   const [busy, setBusy] = useState(false);
 
   async function upload(file: File) {
-    const path = `site-assets/${crypto.randomUUID()}-${file.name}`;
+    const path = await shopStoragePath(`site-assets/${crypto.randomUUID()}-${file.name}`);
     const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true, contentType: file.type || "image/png" });
     if (error) return toast.error(error.message);
     setLogo(supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl);

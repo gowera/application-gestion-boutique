@@ -1,3 +1,4 @@
+import { shopStoragePath } from "@/lib/shop-storage";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -89,7 +90,7 @@ function Page() {
   const setEx = (k: string, v: unknown) => setExtras((e) => ({ ...e, [k]: v }));
 
   async function uploadTo(field: "logo_url" | string, file: File, extrasField = false) {
-    const path = `site-assets/${crypto.randomUUID()}-${file.name}`;
+    const path = await shopStoragePath(`site-assets/${crypto.randomUUID()}-${file.name}`);
     const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true, contentType: file.type || "image/png" });
     if (error) { toast.error(error.message); return; }
     const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;

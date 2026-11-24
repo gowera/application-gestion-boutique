@@ -1,3 +1,4 @@
+import { shopStoragePath } from "@/lib/shop-storage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -107,7 +108,7 @@ export function useDeleteTeamMember() {
 /** Upload d'une photo ou d'un CV dans le bucket partagé. */
 export async function uploadTeamFile(file: File, kind: "photo" | "cv"): Promise<string> {
   const ext = file.name.split(".").pop() || (kind === "photo" ? "jpg" : "pdf");
-  const path = `team/${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const path = await shopStoragePath(`team/${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`);
   const { error } = await supabase.storage
     .from("product-images")
     .upload(path, file, { upsert: true, contentType: file.type || undefined });

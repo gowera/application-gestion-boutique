@@ -1,3 +1,4 @@
+import { shopStoragePath } from "@/lib/shop-storage";
 import { createFileRoute } from "@tanstack/react-router";
 import { isOffline, queueOperation } from "@/lib/offline/sync";
 import { OfflineBanner } from "@/components/admin/offline-banner";
@@ -201,7 +202,7 @@ function ProductDialog({ open, onOpenChange, product, categories, suppliers, onS
     mutationFn: async () => {
       setUploadingImages(true);
       const uploadedUrls = await Promise.all(imageFiles.map(async (file) => {
-        const path = `${crypto.randomUUID()}-${file.name}`;
+        const path = await shopStoragePath(`${crypto.randomUUID()}-${file.name}`);
         const { error: uploadError } = await supabase.storage.from("product-images").upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
         if (uploadError) throw uploadError;
         return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
