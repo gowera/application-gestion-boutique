@@ -8,6 +8,7 @@ import { getBootstrapProgress, subscribeBootstrap, provisionOfflinePin, restoreB
 import { syncNow } from "@/lib/offline/sync";
 import { useCurrentUser, useMyRoles } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import { setLocalUser } from "@/lib/offline/store";
 
 const serverProgress = { running: false, completed: 0, total: 29, current: null, ready: false, lastBootstrapAt: null, error: null };
 
@@ -24,7 +25,7 @@ export function OfflineSetup() {
   useEffect(() => {
     if (!userId || typeof window === "undefined") return;
     if (window.conetecDesktop) {
-      if (user) setLocalUser(user.id);
+      setLocalUser(userId);
       void window.conetecDesktop.hasOfflinePin().then((hasPin) => setNeedsPin(!hasPin));
       return;
     }

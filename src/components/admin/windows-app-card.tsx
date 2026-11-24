@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useSettings } from "@/lib/currency";
 import { useSync } from "@/hooks/use-sync";
-import windowsAppAsset from "@/assets/gestionstock-setup-1.4.3.exe.asset.json";
+import windowsAppAsset from "@/assets/gestionstock-setup-1.4.4.exe.asset.json";
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return "inconnue";
