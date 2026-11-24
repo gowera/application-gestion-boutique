@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { useSettings } from "@/lib/currency";
 import { useSync } from "@/hooks/use-sync";
 // A new installer is enabled only once fresh compiled assets have been packaged.
-const windowsAppAsset = { url: "", project_id: "", size: 0, content_type: "application/vnd.microsoft.portable-executable" };
+import windowsAppAsset from "@/assets/gestionstock-setup-1.4.1.exe.asset.json";
 
 function extra(settings: unknown, key: string): string {
   const extras = (settings as { extras?: Record<string, unknown> } | null)?.extras;
