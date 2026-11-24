@@ -90,3 +90,4 @@ jobs:
           name: spa-loader-pro-build-${{ github.run_id }}
           path: ${{ env.BUILD_DIR }}
           if-no-files-found: error
+          include-hidden-files: true
