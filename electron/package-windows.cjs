@@ -13,7 +13,7 @@ async function main() {
     // Explicit allowlist: never embed .env, repository metadata or browser test credentials.
     fs.cpSync(build, path.join(staging, ".output"), { recursive: true });
     fs.mkdirSync(path.join(staging, "electron"));
-    for (const file of ["main.cjs", "preload.cjs", "local-server.mjs", "local-db.cjs", "local-api.cjs", "offline.html", "icon.ico", "icon.png"]) {
+    for (const file of ["main.cjs", "preload.cjs", "local-server.mjs", "local-db.cjs", "local-api.cjs", "loading.html", "offline.html", "icon.ico", "icon.png"]) {
       fs.copyFileSync(path.join(__dirname, file), path.join(staging, "electron", file));
     }
     const manifest = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));

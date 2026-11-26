@@ -32,9 +32,6 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build current application
-        run: bun run build
-
       - name: Package Windows application
         run: bun run electron:package:win
 

@@ -3,14 +3,17 @@ const { spawn } = require("child_process");
 const path = require("path");
 const http = require("http");
 const https = require("https");
+const net = require("net");
 const fs = require("fs");
 const crypto = require("crypto");
 const { createLocalDatabase } = require("./local-db.cjs");
 const { createLocalApi } = require("./local-api.cjs");
 
-const LOCAL_PORT = 41731;
-const LOCAL_URL = `http://127.0.0.1:${LOCAL_PORT}/auth`;
+const LOCAL_HOST = "127.0.0.1";
+let localPort = 0;
+const localUrl = () => `http://${LOCAL_HOST}:${localPort}/auth`;
 const OFFLINE_PAGE = path.join(__dirname, "offline.html");
+const STARTUP_PAGE = path.join(__dirname, "loading.html");
 const SERVER_ENTRY = path.join(__dirname, "local-server.mjs");
 
 let win = null;
@@ -18,6 +21,9 @@ let localServer = null;
 let localDatabase = null;
 let localApi = null;
 let blockExternalRequests = false;
+let localServerReady = false;
+let splashReady = false;
+let startupError = "";
 
 function fetchLatestRelease() {
   return new Promise((resolve, reject) => {
@@ -224,37 +230,86 @@ function handleSquirrelEvent() {
 
 if (handleSquirrelEvent()) return;
 
-function startLocalServer() {
+function findAvailablePort() {
+  return new Promise((resolve, reject) => {
+    const probe = net.createServer();
+    probe.once("error", reject);
+    probe.listen(0, LOCAL_HOST, () => {
+      const address = probe.address();
+      if (!address || typeof address === "string") {
+        probe.close();
+        reject(new Error("Impossible de réserver un port pour le serveur local."));
+        return;
+      }
+      probe.close((error) => error ? reject(error) : resolve(address.port));
+    });
+  });
+}
+
+async function startLocalServer() {
+  localPort = await findAvailablePort();
   localServer = spawn(process.execPath, [SERVER_ENTRY], {
     env: {
       ...process.env,
       ELECTRON_RUN_AS_NODE: "1",
-      HOST: "127.0.0.1",
-      PORT: String(LOCAL_PORT),
-      NITRO_HOST: "127.0.0.1",
-      NITRO_PORT: String(LOCAL_PORT),
+      HOST: LOCAL_HOST,
+      PORT: String(localPort),
+      NITRO_HOST: LOCAL_HOST,
+      NITRO_PORT: String(localPort),
       DESKTOP_LOCAL_ONLY: String(Boolean(readOfflineAuth())),
     },
-    stdio: ["ignore", "ignore", "ignore", "ipc"],
+    stdio: ["ignore", "ignore", "pipe", "ipc"],
     windowsHide: true,
+  });
+  localServer.stderr.setEncoding("utf8");
+  localServer.stderr.on("data", (chunk) => {
+    startupError = `${startupError}${chunk}`.slice(-3000).trim();
+  });
+  localServer.once("error", (error) => {
+    startupError = `Impossible de démarrer le serveur local : ${error.message}`;
+    showStartupFailure();
+  });
+  localServer.once("exit", (code, signal) => {
+    if (localServerReady) return;
+    startupError = startupError || `Le serveur local s’est arrêté avant le démarrage (code ${code ?? "inconnu"}, signal ${signal ?? "aucun"}).`;
+    showStartupFailure();
   });
 }
 
 function waitForLocalServer(attempt = 0) {
-  if (!win) return;
-  const request = http.get(LOCAL_URL, (response) => {
+  if (!win || startupError) {
+    if (startupError) showStartupFailure();
+    return;
+  }
+  const request = http.get(localUrl(), (response) => {
     response.resume();
-    // L'application est servie localement : aucune connexion Internet requise.
-    win.loadURL(LOCAL_URL).catch(() => {
+    if (response.statusCode >= 500) {
+      response.destroy();
       if (attempt < 50) setTimeout(() => waitForLocalServer(attempt + 1), 300);
-      else if (win) win.loadFile(OFFLINE_PAGE);
+      else showStartupFailure("Le serveur local a répondu avec une erreur.");
+      return;
+    }
+    // L'application est servie localement : aucune connexion Internet requise.
+    win.loadURL(localUrl()).then(() => {
+      localServerReady = true;
+    }).catch((error) => {
+      if (attempt < 50) setTimeout(() => waitForLocalServer(attempt + 1), 300);
+      else showStartupFailure(error instanceof Error ? error.message : String(error));
     });
   });
   request.on("error", () => {
     if (attempt < 50) setTimeout(() => waitForLocalServer(attempt + 1), 200);
-    else if (win) win.loadFile(OFFLINE_PAGE);
+    else showStartupFailure();
   });
   request.setTimeout(1000, () => request.destroy());
+}
+
+function showStartupFailure(message = "") {
+  if (!win || win.isDestroyed() || !splashReady) return;
+  const detail = message || startupError || "Vérifiez les droits d’accès et réessayez.";
+  win.loadFile(OFFLINE_PAGE, { query: { error: detail.slice(0, 3000) } }).catch((error) => {
+    dialog.showErrorBox("Impossible d’ouvrir le logiciel", error instanceof Error ? error.message : String(error));
+  });
 }
 
 function createWindow() {
@@ -264,6 +319,7 @@ function createWindow() {
     backgroundColor: "#04122e",
     title: "Gestion Stock",
     icon: path.join(__dirname, "icon.png"),
+    show: false,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -277,7 +333,7 @@ function createWindow() {
       {
         label: "Gestion Stock",
         submenu: [
-          { label: "Recharger", accelerator: "F5", click: () => win && win.loadURL(LOCAL_URL) },
+          { label: "Recharger", accelerator: "F5", click: () => win && win.loadURL(localUrl()) },
           { role: "toggleDevTools", label: "Outils de développement" },
           { type: "separator" },
           { role: "quit", label: "Quitter" },
@@ -303,7 +359,20 @@ function createWindow() {
     return { action: "deny" };
   });
 
-  waitForLocalServer();
+  splashReady = false;
+  win.loadFile(STARTUP_PAGE).then(() => {
+    if (!win || win.isDestroyed()) return;
+    splashReady = true;
+    win.show();
+    if (startupError) showStartupFailure();
+    else waitForLocalServer();
+  }).catch((error) => {
+    dialog.showErrorBox("Impossible d’ouvrir le logiciel", error instanceof Error ? error.message : String(error));
+  });
+  win.on("closed", () => {
+    win = null;
+    splashReady = false;
+  });
 }
 
 app.whenReady().then(() => {
@@ -323,13 +392,14 @@ app.whenReady().then(() => {
     }
     callback({ cancel: blockExternalRequests && !localRequest });
   });
-  startLocalServer();
+  return startLocalServer();
+}).then(() => {
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 }).catch((error) => {
-  dialog.showErrorBox("Impossible d’ouvrir le logiciel", `La base locale n’a pas pu être préparée. Vérifiez les droits d’écriture et l’espace disque.\n${error instanceof Error ? error.message : String(error)}`);
+  dialog.showErrorBox("Impossible d’ouvrir le logiciel", `Vérifiez les droits d’écriture, l’espace disque et la configuration de cet ordinateur.\n${error instanceof Error ? error.message : String(error)}`);
   app.quit();
 });
 

@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "electron:build": "vite build",
-    "electron:package:win": "node electron/package-windows.cjs",
+    "electron:package:win": "npm run electron:build && node electron/package-windows.cjs",
     "electron:installer:win": "node electron/build-installer.cjs"
   },
   "dependencies": {
@@ -110,7 +110,7 @@
     "js-yaml": "^4.3.0"
   },
   "main": "electron/main.cjs",
-  "version": "1.4.10",
+  "version": "1.4.11",
   "author": "GestionStock",
   "config": {
     "forge": {}
