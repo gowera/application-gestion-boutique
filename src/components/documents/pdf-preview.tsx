@@ -24,8 +24,12 @@ export function PdfPreview({ dataUri, onRendered, zoom = 100 }: { dataUri: strin
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
-        const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
-        pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+        if (window.conetecDesktop) {
+          await import("pdfjs-dist/build/pdf.worker.min.mjs");
+        } else {
+          const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+          pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+        }
 
         const base64 = dataUri.includes(",") ? dataUri.split(",")[1] : dataUri;
         const binary = atob(base64);
@@ -70,7 +74,12 @@ export function PdfPreview({ dataUri, onRendered, zoom = 100 }: { dataUri: strin
   }, [dataUri, onRendered]);
 
   return (
-    <div data-printable-document style={{ zoom: zoom / 100 }} className="max-h-[65vh] overflow-auto rounded-md border bg-muted/30 p-1">
+    <div
+      data-printable-document
+      data-preview-status={error ? "error" : loading ? "loading" : "ready"}
+      style={{ zoom: zoom / 100 }}
+      className="max-h-[65vh] overflow-auto rounded-md border bg-muted/30 p-1"
+    >
       {loading && (
         <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Préparation de l'aperçu…

@@ -69,7 +69,6 @@ export function TemplatePreview({ template, docLabel }: { template: CanvasTempla
     }
     // include nonce so a manual refresh regenerates the URL
   }, [template, sample, nonce]);
-
   return (
     <div className="flex h-full flex-col rounded border bg-muted/20">
       <div className="flex flex-wrap items-center gap-2 border-b bg-background/60 p-2">

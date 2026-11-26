@@ -166,6 +166,9 @@
   body * { visibility: hidden !important; }
   [data-printable-document],
   [data-printable-document] * { visibility: visible !important; }
+  [data-printable-document]:not([data-preview-status="ready"]) {
+    display: none !important;
+  }
   [data-printable-document] {
     position: fixed !important;
     inset: 0 !important;
